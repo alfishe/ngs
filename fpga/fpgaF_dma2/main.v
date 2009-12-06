@@ -247,8 +247,7 @@ module main(
 	wire [2:0] snd_addr;
 	wire [7:0] snd_data;
 
-	wire mode_8chans;
-	wire mode_pan4ch;
+	wire mode_8chans,mode_pan4ch,mode_inv7b;
 
 // ports-SPIs interconnection
 
@@ -514,6 +513,7 @@ module main(
 	                .snd_data(snd_data),
 	                .mode_8chans(mode_8chans),
 	                .mode_pan4ch(mode_pan4ch),
+	                .mode_inv7b(mode_inv7b),
 
 	                .command_port_input(command_zx2gs),
 	                .command_bit_input(command_bit_2gs),
@@ -572,6 +572,7 @@ module main(
 
 	                          .mode_8chans(mode_8chans),
 	                          .mode_pan4ch(mode_pan4ch),
+	                          .mode_inv7b(mode_inv7b),
 
 	                          .in_wrtoggle(snd_wrtoggle),
 	                          .in_datnvol(snd_datnvol),

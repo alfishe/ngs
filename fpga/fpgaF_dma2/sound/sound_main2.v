@@ -39,6 +39,7 @@ module sound_main(
 
 	mode_8chans,   // =1 - 8 channels, =0 - 4 channels
 	mode_pan4ch,   // =1 - 4 channels with panning
+	mode_inv7b,    // =1 - invert 7th bit of every sample byte
 
 
 	in_wrtoggle,   // from ports.v module (async to clock)
@@ -58,6 +59,7 @@ module sound_main(
 
 	input mode_8chans;
 	input mode_pan4ch;
+	input mode_inv7b;
 
 	input in_wrtoggle;
 	input in_datnvol;
@@ -107,6 +109,7 @@ module sound_main(
 	reg sync_mode_8chans; //
 
 	reg int_mode_pan4ch,sync_mode_pan4ch; // same for pan4ch signal
+	reg int_mode_inv7b, sync_mode_inv7b;  // ...
 
 	reg [1:0] chanptr; // pointer to channels (4 channels total: 0,1,4,5 or 2,3,6,7 depending on lrptr state)
 	reg lrptr;         // left-right pointer (selects either left (0) or right (1) channels)
@@ -145,6 +148,7 @@ module sound_main(
 	sound_mulacc my_mulacc( .clock(clock),
 	                        .vol_in(vol),
 	                        .dat_in(mem_do),
+	                        .mode_inv7b(int_mode_inv7b),
 	                        .load(mulacc_load),
 	                        .clr_sum(mulacc_clrsum),
 	                        .ready(mulacc_ready),
@@ -167,6 +171,7 @@ module sound_main(
 	begin
 		{ int_mode_8chans,sync_mode_8chans } <= { sync_mode_8chans, mode_8chans };
 		{ int_mode_pan4ch,sync_mode_pan4ch } <= { sync_mode_pan4ch, mode_pan4ch };
+		{ int_mode_inv7b ,sync_mode_inv7b  } <= { sync_mode_inv7b,  mode_inv7b  };
 	end
 
 

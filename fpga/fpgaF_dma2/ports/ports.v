@@ -29,6 +29,7 @@ module ports(
 
 	mode_8chans, // mode outputs for sound_main module
 	mode_pan4ch, //
+	mode_inv7b,  //
 
 	mode_ramro, // mode outputs for memmap module
 	mode_norom,
@@ -78,7 +79,6 @@ module ports(
 	//
 	dma_wrstb,
 	dma_regsel,
-
 
 	rst_n,
 
@@ -160,9 +160,9 @@ module ports(
 
 	output reg command_bit_wr;
 
-	output reg mode_8chans;
-
-	output reg mode_pan4ch;
+	output reg mode_inv7b,
+	           mode_8chans,
+	           mode_pan4ch;
 
 	output reg mode_ramro;
 
@@ -418,7 +418,7 @@ module ports(
 		ZXSTAT: // status bits
 			dout <= { data_bit_input, 6'bXXXXXX, command_bit_input };
 		GSCFG0: // config register #0F
-			dout <= { 1'b0, mode_pan4ch, clksel1, clksel0, mode_expag, mode_8chans, mode_ramro, mode_norom };
+			dout <= { mode_inv7b, mode_pan4ch, clksel1, clksel0, mode_expag, mode_8chans, mode_ramro, mode_norom };
 
 		SSTAT:
 			dout <= { 4'd0, mc_rdy, sd_wp, sd_det, md_dreq };
@@ -488,12 +488,12 @@ module ports(
 	always @(posedge cpu_clock,negedge rst_n)
 	begin
 		if( rst_n==1'b0 ) // reset!
-			{ mode_pan4ch, clksel1, clksel0, mode_expag, mode_8chans, mode_ramro, mode_norom } <= 7'b0110000;
+			{ mode_inv7b, mode_pan4ch, clksel1, clksel0, mode_expag, mode_8chans, mode_ramro, mode_norom } <= 8'b00110000;
 		else // write to port
 		begin
 			if( port0f_wr == 1'b1 )
 			begin
-				{ mode_pan4ch, clksel1, clksel0, mode_expag, mode_8chans, mode_ramro, mode_norom } <= din[6:0];
+				{ mode_inv7b, mode_pan4ch, clksel1, clksel0, mode_expag, mode_8chans, mode_ramro, mode_norom } <= din[7:0];
 			end
 		end
 	end

@@ -22,6 +22,8 @@ module sound_mulacc(
 	vol_in,  // input volume (6 bit unsigned)
 	dat_in,  // input sound data (8 bit signed with sign bit inverted)
 
+	mode_inv7b, // whether to invert 7th bit of dat_in
+
 	load,    // load pulse input
 	clr_sum, // clear sum input
 
@@ -33,6 +35,8 @@ module sound_mulacc(
 
 	input [5:0] vol_in;
 	input [7:0] dat_in;
+
+	input mode_inv7b;
 
 	input load;
 	input clr_sum;
@@ -106,7 +110,7 @@ module sound_mulacc(
 		begin
 			sum_reg[6:0] <= 7'd0;
 
-			shifter[7]   <= ~dat_in[7];   // convert to signed data (we need signed result)
+			shifter[7]   <= ~(mode_inv7b^dat_in[7]);   // convert to signed data (we need signed result), invert 7th bit if needed
 			shifter[6:0] <=  dat_in[6:0];
 
 			adder <= vol_in;
