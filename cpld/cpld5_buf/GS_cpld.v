@@ -1,10 +1,11 @@
-// Part of NewGS project
+// Part of NeoGS project
 //
-// FPGA early and on-the-fly configuration, Z80 clock switch
+// FPGA early and on-the-fly configuration, Z80 clock switch,
+// 3.3v RAM buffer
 //
-// (c) 2008 NedoPC
+// (c) 2008-2010 NedoPC
 
-module GS_3032(
+module GS_cpld(
 
 	config_n,	// ACEX1K config pins
 	status_n,	//
