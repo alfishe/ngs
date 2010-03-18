@@ -19,20 +19,20 @@ module GS_cpld(
 	clksel0,	// clock select 0 (1=divide by 2, 0=no divide)
 	clksel1,	// clock select 1 (1=clk20in, 0=clk24in)
 
-	za,
-	zd,
-	a6,a7,//a14,a15,	// z80 signals
-	iorq_n,mreq_n,	//
-	rd_n,wr_n,		//
-	busak_n, rfsh_n, m1_n,
-//	d7,d0,			//
+	d, // bus 7:0
+	a6,a7,a10,a11,a12,a13,a14,a15,
+	iorq_n,mreq_n,
+	rd_n,wr_n,
+	/*busak_n, rfsh_n, m1_n,*/
 
 	mema14,mema15,	// signals to memories
 	romcs_n,ramcs0_n,
 	memoe_n,memwe_n,
 
-	mema,
-	memd,
+	ra6,ra7,ra10,ra11,ra12,ra13,ra14,ra15,
+	rd, // bus 7:0
+
+
 
 	coldres_n,		// cold reset input
 
@@ -41,11 +41,11 @@ module GS_cpld(
 	clkin			// input of clkout signal
 );
 
-	inout reg [ 7:0] zd;
-	input wire [15:8] za;
-
-	output reg [13:8] mema;
-	inout  reg [ 7:0] memd;
+	input  wire a6,a7,a10,a11,a12,a13,a14,a15;
+	output wire ra6,ra7,ra10,ra11,ra12,ra13,ra14,ra15;
+	
+	inout  wire [ 7:0] d;
+	inout  wire [ 7:0] rd;
 
 	output config_n; reg config_n;
 	input status_n;
@@ -79,7 +79,7 @@ module GS_cpld(
 	reg [1:0] memcfg; // memcfg[1]: 1 ram, 0 roms
 	                  // memcfg[0]: 0 page0, 1 page1 -> in 8000-ffff region
 
-	reg disbl; // =1 - 3032 disabled, =0 - enabled
+	reg disbl; // =1 - cpld disabled, =0 - enabled
 
 	reg was_cold_reset_n; // 1 - no cold reset, 0 - was cold reset
 
@@ -87,13 +87,8 @@ module GS_cpld(
 	reg [1:0] dbout;
 	wire [1:0] dbin;
 
-	assign dbin[1] = zd[7];
-	assign dbin[0] = zd[0];
-
-	input a6;
-	input a7;
-	wire a14=za[14];
-	wire a15=za[15];
+	assign dbin[1] = d[7];
+	assign dbin[0] = d[0];
 
 	wire memcfg_write;
 	wire rescfg_write;
@@ -280,9 +275,9 @@ module GS_cpld(
 			end
 			else // no disbl_sync positive pulse
 			begin
-                rstcount <= rstcount - 1;
-                if( |rstcount == 0 )
-                	warmres_n <= 1'bZ;
+				rstcount <= rstcount - 1;
+				if( |rstcount == 0 )
+					warmres_n <= 1'bZ;
 			end
 		end
 
@@ -292,7 +287,7 @@ module GS_cpld(
 
 
 
-
+	хуета!
 	// translate memory addresses
 	always @*
 	begin
@@ -335,3 +330,4 @@ module GS_cpld(
 
 
 endmodule
+
