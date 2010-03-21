@@ -7,73 +7,73 @@
 
 module GS_cpld(
 
-	config_n,	// ACEX1K config pins
-	status_n,	//
-	conf_done,	//
-	cs,			//
-	init_done,	//
-
-	clk24in,	// 24mhz in
-	clk20in,	// 20mhz in
-	clkout,		// clock out
-	clksel0,	// clock select 0 (1=divide by 2, 0=no divide)
-	clksel1,	// clock select 1 (1=clk20in, 0=clk24in)
-
-	d, // bus 7:0
-	a6,a7,a10,a11,a12,a13,a14,a15,
-	iorq_n,mreq_n,
-	rd_n,wr_n,
-	/*busak_n, rfsh_n, m1_n,*/
-
-	mema14,mema15,	// signals to memories
-	romcs_n,ramcs0_n,
-	memoe_n,memwe_n,
-
-	ra6,ra7,ra10,ra11,ra12,ra13,ra14,ra15,
-	rd, // bus 7:0
+	output reg         config_n,  // ACEX1K config pins
+	input  wire        status_n,  //
+	input  wire        conf_done, //
+	output wire        cs,        //
+	input  wire        init_done, //
 
 
+	input  wire        clk24in, // 24mhz in
+	input  wire        clk20in, // 20mhz in
+	input  wire        clksel0, // clock select 0 (1=divide by 2, 0=no divide)
+	input  wire        clksel1, // clock select 1 (1=clk20in, 0=clk24in)
+	output wire        clkout,  // clock out
 
-	coldres_n,		// cold reset input
+	input  wire        clkin, // input of clkout signal, buffered, same as for Z80
 
-	warmres_n,		// warm reset output
+	
+	input  wire        coldres_n, // resets
+	output reg         warmres_n,
 
-	clkin			// input of clkout signal
+
+	input  wire        iorq_n, // Z80 control signals
+	input  wire        mreq_n,
+	input  wire        rd_n,
+	input  wire        wr_n,
+
+	inout  wire [ 7:0] d, // Z80 data bus
+
+	input  wire        a6,  // some Z80 addresses
+	input  wire        a7,
+	input  wire        a10,
+	input  wire        a11,
+	input  wire        a12,
+	input  wire        a13,
+	input  wire        a14,
+	input  wire        a15,
+
+
+	output wire        mema14,
+	output wire        mema15,
+	output wire        mema19,
+	inout  wire        romcs_n,
+	input  wire        in_ramcs0_n,
+	input  wire        in_ramcs1_n,
+	input  wire        in_ramcs2_n,
+	input  wire        in_ramcs3_n,
+	output wire        out_ramcs0_n,
+	output wire        out_ramcs1_n,
+	inout  wire        memoe_n,
+	inout  wire        memwe_n,
+
+	output wire        ra6,  // some buffered memory addresses
+	output wire        ra7,
+	output wire        ra10,
+	output wire        ra11,
+	output wire        ra12,
+	output wire        ra13,
+
+	inout  wire [ 7:0] rd // memory data bus
 );
 
-	input  wire a6,a7,a10,a11,a12,a13,a14,a15;
-	output wire ra6,ra7,ra10,ra11,ra12,ra13,ra14,ra15;
-	
-	inout  wire [ 7:0] d;
-	inout  wire [ 7:0] rd;
 
-	output config_n; reg config_n;
-	input status_n;
-	input conf_done;
-	output cs; reg cs;
-	input init_done;
 
-	input clk24in;
-	input clk20in;
-	output clkout; reg clkout;
-	input clksel0,clksel1;
-
-	input iorq_n,mreq_n,rd_n,wr_n,busak_n,m1_n,rfsh_n;
-
-	output mema14,mema15; reg mema14,mema15;
-	output romcs_n,ramcs0_n; reg romcs_n,ramcs0_n;
-	output memoe_n,memwe_n; reg memoe_n,memwe_n;
-
-	input coldres_n;
-
-	output warmres_n; reg warmres_n;
-
-	input clkin;
 
 	reg int_mema14,int_mema15;
-	reg int_romcs_n,int_ramcs0_n;
-	reg int_memoe_n,int_memwe_n;
-	reg int_cs;
+	reg int_romcs_n,int_ramcs_n;
+	wire int_memoe_n,int_memwe_n;
+	wire int_cs;
 
 
 	reg [1:0] memcfg; // memcfg[1]: 1 ram, 0 roms
@@ -84,17 +84,21 @@ module GS_cpld(
 	reg was_cold_reset_n; // 1 - no cold reset, 0 - was cold reset
 
 
-	reg [1:0] dbout;
+	reg  [1:0] dbout;
 	wire [1:0] dbin;
+
+	wire memcfg_write_n;
+	wire rescfg_write_n;
+
+	wire coldrstf_read_n;
+	wire fpgastat_read_n;
+
+
+
 
 	assign dbin[1] = d[7];
 	assign dbin[0] = d[0];
 
-	wire memcfg_write;
-	wire rescfg_write;
-
-	wire coldrstf_read;
-	wire fpgastat_read;
 
 
 	reg [3:0] rstcount; // counter for warm reset period
@@ -117,14 +121,15 @@ module GS_cpld(
 	             .clk2(clk20in),
 	             .clksel(clksel1),
 	             .divsel(clksel0),
-	             .clkout(clkout) );
+	             .clkout(clkout)
+	           );
 
 
 	// disable control
 
 	always @(negedge config_n,posedge init_done)
 	begin
-		if( config_n==0 ) // asynchronous reset
+		if( !config_n ) // asynchronous reset
 			disbl <= 0;
 		else // posedge of init_done, synchronous set
 			disbl <= 1;
@@ -132,31 +137,13 @@ module GS_cpld(
 
 
 
-
-	// enabling memory control pins on request
-	always @*
-	begin
-		if( disbl==0 )
-		begin
-			mema14   <= int_mema14;
-			mema15   <= int_mema15;
-			romcs_n  <= int_romcs_n;
-			ramcs0_n <= int_ramcs0_n;
-			memoe_n  <= int_memoe_n;
-			memwe_n  <= int_memwe_n;
-			cs       <= int_cs;
-		end
-		else // disbl==1
-		begin
-			mema14   <= 1'bZ;
-			mema15   <= 1'bZ;
-			romcs_n  <= 1'bZ;
-			ramcs0_n <= 1'bZ;
-			memoe_n  <= 1'bZ;
-			memwe_n  <= 1'bZ;
-			cs       <= 1'bZ;
-		end
-	end
+	// memory control pins when running without configured FPGA
+	assign mema14  = disbl ? 1'bZ : int_mema14;
+	assign mema15  = disbl ? 1'bZ : int_mema15;
+	assign romcs_n = disbl ? 1'bZ : int_romcs_n;
+	assign memoe_n = disbl ? 1'bZ : int_memoe_n;
+	assign memwe_n = disbl ? 1'bZ : int_memwe_n;
+	assign cs      = disbl ? 1'bZ : int_cs;
 
 
 	// controlling memory paging
@@ -164,40 +151,37 @@ module GS_cpld(
 	begin
 		casex( {a15,a14,memcfg[1]} )
 		3'b00x:
-			{int_mema15,int_mema14,int_romcs_n,int_ramcs0_n} <= 4'b0001;
+			{int_mema15,int_mema14,int_romcs_n,int_ramcs_n} <= 4'b0001;
 		3'b01x:
-			{int_mema15,int_mema14,int_romcs_n,int_ramcs0_n} <= 4'b0010;
+			{int_mema15,int_mema14,int_romcs_n,int_ramcs_n} <= 4'b0010;
 		3'b1x0:
-			{int_mema15,int_mema14,int_romcs_n,int_ramcs0_n} <= {memcfg[0],a14,2'b01};
+			{int_mema15,int_mema14,int_romcs_n,int_ramcs_n} <= {memcfg[0],a14,2'b01};
 		3'b1x1:
-			{int_mema15,int_mema14,int_romcs_n,int_ramcs0_n} <= {memcfg[0],a14,2'b10};
+			{int_mema15,int_mema14,int_romcs_n,int_ramcs_n} <= {memcfg[0],a14,2'b10};
 		endcase
 	end
 
 	// controlling memory /OE, /WE
-	always @*
-	begin
-		int_memoe_n <= mreq_n | rd_n;
-		int_memwe_n <= mreq_n | wr_n;
-	end
+	assign int_memoe_n = mreq_n | rd_n;
+	assign int_memwe_n = mreq_n | wr_n;
 
 
 	// writing paging register [1:0] memcfg
-	assign memcfg_write = iorq_n | wr_n | a7 | ~a6; // {a7,a6}==01
+	assign memcfg_write_n = iorq_n | wr_n | a7 | ~a6; // {a7,a6}==01
 
-	always @(negedge coldres_n, posedge memcfg_write)
+	always @(negedge coldres_n, posedge memcfg_write_n)
 	begin
-		if( coldres_n==0 ) // reset on coldres_n
+		if( !coldres_n ) // reset on coldres_n
 			memcfg <= 2'b00;
-		else // write on memcfg_write
+		else // write on memcfg_write_n
 			memcfg <= dbin;
 	end
 
 
 	// writing nCONFIG and cold reset "register"
-	assign rescfg_write = iorq_n | wr_n | ~a7 | a6; // {a7,a6}==10
+	assign rescfg_write_n = iorq_n | wr_n | ~a7 | a6; // {a7,a6}==10
 
-	always @(negedge coldres_n, posedge rescfg_write)
+	always @(negedge coldres_n, posedge rescfg_write_n)
 	begin
 		if( coldres_n==0 ) // async reset
 		begin
@@ -213,40 +197,25 @@ module GS_cpld(
 
 
 	// controlling positive CS pin to FPGA
-	always @*
-	begin
-		int_cs <= a7 & a6; // {a7,a6}==11
-	end
+	assign int_cs = a7 & a6; // {a7,a6}==11
 
 
 
 	// reading control
-	assign coldrstf_read = iorq_n | rd_n | a7 | ~a6; // {a7,a6}=01
-	assign fpgastat_read = iorq_n | rd_n | ~a7 | a6; // {a7,a6}=10
+	assign coldrstf_read_n = iorq_n | rd_n | a7 | ~a6; // {a7,a6}=01
+	assign fpgastat_read_n = iorq_n | rd_n | ~a7 | a6; // {a7,a6}=10
 
-/*	always @*
-	begin
-		if( (coldrstf_read & fpgastat_read)==0 )
-		begin
-			d7 <= dbout[1];
-			d0 <= dbout[0];
-		end
-		else
-		begin
-			d7 <= 1'bZ;
-			d0 <= 1'bZ;
-		end
-	end
-*/
+
+
 	always @*
 	begin
-		casex( {coldrstf_read,fpgastat_read} )
+		case( {coldrstf_read_n,fpgastat_read_n} )
 			2'b01:
-				dbout <= { was_cold_reset_n, 1'bX };
+				dbout = { was_cold_reset_n, 1'bX };
 			2'b10:
-				dbout <= { status_n, conf_done };
+				dbout = { status_n, conf_done };
 			default:
-				dbout <= 2'bXX;
+				dbout = 2'bXX;
 		endcase
 	end
 
@@ -285,47 +254,32 @@ module GS_cpld(
 
 
 
+	// Z80 data bus control
+
+	assign d = ( (!coldrstf_read_n)||(!fpgastat_read_n) )   ?
+	           { dbout[1], 6'bXXXXXX, dbout[0] }            :
+	           ( (romcs_n&&(!memoe_n)) ? rd : 8'bZZZZZZZZ ) ;
+
+	// memory data bus control
+
+	assign rd = (romcs_n&&(!memwe_n)) ? d : 8'bZZZZZZZZ;
+
+	// memory addresses buffering
+
+	assign ra6  = a6;
+	assign ra7  = a7;
+	assign ra10 = a10;
+	assign ra11 = a11;
+	assign ra12 = a12;
+	assign ra13 = a13;
 
 
-	хуета!
-	// translate memory addresses
-	always @*
-	begin
-		if( !busak_n )
-		begin
-			mema = za[13:8];
-		end
-		else
-		begin
-			mema = 14'bZZ_ZZZZ_ZZZZ_ZZZZ;
-		end
-	end
+	// memory CS'ing
 
-	// translate data bus
-	always @*
-	begin
-		if( (coldrstf_read & fpgastat_read)==0 )
-		begin
-			zd = { dbout[1], 6'd0, dbout[0] };
-			memd = 8'bZZZZ_ZZZZ;
-		end
-		else if ( !rd_n && ( !mreq_n || !iorq_n ) )
-		begin
-			memd = 8'bZZZZ_ZZZZ;
-			zd = memd;
-		end
-		else if( ( !mreq_n && !rfsh_n ) || ( !iorq_n && m1_n ) )
-		begin
-			zd = 8'bZZZZ_ZZZZ;
-			memd = zd;
-		end
-		else
-		begin
-			zd   = 8'bZZZZ_ZZZZ;
-			memd = 8'bZZZZ_ZZZZ;
-		end
-	end
+	assign out_ramcs0_n = disbl ? ( in_ramcs0_n & in_ramcs1_n ) : int_ramcs_n;
+	assign out_ramcs1_n = disbl ? ( in_ramcs2_n & in_ramcs3_n ) : 1'b1;
 
+	assign mema19 = disbl ? ( in_ramcs0_n & in_ramcs2_n ) : 1'b0;
 
 
 
