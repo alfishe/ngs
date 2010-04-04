@@ -6,7 +6,7 @@
 // (c) 2008-2010 NedoPC
 
 module GS_cpld(
-
+output reg disbl,
 	output reg         config_n,  // ACEX1K config pins
 	input  wire        status_n,  //
 	input  wire        conf_done, //
@@ -22,7 +22,7 @@ module GS_cpld(
 
 	input  wire        clkin, // input of clkout signal, buffered, same as for Z80
 
-	
+
 	input  wire        coldres_n, // resets
 	output reg         warmres_n,
 
@@ -47,15 +47,19 @@ module GS_cpld(
 	output wire        mema14,
 	output wire        mema15,
 	output wire        mema19,
+
 	inout  wire        romcs_n,
+	inout  wire        memoe_n,
+	inout  wire        memwe_n,
+
 	input  wire        in_ramcs0_n,
 	input  wire        in_ramcs1_n,
 	input  wire        in_ramcs2_n,
 	input  wire        in_ramcs3_n,
+
 	output wire        out_ramcs0_n,
 	output wire        out_ramcs1_n,
-	inout  wire        memoe_n,
-	inout  wire        memwe_n,
+
 
 	output wire        ra6,  // some buffered memory addresses
 	output wire        ra7,
@@ -65,21 +69,27 @@ module GS_cpld(
 	output wire        ra13,
 
 	inout  wire [ 7:0] rd // memory data bus
+
+,output reg int_romcs_n
 );
 
 
 
 
 	reg int_mema14,int_mema15;
-	reg int_romcs_n,int_ramcs_n;
+	reg /*int_romcs_n,*/int_ramcs_n;
 	wire int_memoe_n,int_memwe_n;
 	wire int_cs;
+
+	wire ext_romcs_n,
+	     ext_memoe_n,
+	     ext_memwe_n;
 
 
 	reg [1:0] memcfg; // memcfg[1]: 1 ram, 0 roms
 	                  // memcfg[0]: 0 page0, 1 page1 -> in 8000-ffff region
 
-	reg disbl; // =1 - cpld disabled, =0 - enabled
+//	reg disbl; // =1 - cpld disabled, =0 - enabled
 
 	reg was_cold_reset_n; // 1 - no cold reset, 0 - was cold reset
 
@@ -115,8 +125,8 @@ module GS_cpld(
 	// 11,WR - write to FPGA
 	// 11,RD - read from FPGA
 
-	
-	// clock selector	
+
+	// clock selector
 	clocker clk( .clk1(clk24in),
 	             .clk2(clk20in),
 	             .clksel(clksel1),
@@ -144,6 +154,10 @@ module GS_cpld(
 	assign memoe_n = disbl ? 1'bZ : int_memoe_n;
 	assign memwe_n = disbl ? 1'bZ : int_memwe_n;
 	assign cs      = disbl ? 1'bZ : int_cs;
+
+	assign ext_romcs_n = 1'b1;//romcs_n;
+	assign ext_memoe_n = memoe_n;
+	assign ext_memwe_n = memwe_n;
 
 
 	// controlling memory paging
@@ -258,11 +272,11 @@ module GS_cpld(
 
 	assign d = ( (!coldrstf_read_n)||(!fpgastat_read_n) )   ?
 	           { dbout[1], 6'bXXXXXX, dbout[0] }            :
-	           ( (romcs_n&&(!memoe_n)) ? rd : 8'bZZZZZZZZ ) ;
+	           ( (ext_romcs_n&&(!ext_memoe_n)) ? rd : 8'bZZZZZZZZ ) ;
 
 	// memory data bus control
 
-	assign rd = (romcs_n&&(!memwe_n)) ? d : 8'bZZZZZZZZ;
+	assign rd = (ext_romcs_n&&(!ext_memwe_n)) ? d : 8'bZZZZZZZZ;
 
 	// memory addresses buffering
 
