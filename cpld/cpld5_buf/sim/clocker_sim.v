@@ -18,6 +18,10 @@ module clocker(
 потом по новому входному клоку уже проресинхренное прогоняем
 еще раз ресинхря - и как прошло, включаем выход опять
 */
+/*
+* выше написана хуета!11
+*/
+
 
 	wire midck,ck;
 
@@ -60,13 +64,16 @@ module clocker(
 
 
 	initial
+	begin
 		divby2 = 1'b0;
+		idiv=1'b0;
+	end
 
 	always @(posedge ck)
 		divby2 <= ~divby2;
 
 
-	always @(negedge clkout)
+	always @(posedge divby2)
 		idiv <= divsel;
 
 

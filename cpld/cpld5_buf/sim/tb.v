@@ -1,7 +1,7 @@
 // testbench for CPLD_buf.v
 // (c) NedoPC 2010
 
-`timescale 1ns/100ps
+`timescale 1ns/1ps
 
 
 `define CLK20_HALFPERIOD (25.000)
@@ -55,9 +55,42 @@ module tb;
 		begin
 			repeat(10) @(posedge clkout);
 
-			clksel <= clksel + 2'b01;
+			clksel[1:0] <= $random>>30;
 		end
 	end
+
+
+
+
+	// control minimal period of switched clock
+	real old_time,cur_time;
+	real width,min_width;
+
+	initial
+	begin
+		old_time=$time;
+		cur_time=old_time;
+		min_width=1e10;
+
+		#(0.1); // wait to skip x->value init at the beginning
+
+		forever
+		begin
+			@(clkout);
+
+			cur_time=$realtime;
+			width = cur_time-old_time;
+			old_time=cur_time;
+
+			if( width<min_width )
+			begin
+				min_width = width;
+				$display("at time %t,",cur_time);
+				$display("minimum width set to %t",min_width);
+			end
+		end
+	end
+
 
 
 
