@@ -155,7 +155,7 @@ output reg disbl,
 	assign memwe_n = disbl ? 1'bZ : int_memwe_n;
 	assign cs      = disbl ? 1'bZ : int_cs;
 
-	assign ext_romcs_n = 1'b1;//romcs_n;
+	assign ext_romcs_n = romcs_n;
 	assign ext_memoe_n = memoe_n;
 	assign ext_memwe_n = memwe_n;
 
