@@ -28,8 +28,16 @@ add wave -noupdate -format Logic /tb/mema19
 add wave -noupdate -format Logic /tb/memoe_n
 add wave -noupdate -format Logic /tb/memwe_n
 add wave -noupdate -format Logic /tb/romcs_n
+add wave -noupdate -divider <NULL>
+add wave -noupdate -format Literal -radix hexadecimal /tb/mdata
+add wave -noupdate -format Logic /tb/ma6
+add wave -noupdate -format Logic /tb/ma7
+add wave -noupdate -format Logic /tb/ma10
+add wave -noupdate -format Logic /tb/ma11
+add wave -noupdate -format Logic /tb/ma12
+add wave -noupdate -format Logic /tb/ma13
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {11458447 ps} 0}
+WaveRestoreCursors {{Cursor 1} {10260739 ps} 0}
 configure wave -namecolwidth 150
 configure wave -valuecolwidth 100
 configure wave -justifyvalue left
@@ -43,4 +51,4 @@ configure wave -gridperiod 100000
 configure wave -griddelta 8
 configure wave -timeline 1
 update
-WaveRestoreZoom {0 ps} {5250 ns}
+WaveRestoreZoom {8822733 ps} {15315034 ps}

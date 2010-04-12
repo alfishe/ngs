@@ -35,7 +35,12 @@ module tb;
 	reg  [ 7:0] zdout;
 	reg         zdena;
 
+
 	wire [ 7:0] mdata;
+
+	wire ma6,ma7,ma10,ma11,ma12,ma13;
+
+
 
 	reg mreq_n, iorq_n, rd_n, wr_n;
 
@@ -44,6 +49,9 @@ module tb;
 	wire memoe_n,memwe_n,romcs_n;
 
 
+
+
+	
 	// 20MHz clock
 	initial
 	begin
@@ -172,8 +180,28 @@ module tb;
 		test_conf_done;
 
 
+		repeat(10) @(posedge clkin);
+
+
+		memrd(16'h0123,dummy8);
+		memwr(16'h3210,8'hA5);
+		memrd(16'h4321,dummy8);
+		memwr(16'h4567,8'hA5);
+
 
 	end
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -220,9 +248,47 @@ module tb;
 	             .memoe_n(memoe_n),
 	             .memwe_n(memwe_n),
 	             .romcs_n(romcs_n),
-	             .mema14(mema14), .mema15(mema15), .mema19(mema19)
+	             .mema14(mema14), .mema15(mema15), .mema19(mema19),
+
+		     .rd(mdata),
+		     .ra6 (ma6 ), .ra7 (ma7 ), .ra10(ma10),
+		     .ra11(ma11), .ra12(ma12), .ra13(ma13)
 
                );
+
+
+	// data passing d<>rd check
+	reg old_mreq_n, old_memwe_n, old_memoe_n;
+	//	
+	always @(posedge clkin)
+	begin
+		old_mreq_n  <= mreq_n;
+		old_memwe_n <= memwe_n;
+		old_memoe_n <= memoe_n;
+	end
+	//
+	always @(posedge clkin)
+	if( romcs_n && !mreq_n && !old_mreq_n && !memwe_n && !old_memwe_n )
+	begin
+		if( mdata!==zdata )
+		begin
+			$display("error: data doesn't pass from d to rd!");
+			$stop;
+		end
+	end
+	//
+	always @(posedge clkin)
+	if( romcs_n && !mreq_n && !old_mreq_n && !memoe_n && !old_memoe_n )
+	begin
+		if( mdata!==zdata )
+		begin
+			$display("error: data doesn't pass from rd to d!");
+			$stop;
+		end
+	end
+
+
+
 
 
 
@@ -238,6 +304,67 @@ module tb;
 
 
 	// tasks for z80 bus model (simplified)
+
+	task memrd;
+
+		input  [15:0] addr;
+		output [ 7:0] data;
+
+		begin
+			@(posedge clkin);
+			mreq_n <= 1'b1;
+			iorq_n <= 1'b1;
+			rd_n   <= 1'b1;
+			wr_n   <= 1'b1;
+			zdena  <= 1'b0;
+			zaddr <= addr;
+
+			@(negedge clkin);
+
+			mreq_n <= 1'b0;
+			rd_n   <= 1'b0;
+
+			@(negedge clkin);
+			@(negedge clkin);
+
+			data = zdata;
+			mreq_n <= 1'b1;
+			rd_n   <= 1'b1;
+		end
+	endtask
+
+
+	task memwr;
+
+		input  [15:0] addr;
+		input  [ 7:0] data;
+
+		begin
+			@(posedge clkin);
+
+			mreq_n <= 1'b1;
+			iorq_n <= 1'b1;
+			rd_n   <= 1'b1;
+			wr_n   <= 1'b1;
+			zdena  <= 1'b1;
+			zaddr  <= addr;
+			zdout  <= data;
+
+			@(negedge clkin);
+
+			mreq_n <= 1'b0;
+			wr_n   <= 1'b0;
+
+			@(negedge clkin);
+			@(negedge clkin);
+
+			mreq_n <= 1'b1;
+			wr_n   <= 1'b1;
+			wait(wr_n==1'b1); // delta-cycle delay!!!
+			zdena  <= 1'b0;
+		end
+	endtask
+
 
 	task iord;
 
@@ -449,6 +576,16 @@ module tb;
 		end
 
 	endtask
+
+
+
+
+
+
+
+
+
+
 
 
 
