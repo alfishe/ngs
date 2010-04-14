@@ -46,6 +46,12 @@ module tb;
 
 
 
+	reg in_ramcs0_n,
+	    in_ramcs1_n,
+	    in_ramcs2_n,
+	    in_ramcs3_n;
+
+
 	reg mreq_n, iorq_n, rd_n, wr_n;
 
 	wire ra6,ra7,ra10,ra11,ra12,ra13;
@@ -58,29 +64,35 @@ module tb;
 	reg [7:0] romd;
 	reg romd_ena;
 
-	reg [7:0] last_rom_data;
+	reg [7:0] last_mem_data;
 
 
 
 
 
-	reg md,md_ena;
+	reg [7:0] md;
+	reg md_ena;
 
 
 
 
 
 
-	reg  	  romop_type;
-	reg [1:0] romop_page;
-	reg [7:0] romop_data;
-
-
-
-
+	reg  	  memop_type;
+	reg [1:0] memop_page;
+	reg [7:0] memop_data;
 
 	localparam READ  = 1'b0;
 	localparam WRITE = 1'b1;
+
+
+
+
+
+	// see whether out_ramcs1_n or mema19 will toggle when they shouldn't
+	reg ramcs1_toggled;
+	reg mema19_toggled;
+	reg clr_mema19_ramcs1_toggle;
 
 
 
@@ -188,6 +200,16 @@ module tb;
 		init_done = 1'b0;
 
 
+	// init in_ramcsX_n
+	initial
+	begin
+		in_ramcs0_n = 1'b1;
+		in_ramcs1_n = 1'b1;
+		in_ramcs2_n = 1'b1;
+		in_ramcs3_n = 1'b1;
+	end
+
+
 	// Z80 cycles
 	assign zdata = zdena ? zdout : ( romd_ena ? romd : 8'hZZ);
 	//
@@ -223,6 +245,11 @@ module tb;
 		repeat(10) @(posedge clkin);
 
 		test_rammap;
+
+
+		repeat(10) @(posedge clkin);
+
+		test_cpldoff;
 
 
 	end
@@ -284,7 +311,14 @@ module tb;
 	             .memoe_n(memoe_n),
 	             .memwe_n(memwe_n),
 	             .romcs_n(romcs_n),
+
 	             .mema14(mema14), .mema15(mema15), .mema19(mema19),
+
+	             .in_ramcs0_n(in_ramcs0_n),
+	             .in_ramcs1_n(in_ramcs1_n),
+	             .in_ramcs2_n(in_ramcs2_n),
+	             .in_ramcs3_n(in_ramcs3_n),
+
 	             .out_ramcs0_n(out_ramcs0_n),
 	             .out_ramcs1_n(out_ramcs1_n),
 
@@ -297,6 +331,7 @@ module tb;
 
 	// data passing d<>rd check
 	reg old_mreq_n, old_iorq_n, old_memwe_n, old_memoe_n;
+	wire ramcs_n = out_ramcs0_n & out_ramcs1_n;
 	//
 	always @(posedge clkin)
 	begin
@@ -307,7 +342,7 @@ module tb;
 	end
 	//
 	always @(posedge clkin)
-	if( romcs_n && !mreq_n && !old_mreq_n && !memwe_n && !old_memwe_n )
+	if( !ramcs_n && !memwe_n && !old_memwe_n )
 	begin
 		if( mdata!==zdata )
 		begin
@@ -317,7 +352,7 @@ module tb;
 	end
 	//
 	always @(posedge clkin)
-	if( romcs_n && !mreq_n && !old_mreq_n && !memoe_n && !old_memoe_n )
+	if( !ramcs_n && !memoe_n && !old_memoe_n )
 	begin
 		if( mdata!==zdata )
 		begin
@@ -346,7 +381,8 @@ module tb;
 		begin
 			seed = $random( {out_ramcs0_n, out_ramcs1_n, mema19, mema15, mema14, ma13, ma12, ma11, ma10, ma7, ma6} );
 			seed = $random;
-			md = $random;
+			last_mem_data = $random>>24;
+			md = last_mem_data;
 			md_ena = 1'b1;
 		end
 		else
@@ -362,8 +398,8 @@ module tb;
 		begin
 			seed = $random( {romcs_n, mema19, mema15, mema14, ma13, ma12, ma11, ma10, ma7, ma6} );
 			seed = $random;
-			last_rom_data = $random>>24;
-			romd = last_rom_data;
+			last_mem_data = $random>>24;
+			romd = last_mem_data;
 			romd_ena = 1'b1;
 		end
 		else
@@ -377,17 +413,60 @@ module tb;
 	begin
 		if( memwe_n )
 		begin // read ROM
-			romop_type = READ;
-			romop_page = {mema15,mema14};
-			romop_data = zdata;
+			memop_type = READ;
+			memop_page = {mema15,mema14};
+			memop_data = zdata;
 		end
 		else
 		begin // write ROM
-			romop_type = WRITE;
-			romop_page = {mema15,mema14};
-			romop_data = zdata;
+			memop_type = WRITE;
+			memop_page = {mema15,mema14};
+			memop_data = zdata;
 		end
 	end
+
+	// RAM paging and data tracer
+	always @(posedge clkin)
+	if( !out_ramcs0_n && !mreq_n && !old_mreq_n && ( (!memwe_n && !old_memwe_n) || (!memoe_n && !old_memoe_n) ) )
+	begin
+		if( memwe_n )
+		begin // read RAM
+			memop_type = READ;
+			memop_page = {mema15,mema14};
+			memop_data = zdata;
+		end
+		else
+		begin // write RAM
+			memop_type = WRITE;
+			memop_page = {mema15,mema14};
+			memop_data = zdata;
+		end
+	end
+
+	// mema19 and out_ramcs1_n toggle tracers
+	initial
+	begin
+		clr_mema19_ramcs1_toggle = 1'b0;
+
+		#(0.1);
+
+		mema19_toggled = 1'b0;
+		ramcs1_toggled = 1'b0;
+	end
+	//
+	always @(clr_mema19_ramcs1_toggle) // clr on request
+	begin
+		mema19_toggled = 1'b0;
+		ramcs1_toggled = 1'b0;
+	end
+	//
+	always @(mema19)
+	if( mema19 !== 1'b0 )
+		mema19_toggled = 1'b1;
+	//
+	always @(out_ramcs1_n)
+	if( out_ramcs1_n !== 1'b1 )
+		ramcs1_toggled = 1'b1;
 
 
 
@@ -697,14 +776,14 @@ module tb;
 			$display("test_rommap: testing CPLD mapping of ROM...");
 
 			memwr(16'h0f23,8'h55);
-			if( romop_type!=WRITE || romop_page!=2'b00 || romop_data!=8'h55 )
+			if( memop_type!=WRITE || memop_page!=2'b00 || memop_data!=8'h55 )
 			begin
 				$display("test_rommap: error! write to cpu bank 0 fails!");
 				$stop;
 			end
 
 			memrd(16'h3210,tmp);
-			if( romop_type!=READ || romop_page!=2'b00 || tmp!=last_rom_data )
+			if( memop_type!=READ || memop_page!=2'b00 || tmp!=last_mem_data )
 			begin
 				$display("test_rommap: error! read from cpu bank 0 fails!");
 				$stop;
@@ -715,14 +794,14 @@ module tb;
 				iowr(16'h0040,{ 7'd0, i[1] } ); // low or high part of 64k rom slice
 
                 memwr( { 1'b1, i[0], 14'h29ac }, 8'hAA );
-				if( romop_type!=WRITE || romop_page!=i[1:0] || romop_data!=8'hAA )
+				if( memop_type!=WRITE || memop_page!=i[1:0] || memop_data!=8'hAA )
 				begin
 					$display("test_rommap: error! write to cpu banks 2 or 3 fails!");
 					$stop;
 				end
 
 				memrd( { 1'b1, i[0], 14'h25ac }, tmp );
-				if( romop_type!=READ || romop_page!=i[1:0] || tmp!=last_rom_data )
+				if( memop_type!=READ || memop_page!=i[1:0] || tmp!=last_mem_data )
 				begin
 					$display("test_rommap: error! read from cpu banks 2 or 3 fails!");
 					$stop;
@@ -735,14 +814,99 @@ module tb;
 	endtask
 
 
+	task test_rammap;
+
+		integer i;
+
+		reg [7:0] tmp;
+
+		begin
+			$display("test_rammap: testing CPLD mapping of RAM...");
+
+			memwr(16'h7fff,8'h33);
+			if( memop_type!=WRITE || memop_page!=2'b00 || memop_data!=8'h33 )
+			begin
+				$display("test_rammap: error! write to cpu bank 1 fails!");
+				$stop;
+			end
+
+			memrd(16'h4000,tmp);
+			if( memop_type!=READ || memop_page!=2'b00 || tmp!=last_mem_data )
+			begin
+				$display("test_rammap: error! read from cpu bank 1 fails!");
+				$stop;
+			end
+
+
+			for(i=0;i<4;i=i+1)
+			begin
+				iowr(16'h0040,{ 1'b1, 6'd0, i[0] } ); // low or high part of 64k ram slice
+
+                memwr( { 1'b1, i[1], 14'h1555 }, 8'hCC );
+				if( memop_type!=WRITE || memop_page!={i[0],i[1]} || memop_data!=8'hCC )
+				begin
+					$display("test_rammap: error! write to cpu banks 2 or 3 fails!");
+					$stop;
+				end
+
+				memrd( { 1'b1, i[1], 14'h2AAA }, tmp );
+				if( memop_type!=READ || memop_page!={i[0],i[1]} || tmp!=last_mem_data )
+				begin
+					$display("test_rammap: error! read from cpu banks 2 or 3 fails!");
+					$stop;
+				end
+			end
 
 
 
 
+			$display("test_rammap: success!");
+		end
+
+	endtask
 
 
 
 
+	task test_cpldoff; // test turning off CPLD and then - mapping of FPGA accesses
+
+		begin
+			$display("test_cpldoff: testing CPLD going offline...");
+
+			// check some signals are correct prior to turning CPLD off
+			if( mema19_toggled || ramcs1_toggled )
+			begin
+				$display("test_cpldoff: error! mema19 or out_ramcs1_n were toggling prior to CPLD turn-off!");
+				$stop;
+			end
+
+
+			init_done <= 1'b1; // here CPLD must shut off
+
+			@(posedge clkin);
+			@(posedge clkin);
+
+			if( mema14  !== 1'bZ ||
+			    mema15  !== 1'bZ ||
+			    romcs_n !== 1'bZ ||
+			    memoe_n !== 1'bZ ||
+			    memwe_n !== 1'bZ ||
+			    cs      !== 1'bZ )
+			begin
+				$display("test_cpldoff: error! CPLD did not shut up outputs (mema14 etc.)!");
+				$stop;
+			end
+
+			@(posedge clkin);
+			@(posedge clkin);
+
+
+
+
+			$display("test_cpldoff: success!");
+		end
+
+	endtask
 
 
 

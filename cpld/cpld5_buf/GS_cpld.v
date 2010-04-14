@@ -6,7 +6,6 @@
 // (c) 2008-2010 NedoPC
 
 module GS_cpld(
-output reg disbl,
 	output reg         config_n,  // ACEX1K config pins
 	input  wire        status_n,  //
 	input  wire        conf_done, //
@@ -69,15 +68,13 @@ output reg disbl,
 	output wire        ra13,
 
 	inout  wire [ 7:0] rd // memory data bus
-
-,output reg int_romcs_n
 );
 
 
 
 
 	reg int_mema14,int_mema15;
-	reg /*int_romcs_n,*/int_ramcs_n;
+	reg int_romcs_n,int_ramcs_n;
 	wire int_memoe_n,int_memwe_n;
 	wire int_cs;
 
@@ -89,7 +86,7 @@ output reg disbl,
 	reg [1:0] memcfg; // memcfg[1]: 1 ram, 0 roms
 	                  // memcfg[0]: 0 page0, 1 page1 -> in 8000-ffff region
 
-//	reg disbl; // =1 - cpld disabled, =0 - enabled
+	reg disbl; // =1 - cpld disabled, =0 - enabled
 
 	reg was_cold_reset_n; // 1 - no cold reset, 0 - was cold reset
 
