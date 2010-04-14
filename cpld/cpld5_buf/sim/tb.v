@@ -10,6 +10,10 @@
 
 module tb;
 
+
+	integer seed;
+
+
 	reg [ 7:0] dummy8;
 
 
@@ -47,11 +51,42 @@ module tb;
 	wire ra6,ra7,ra10,ra11,ra12,ra13;
 	wire mema14,mema15,mema19;
 	wire memoe_n,memwe_n,romcs_n;
+	wire out_ramcs0_n,out_ramcs1_n;
+
+
+
+	reg [7:0] romd;
+	reg romd_ena;
+
+	reg [7:0] last_rom_data;
 
 
 
 
-	
+
+	reg md,md_ena;
+
+
+
+
+
+
+	reg  	  romop_type;
+	reg [1:0] romop_page;
+	reg [7:0] romop_data;
+
+
+
+
+
+	localparam READ  = 1'b0;
+	localparam WRITE = 1'b1;
+
+
+
+
+
+
 	// 20MHz clock
 	initial
 	begin
@@ -154,7 +189,7 @@ module tb;
 
 
 	// Z80 cycles
-	assign zdata = zdena ? zdout : 8'hZZ;
+	assign zdata = zdena ? zdout : ( romd_ena ? romd : 8'hZZ);
 	//
 	initial
 	begin
@@ -182,11 +217,12 @@ module tb;
 
 		repeat(10) @(posedge clkin);
 
+		test_rommap;
 
-		memrd(16'h0123,dummy8);
-		memwr(16'h3210,8'hA5);
-		memrd(16'h4321,dummy8);
-		memwr(16'h4567,8'hA5);
+
+		repeat(10) @(posedge clkin);
+
+		test_rammap;
 
 
 	end
@@ -249,20 +285,23 @@ module tb;
 	             .memwe_n(memwe_n),
 	             .romcs_n(romcs_n),
 	             .mema14(mema14), .mema15(mema15), .mema19(mema19),
+	             .out_ramcs0_n(out_ramcs0_n),
+	             .out_ramcs1_n(out_ramcs1_n),
 
-		     .rd(mdata),
-		     .ra6 (ma6 ), .ra7 (ma7 ), .ra10(ma10),
-		     .ra11(ma11), .ra12(ma12), .ra13(ma13)
+	             .rd(mdata),
+	             .ra6 (ma6 ), .ra7 (ma7 ), .ra10(ma10),
+	             .ra11(ma11), .ra12(ma12), .ra13(ma13)
 
                );
 
 
 	// data passing d<>rd check
-	reg old_mreq_n, old_memwe_n, old_memoe_n;
-	//	
+	reg old_mreq_n, old_iorq_n, old_memwe_n, old_memoe_n;
+	//
 	always @(posedge clkin)
 	begin
 		old_mreq_n  <= mreq_n;
+		old_iorq_n  <= iorq_n;
 		old_memwe_n <= memwe_n;
 		old_memoe_n <= memoe_n;
 	end
@@ -272,7 +311,7 @@ module tb;
 	begin
 		if( mdata!==zdata )
 		begin
-			$display("error: data doesn't pass from d to rd!");
+			$display("error: data do not pass from d to rd!");
 			$stop;
 		end
 	end
@@ -282,10 +321,78 @@ module tb;
 	begin
 		if( mdata!==zdata )
 		begin
-			$display("error: data doesn't pass from rd to d!");
+			$display("error: data do not pass from rd to d!");
 			$stop;
 		end
 	end
+
+	// data passing a -> ra check
+	always @(posedge clkin)
+	if( (!mreq_n && !old_mreq_n) || (!iorq_n && !old_iorq_n) )
+	begin
+		if( { zaddr[13:10], zaddr[7:6] } !== { ma13,ma12,ma11,ma10,ma7,ma6 } )
+		begin
+			$display("error: addresses do not pass from a to ra!");
+			$stop ;
+		end
+	end
+
+
+	// RAM and ROM emulators
+    //
+	always @*
+	begin
+		if( !memoe_n && ( !out_ramcs0_n || !out_ramcs1_n ) ) // RAM via buffers
+		begin
+			seed = $random( {out_ramcs0_n, out_ramcs1_n, mema19, mema15, mema14, ma13, ma12, ma11, ma10, ma7, ma6} );
+			seed = $random;
+			md = $random;
+			md_ena = 1'b1;
+		end
+		else
+			md_ena = 1'b0;
+	end
+	//
+	assign mdata = md_ena ? md : 8'hZZ;
+	//
+	//
+	always @*
+	begin
+		if( !memoe_n && !romcs_n ) // ROM directly
+		begin
+			seed = $random( {romcs_n, mema19, mema15, mema14, ma13, ma12, ma11, ma10, ma7, ma6} );
+			seed = $random;
+			last_rom_data = $random>>24;
+			romd = last_rom_data;
+			romd_ena = 1'b1;
+		end
+		else
+			romd_ena = 1'b0;
+	end
+
+
+	// ROM paging and data tracer
+	always @(posedge clkin)
+	if( !romcs_n && !mreq_n && !old_mreq_n && ( (!memwe_n && !old_memwe_n) || (!memoe_n && !old_memoe_n) ) )
+	begin
+		if( memwe_n )
+		begin // read ROM
+			romop_type = READ;
+			romop_page = {mema15,mema14};
+			romop_data = zdata;
+		end
+		else
+		begin // write ROM
+			romop_type = WRITE;
+			romop_page = {mema15,mema14};
+			romop_data = zdata;
+		end
+	end
+
+
+
+
+
 
 
 
@@ -580,7 +687,52 @@ module tb;
 
 
 
+	task test_rommap; // test rom paging
 
+		integer i;
+
+		reg [7:0] tmp;
+
+		begin
+			$display("test_rommap: testing CPLD mapping of ROM...");
+
+			memwr(16'h0f23,8'h55);
+			if( romop_type!=WRITE || romop_page!=2'b00 || romop_data!=8'h55 )
+			begin
+				$display("test_rommap: error! write to cpu bank 0 fails!");
+				$stop;
+			end
+
+			memrd(16'h3210,tmp);
+			if( romop_type!=READ || romop_page!=2'b00 || tmp!=last_rom_data )
+			begin
+				$display("test_rommap: error! read from cpu bank 0 fails!");
+				$stop;
+			end
+
+			for(i=0;i<4;i=i+1)
+			begin
+				iowr(16'h0040,{ 7'd0, i[1] } ); // low or high part of 64k rom slice
+
+                memwr( { 1'b1, i[0], 14'h29ac }, 8'hAA );
+				if( romop_type!=WRITE || romop_page!=i[1:0] || romop_data!=8'hAA )
+				begin
+					$display("test_rommap: error! write to cpu banks 2 or 3 fails!");
+					$stop;
+				end
+
+				memrd( { 1'b1, i[0], 14'h25ac }, tmp );
+				if( romop_type!=READ || romop_page!=i[1:0] || tmp!=last_rom_data )
+				begin
+					$display("test_rommap: error! read from cpu banks 2 or 3 fails!");
+					$stop;
+				end
+			end
+
+			$display("test_rommap: success!");
+		end
+
+	endtask
 
 
 

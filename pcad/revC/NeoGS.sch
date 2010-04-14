@@ -1,8 +1,8 @@
-ACCEL_ASCII "Z:\home\lvd\Desktop\ngs\pcad\revC\NeoGS.sch"
+ACCEL_ASCII "D:\d\ngs\pcad\revC\NeoGS.sch"
 
 (asciiHeader 
   (asciiVersion 3 0)
-  (timeStamp 2010 3 21 19 37 5)
+  (timeStamp 2010 4 13 20 29 14)
   (program "P-CAD 2002 Schematic" "17.00.50")
   (copyright "Copyright © 1992-2002 Altium Limited")
   (fileAuthor "")
@@ -7883,7 +7883,7 @@ ACCEL_ASCII "Z:\home\lvd\Desktop\ngs\pcad\revC\NeoGS.sch"
   (compInst "R39"
     (compRef "RESCHIP_3")
     (originalName "RESCHIP")
-    (compValue "6k8")
+    (compValue "1k")
     (patternName "R-CHIP")
   )
   (compInst "C49"
@@ -8137,9 +8137,9 @@ ACCEL_ASCII "Z:\home\lvd\Desktop\ngs\pcad\revC\NeoGS.sch"
     (node "R1" "1")
   )
   (net "GND"
+    (node "R39" "1")
     (node "C33" "2")
     (node "C38" "2")
-    (node "R39" "1")
     (node "C16" "2")
     (node "C17" "2")
     (node "D1" "95")
@@ -9109,9 +9109,9 @@ ACCEL_ASCII "Z:\home\lvd\Desktop\ngs\pcad\revC\NeoGS.sch"
     (node "RAM2" "13")
   )
   (net "MEMA21"
+    (node "R39" "2")
     (node "RAM1" "39")
     (node "RAM2" "39")
-    (node "R39" "2")
     (node "D4" "73")
   )
   (netClass "ANALOG" 
@@ -9775,10 +9775,10 @@ ACCEL_ASCII "Z:\home\lvd\Desktop\ngs\pcad\revC\NeoGS.sch"
     )
     (wire (line (pt 8300.0 15500.0) (pt 8100.0 15500.0) (width 10.0) (netNameRef "NET00021") )
     )
-    (junction (pt 9300.0 1000.0) (netNameRef "VCC33") )
     (wire (line (pt 9100.0 1000.0) (pt 9300.0 1000.0) (width 10.0) (netNameRef "VCC33") )
     )
     (port (pt 9100.0 1000.0) (portType NoAngle_Sgl_Horz) (portPinLength PortPinShort) (netNameRef "VCC33") (rotation 180.0) )
+    (junction (pt 9300.0 1000.0) (netNameRef "VCC33") )
     (port (pt 9700.0 1400.0) (portType LeftAngle_Sgl_Horz) (portPinLength PortPinShort) (netNameRef "~WR") (rotation 180.0) )
     (port (pt 9700.0 1700.0) (portType LeftAngle_Sgl_Horz) (portPinLength PortPinShort) (netNameRef "~MREQ") (rotation 180.0) )
     (port (pt 9700.0 1600.0) (portType LeftAngle_Sgl_Horz) (portPinLength PortPinShort) (netNameRef "~RD") (rotation 180.0) )
@@ -10050,9 +10050,9 @@ ACCEL_ASCII "Z:\home\lvd\Desktop\ngs\pcad\revC\NeoGS.sch"
     (port (pt 20100.0 3400.0) (portType NoAngle_Sgl_Horz) (portPinLength PortPinShort) (netNameRef "GND") (rotation 180.0) )
     (port (pt 20100.0 3500.0) (portType LeftAngle_Sgl_Horz) (portPinLength PortPinShort) (netNameRef "MP3_XRESET") (rotation 180.0) )
     (port (pt 20100.0 7400.0) (portType NoAngle_Sgl_Horz) (portPinLength PortPinShort) (netNameRef "GND") (rotation 270.0) )
-    (junction (pt 20400.0 7900.0) (netNameRef "MEMA21") )
     (wire (line (pt 20100.0 7900.0) (pt 20400.0 7900.0) (width 10.0) (netNameRef "MEMA21") )
     )
+    (junction (pt 20400.0 7900.0) (netNameRef "MEMA21") )
     (port (pt 20100.0 8200.0) (portType LeftAngle_Sgl_Horz) (portPinLength PortPinShort) (netNameRef "~CONFIG") )
     (wire (line (pt 20500.0 8600.0) (pt 20100.0 8600.0) (width 10.0) (netNameRef "MEMA18") )
     )
