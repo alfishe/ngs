@@ -29,6 +29,14 @@ add wave -noupdate -format Logic /tb/memoe_n
 add wave -noupdate -format Logic /tb/memwe_n
 add wave -noupdate -format Logic /tb/romcs_n
 add wave -noupdate -divider <NULL>
+add wave -noupdate -format Logic /tb/in_ramcs0_n
+add wave -noupdate -format Logic /tb/in_ramcs1_n
+add wave -noupdate -format Logic /tb/in_ramcs2_n
+add wave -noupdate -format Logic /tb/in_ramcs3_n
+add wave -noupdate -format Logic /tb/mema19
+add wave -noupdate -format Logic /tb/out_ramcs0_n
+add wave -noupdate -format Logic /tb/out_ramcs1_n
+add wave -noupdate -divider <NULL>
 add wave -noupdate -format Literal -radix hexadecimal /tb/mdata
 add wave -noupdate -format Logic /tb/ma6
 add wave -noupdate -format Logic /tb/ma7
@@ -51,4 +59,4 @@ configure wave -gridperiod 100000
 configure wave -griddelta 8
 configure wave -timeline 1
 update
-WaveRestoreZoom {8822733 ps} {15315034 ps}
+WaveRestoreZoom {24513751 ps} {47060823 ps}

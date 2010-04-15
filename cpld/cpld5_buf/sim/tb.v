@@ -95,6 +95,27 @@ module tb;
 	reg clr_mema19_ramcs1_toggle;
 
 
+	// external drive on romcs_n, memoe_n, memwe_n
+	reg eromcs_n, ememoe_n, ememwe_n;
+	reg edrv;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -209,6 +230,15 @@ module tb;
 		in_ramcs3_n = 1'b1;
 	end
 
+	// external drive init
+	initial
+	begin
+		eromcs_n = 1'b1;
+		ememoe_n = 1'b1;
+		ememwe_n = 1'b1;
+		edrv     = 1'b0;
+	end
+
 
 	// Z80 cycles
 	assign zdata = zdena ? zdout : ( romd_ena ? romd : 8'hZZ);
@@ -251,6 +281,8 @@ module tb;
 
 		test_cpldoff;
 
+
+		test_ramcs_fpga;
 
 	end
 
@@ -468,7 +500,10 @@ module tb;
 	if( out_ramcs1_n !== 1'b1 )
 		ramcs1_toggled = 1'b1;
 
-
+	// external drive on romcs memoe memwe
+	assign romcs_n = edrv ? eromcs_n : 1'bZ;
+	assign memoe_n = edrv ? ememoe_n : 1'bZ;
+	assign memwe_n = edrv ? ememwe_n : 1'bZ;
 
 
 
@@ -880,9 +915,11 @@ module tb;
 				$stop;
 			end
 
+			@(posedge clkin);
 
 			init_done <= 1'b1; // here CPLD must shut off
 
+			@(posedge clkin);
 			@(posedge clkin);
 			@(posedge clkin);
 
@@ -897,11 +934,19 @@ module tb;
 				$stop;
 			end
 
+			if( warmres_n !== 1'b0 )
+			begin
+				$display("test_cpldoff: error! CPLD did not assert warmres_n after disabling!");
+				$stop;
+			end
+
+			wait( warmres_n!==1'b0 );
+			@(posedge clkin);
+
+			edrv = 1'b1;
+
 			@(posedge clkin);
 			@(posedge clkin);
-
-
-
 
 			$display("test_cpldoff: success!");
 		end
@@ -912,6 +957,34 @@ module tb;
 
 
 
+	task test_ramcs_fpga;
+
+		integer i;
+
+		begin
+			$display("test_ramcs_fpga: testing muxing 4 ramcses into 2 with extra address...");
+
+			for(i=0;i<4;i=i+1)
+			begin
+				@(posedge clkin);
+				{ in_ramcs3_n, in_ramcs2_n, in_ramcs1_n, in_ramcs0_n } <= ~(4'b0001<<i);
+				@(posedge clkin);
+
+				if( mema19 != i[0]          ||
+				    out_ramcs0_n != i[1]    ||
+				    out_ramcs1_n != (~i[1]) )
+				begin
+					$display("test_ramcs_fpga: error!");
+					$stop;
+				end
+			end
+
+			in_ramcs3_n <= 1'b1;
+
+			$display("test_ramcs_fpga: success!");
+		end
+
+	endtask
 
 
 
