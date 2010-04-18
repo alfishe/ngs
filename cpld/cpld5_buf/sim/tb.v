@@ -103,7 +103,7 @@ module tb;
 
 
 
-
+	reg cold_reset_set;
 
 
 
@@ -254,35 +254,69 @@ module tb;
 
 		zaddr  = 16'hZZZZ;
 
+
+		cold_reset_set = 1'b1;
+
+
 		wait(warmres_n===1'bZ);
 		repeat(3) @(posedge clkin);
 
 
-		test_config_status;
+		repeat(32)
+		begin	
+			mema19_toggled = 1'b0;
+			ramcs1_toggled = 1'b0;
 
-		test_cold_reset_flag;
-
-		test_fpga_cs;
-
-		test_conf_done;
-
-
-		repeat(10) @(posedge clkin);
-
-		test_rommap;
+			init_done = 1'b0;
 
 
-		repeat(10) @(posedge clkin);
+			test_config_status;
 
-		test_rammap;
+			test_cold_reset_flag(cold_reset_set);
+			cold_reset_set = 1'b0;
+
+			test_fpga_cs;
+
+			test_conf_done;
 
 
-		repeat(10) @(posedge clkin);
+			repeat(10) @(posedge clkin);
 
-		test_cpldoff;
+			test_rommap;
 
 
-		test_ramcs_fpga;
+			repeat(10) @(posedge clkin);
+
+			test_rammap;
+
+
+			repeat(10) @(posedge clkin);
+
+			test_cpldoff;
+
+
+			test_ramcs_fpga;
+
+
+			repeat(10) @(posedge clkin);
+
+			test_fwd_fpga;
+	
+
+			repeat(10) @(posedge clkin);
+
+			test_restart;
+		end
+
+
+
+		repeat(4) $display("");
+
+		$display("full SUCCESS!");
+
+		$stop;
+
+
 
 	end
 
@@ -706,35 +740,38 @@ module tb;
 
 	task test_cold_reset_flag;
 
+		input cold_reset_set;
+
+
 		reg [7:0] tmp;
 
 		begin
 			$display("test_cold_reset_flag: doing sticking test...");
 
-            iord(16'h0040,tmp);
-            if( tmp[7] )
-            begin
+			iord(16'h0040,tmp);
+			if( tmp[7] && cold_reset_set )
+			begin
 				$display("test_cold_reset_flag: error! cold_reset_flag was set at the beginning!");
 				$stop;
-            end
+			end
 
 			iowr(16'h0080,8'h81); // set cold reset flag
 
-            iord(16'h0040,tmp);
-            if( !tmp[7] )
-            begin
+			iord(16'h0040,tmp);
+			if( !tmp[7] )
+			begin
 				$display("test_cold_reset_flag: error! can't set cold_reset_flag!");
 				$stop;
-            end
+			end
 
 			iowr(16'h0080,8'h01); // try to clear cold reset flag
 
-            iord(16'h0040,tmp);
-            if( !tmp[7] )
-            begin
+       			iord(16'h0040,tmp);
+       			if( !tmp[7] )
+			begin
 				$display("test_cold_reset_flag: error! can clear cold_reset_flag!");
 				$stop;
-            end
+			end
 
 			$display("test_cold_reset_flag: success!");
 		end
@@ -828,7 +865,7 @@ module tb;
 			begin
 				iowr(16'h0040,{ 7'd0, i[1] } ); // low or high part of 64k rom slice
 
-                memwr( { 1'b1, i[0], 14'h29ac }, 8'hAA );
+				memwr( { 1'b1, i[0], 14'h29ac }, 8'hAA );
 				if( memop_type!=WRITE || memop_page!=i[1:0] || memop_data!=8'hAA )
 				begin
 					$display("test_rommap: error! write to cpu banks 2 or 3 fails!");
@@ -877,7 +914,7 @@ module tb;
 			begin
 				iowr(16'h0040,{ 1'b1, 6'd0, i[0] } ); // low or high part of 64k ram slice
 
-                memwr( { 1'b1, i[1], 14'h1555 }, 8'hCC );
+				memwr( { 1'b1, i[1], 14'h1555 }, 8'hCC );
 				if( memop_type!=WRITE || memop_page!={i[0],i[1]} || memop_data!=8'hCC )
 				begin
 					$display("test_rammap: error! write to cpu banks 2 or 3 fails!");
@@ -979,6 +1016,7 @@ module tb;
 				end
 			end
 
+			@(posedge clkin);
 			in_ramcs3_n <= 1'b1;
 
 			$display("test_ramcs_fpga: success!");
@@ -987,6 +1025,71 @@ module tb;
 	endtask
 
 
+
+	task test_fwd_fpga;
+
+		
+		begin
+			$display("test_fwd_fpga: testing forwarding of ram data during fpga active...");
+
+
+			@(posedge clkin);
+
+			eromcs_n <= 1'b1;
+			ememoe_n <= 1'b0;
+			in_ramcs0_n <= 1'b0;
+
+			@(posedge clkin);
+
+			if( zdata!==last_mem_data )
+			begin
+				$display("test_fwd_fpga: error! no data forwarding from RAM side!");
+				$stop;
+			end
+
+			ememoe_n <= 1'b1;
+
+			@(posedge clkin);
+
+			ememwe_n <= 1'b0;
+			zdena <= 1'b1;
+			zdout <= $random>>24;
+
+			@(posedge clkin);
+
+			if( mdata!==zdout )
+			begin
+				$display("test_fwd_fpga: error! no data forwarding from Z80 side!");
+				$stop;
+			end
+
+			zdena <= 1'b0;
+			ememwe_n <= 1'b1;
+			in_ramcs0_n <= 1'b1;
+
+
+			$display("test_fwd_fpga: success!");
+		end
+	endtask
+
+
+
+
+	task test_restart;
+
+		begin
+			$display("test_restart: restarting CPLD...");
+
+			
+			iowr(16'h0080,8'h00);
+
+			edrv <= 1'b0;
+
+
+
+			$display("test_restart: success!");
+		end
+	endtask
 
 
 
