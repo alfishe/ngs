@@ -186,7 +186,7 @@ module tb;
 		cur_time=old_time;
 		min_width=1e10;
 
-		#(0.1); // wait to skip x->value init at the beginning
+		#(20); // wait to skip x->value init at the beginning
 
 		forever
 		begin
@@ -258,12 +258,13 @@ module tb;
 		cold_reset_set = 1'b1;
 
 
+		wait(warmres_n===1'b0);
 		wait(warmres_n===1'bZ);
 		repeat(3) @(posedge clkin);
 
 
 		repeat(32)
-		begin	
+		begin
 			mema19_toggled = 1'b0;
 			ramcs1_toggled = 1'b0;
 
@@ -301,7 +302,7 @@ module tb;
 			repeat(10) @(posedge clkin);
 
 			test_fwd_fpga;
-	
+
 
 			repeat(10) @(posedge clkin);
 
@@ -1028,7 +1029,7 @@ module tb;
 
 	task test_fwd_fpga;
 
-		
+
 		begin
 			$display("test_fwd_fpga: testing forwarding of ram data during fpga active...");
 
@@ -1080,7 +1081,7 @@ module tb;
 		begin
 			$display("test_restart: restarting CPLD...");
 
-			
+
 			iowr(16'h0080,8'h00);
 
 			edrv <= 1'b0;
