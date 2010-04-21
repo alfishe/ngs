@@ -35,12 +35,12 @@ module tb;
 
 
 	reg  [15:0] zaddr;
-	wire [ 7:0] zdata;
+	tri1 [ 7:0] zdata;
 	reg  [ 7:0] zdout;
 	reg         zdena;
 
 
-	wire [ 7:0] mdata;
+	tri1 [ 7:0] mdata;
 
 	wire ma6,ma7,ma10,ma11,ma12,ma13;
 
@@ -252,7 +252,7 @@ module tb;
 		rd_n   = 1'b1;
 		wr_n   = 1'b1;
 
-		zaddr  = 16'hZZZZ;
+		zaddr  = 16'h0000;
 
 
 		cold_reset_set = 1'b1;

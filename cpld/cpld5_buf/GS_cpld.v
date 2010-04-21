@@ -192,9 +192,9 @@ module GS_cpld(
 	// writing nCONFIG and cold reset "register"
 	assign rescfg_write_n = iorq_n | wr_n | ~a7 | a6; // {a7,a6}==10
 
-	always @(negedge coldres_n, posedge rescfg_write_n)
+	always @(posedge rescfg_write_n, negedge coldres_n)
 	begin
-		if( coldres_n==0 ) // async reset
+		if( !coldres_n ) // async reset
 		begin
 			was_cold_reset_n <= 0; // there was!
 			config_n <= 0; // start FPGA config

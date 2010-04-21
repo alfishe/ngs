@@ -10,6 +10,32 @@ add wave -noupdate -format Logic /tb/coldres_n
 add wave -noupdate -format Logic /tb/warmres_n
 add wave -noupdate -divider <NULL>
 add wave -noupdate -format Logic /tb/config_n
+add wave -noupdate -format Logic {/tb/DUT/\config_n~reg0_I\/aclr}
+add wave -noupdate -format Logic {/tb/DUT/\config_n~reg0_I\/clk}
+add wave -noupdate -format Logic {/tb/DUT/\config_n~reg0_I\/combo}
+add wave -noupdate -format Logic {/tb/DUT/\config_n~reg0_I\/dataout}
+add wave -noupdate -format Logic {/tb/DUT/\config_n~reg0_I\/dffin}
+add wave -noupdate -format Logic {/tb/DUT/\config_n~reg0_I\/dffo}
+add wave -noupdate -format Logic {/tb/DUT/\config_n~reg0_I\/fbk}
+add wave -noupdate -format Logic {/tb/DUT/\config_n~reg0_I\/fpin}
+add wave -noupdate -format Literal {/tb/DUT/\config_n~reg0_I\/operation_mode}
+add wave -noupdate -format Literal {/tb/DUT/\config_n~reg0_I\/output_mode}
+add wave -noupdate -format Literal {/tb/DUT/\config_n~reg0_I\/paclr}
+add wave -noupdate -format Literal {/tb/DUT/\config_n~reg0_I\/papre}
+add wave -noupdate -format Literal {/tb/DUT/\config_n~reg0_I\/pclk}
+add wave -noupdate -format Literal {/tb/DUT/\config_n~reg0_I\/pena}
+add wave -noupdate -format Literal {/tb/DUT/\config_n~reg0_I\/pexp_mode}
+add wave -noupdate -format Logic {/tb/DUT/\config_n~reg0_I\/pexpin}
+add wave -noupdate -format Logic {/tb/DUT/\config_n~reg0_I\/pexpout}
+add wave -noupdate -format Literal {/tb/DUT/\config_n~reg0_I\/power_up}
+add wave -noupdate -format Literal {/tb/DUT/\config_n~reg0_I\/pterm0}
+add wave -noupdate -format Literal {/tb/DUT/\config_n~reg0_I\/pterm1}
+add wave -noupdate -format Literal {/tb/DUT/\config_n~reg0_I\/pterm2}
+add wave -noupdate -format Literal {/tb/DUT/\config_n~reg0_I\/pterm3}
+add wave -noupdate -format Literal {/tb/DUT/\config_n~reg0_I\/pterm4}
+add wave -noupdate -format Literal {/tb/DUT/\config_n~reg0_I\/pterm5}
+add wave -noupdate -format Literal {/tb/DUT/\config_n~reg0_I\/pxor}
+add wave -noupdate -format Literal {/tb/DUT/\config_n~reg0_I\/register_mode}
 add wave -noupdate -format Logic /tb/status_n
 add wave -noupdate -format Logic /tb/conf_done
 add wave -noupdate -format Logic /tb/init_done
@@ -45,7 +71,7 @@ add wave -noupdate -format Logic /tb/ma11
 add wave -noupdate -format Logic /tb/ma12
 add wave -noupdate -format Logic /tb/ma13
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {10260739 ps} 0}
+WaveRestoreCursors {{Cursor 1} {4645620 ps} 0}
 configure wave -namecolwidth 150
 configure wave -valuecolwidth 100
 configure wave -justifyvalue left
@@ -59,4 +85,4 @@ configure wave -gridperiod 100000
 configure wave -griddelta 8
 configure wave -timeline 1
 update
-WaveRestoreZoom {24513751 ps} {47060823 ps}
+WaveRestoreZoom {959450 ps} {2802535 ps}
