@@ -35,7 +35,7 @@ module tb;
 
 
 	reg  [15:0] zaddr;
-	tri1 [ 7:0] zdata;
+	trireg [ 7:0] zdata;
 	reg  [ 7:0] zdout;
 	reg         zdena;
 
@@ -957,9 +957,7 @@ module tb;
 
 			init_done <= 1'b1; // here CPLD must shut off
 
-			@(posedge clkin);
-			@(posedge clkin);
-			@(posedge clkin);
+			repeat(4) @(posedge clkin);
 
 			if( mema14  !== 1'bZ ||
 			    mema15  !== 1'bZ ||
