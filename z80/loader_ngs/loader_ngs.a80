@@ -1,10 +1,10 @@
 
-;LAST UPDATE: 16.04.2010 savelij
+;LAST UPDATE: 27.04.2010 savelij
 
-DD		EQU 16				;„€’€
+DD		EQU 27				;„€’€
 MM		EQU 4				;Œ…‘Ÿ–
 YY		EQU 10				;ƒŽ„
-DATA		EQU DD|MM<<5|YY<<9|#8000
+DATA		EQU DD|MM<<5|YY<<9|#8000	;“€ŠŽ‚€‹ˆ ‚ 16 ˆ’
 
 		INCLUDE "ports_ngs.a80"
 		INCLUDE "sdcomand.a80"
@@ -27,6 +27,8 @@ STRPAG		EQU #8000			;€„…‘ Š“„€ ‡€ƒ“‡Šˆ
 		OUT (VOL6),A
 		OUT (VOL7),A
 		OUT (VOL8),A		;‡€ƒ‹“˜ˆ‹ˆ ŒŽ„ Ž’› „‹Ÿ ˆ‘Ž‹œ‡Ž‚€ˆŸ “”…€
+
+;	JP RDBYT03-2	Ž’‹€„Ž—€Ÿ ”ˆƒŸ
 
 ;Ž†ˆ„€ˆ… ‡€ƒ“‡Šˆ Ž˜ˆ‚Šˆ ‘Ž ‘…Š€
 		LD B,0			;—ˆ’€…Œ 256 Ž’ ‘’€’“‘€
@@ -77,7 +79,7 @@ VERLOAD		DB "Loader"
 		DW DATA
 
 ;“’œ „Ž ”€‰‹€ Ž˜ˆ‚Šˆ GS
-F_PATH		DB "SYSTEMZX\NEOGS\NEOGS.ROM",0
+F_PATH		DB 'SYSTEMZX\NEOGS\NEOGS.ROM',0		;’Ž‹œŠŽ ’€Š ˆŽ “†€‘Œ …€ƒˆ“…’ € ‘…–‘ˆŒ‚Ž‹›
 
 TXT1		DB "not found",0
 TXT1E
@@ -551,10 +553,10 @@ WR_STAT		LD SP,(OLD_SP)
 ;ˆŒ…: €‡Œ… ”€‰‹€ =#80-Ž‘‹… „ŽŽ‹…ˆŸ “„…’ ‡€ƒ“†… 1 ‘…Š’Ž
 ;=#401-“„…’ ‡€ƒ“†…Ž 3 ‘…Š’Ž€
 ;€ ‚›•Ž„…: A=
-;#00-”€‰‹ ‡€ƒ“†…
-;#AA-”€‰‹ … €‰„…
-;#DD-FAT … Ž€“†…
-;#EE-SD Š€’€ … Ž€“†…€
+		;#00-”€‰‹ ‡€ƒ“†…
+		;#AA-”€‰‹ … €‰„…
+		;#DD-FAT … Ž€“†…
+		;#EE-SD Š€’€ … Ž€“†…€
 LOAD_SD		LD LY,A			;‘Ž•€ˆ‹ˆ ŽŒ… ‘’€ˆ–› Š“„€ ƒ“‡ˆ’œ
 		LD (ADRPATH),HL		;‘Ž•€ˆ‹ˆ €„…‘ ‘’ŽŠˆ “’ˆ
 		LD (OLD_SP),SP		;‘Ž•€ˆ‹ˆ ‘’…Š
@@ -842,7 +844,7 @@ NEXTCLS		PUSH HL
 		CALL RDFATZP		;—ˆ’€…Œ ‘‹…„“™ˆ‰ ŽŒ… Š‹€‘’…€ ˆ‡ –…Ž—Šˆ „ˆ…Š’Žˆˆ
 		CALL LST_CLS		;Ž‚…Ÿ…Œ € ŠŽ…– –…Ž—Šˆ
 		POP HL
-		JR Z,LASTCLS
+		JR C,LASTCLS
 		CALL SAVEZP		;…‘‹ˆ …Ž‘‹…„ˆ‰ ‘Ž•€Ÿ…Œ ‚ ’€‹ˆ–“
 		JR NEXTCLS		;‘‹…„“ž™ˆ‰ ŽŒ… Š‹€‘’…€
 
@@ -877,7 +879,7 @@ FINDFL		INC BC			;ˆ™…Œ Ž ‡€„€Ž‰ Œ€‘Š… €—ˆ€Ÿ ‘ 0
 		CALL RD_CLAS		;‡€ˆ€…Œ ŽŒ… Š‹€‘’…€ ˆ‡ €‰„…ŽƒŽ Žˆ‘€’…‹Ÿ
 		EX (SP),HL		;‚Ž‘‘’€Ž‚ˆ‹ˆ ’…Š“™ˆ‰ €„…‘ ‚ ‘’ŽŠ… “’ˆ „Ž ”€‰‹€
 		INC SP
-		INC SP			;Œ€‘ŠˆŽ‚Š€ €„…‘€ €‡Œ…€ ‚ €‰’€• ’…Š“™…ƒŽ ”€‰‹€
+		INC SP			;Œ€‘ŠˆŽ‚Š€ € ‘’…Š… €„…‘€ €‡Œ…€ ‚ €‰’€• ’…Š“™…ƒŽ ”€‰‹€
 		LD A,(HL)
 		AND A			;’…Š‘’Ž‚€Ÿ ‘’ŽŠ€ ŠŽ—ˆ‹€‘œ?
 		JR NZ,FINDFL1		;…‘‹ˆ …’, ’Ž ˆ™…Œ „€‹œ˜…
@@ -997,7 +999,7 @@ LDFILE2		POP DE
 		CALL RDFATZP
 		CALL LST_CLS
 		POP HL
-		JR Z,LDEFILE
+		JR C,LDEFILE
 		LD A,LX
 		CP HX
 		JR C,LDEFILE
@@ -1037,7 +1039,7 @@ LDMINI		EXX
 		CALL RDFATZP
 		CALL LST_CLS
 		POP HL
-		JR Z,LDEFILE
+		JR C,LDEFILE
 		EXX
 		LD A,L
 		SUB H
@@ -1101,106 +1103,110 @@ RDDIRSC		PUSH BC
 		POP BC
 		RET
 
-LST_CLS		LD A,(CAL_FAT)
+;Ž‚…Š€ € Ž‘‹…„ˆ‰ Š‹€‘’… ‚ –…Ž—Š…
+LST_CLS		LD A,(CAL_FAT)		;‡€‚ˆ‘ˆ’ Ž’ €‡Ÿ„Ž‘’ˆ ”€’€
 		AND A
 		JR NZ,LST_CL1
-		LD HL,#0FFF
+		LD HL,#0FF7		;Ž‚…Š€ „‹Ÿ ”€’12
 		SBC HL,DE
 		RET
 
 LST_CL1		DEC A
 		JR NZ,LST_CL2
-LST_CL3		LD HL,#FFFF
+LST_CL3		LD HL,#FFF7		;Ž‚…Š€Œ „‹Ÿ ”€’16 ˆ Œ‹€„˜ˆ• ˆ’ ”€’32
 		SBC HL,DE
 		RET
 
-LST_CL2		LD HL,#0FFF
+LST_CL2		LD HL,#0FFF		;Ž‚…Š€ „‹Ÿ ‘’€˜ˆ• ˆ’ ”€’32
 		SBC HL,BC
 		RET NZ
 		JR LST_CL3
 
-RDFATZP		LD A,(CAL_FAT)
+;—’…ˆ… ‘‹…„“ž™…ƒŽ ŽŒ…€ Š‹€‘’…€ ‚ –…Ž—Š…
+RDFATZP		LD A,(CAL_FAT)		;—’…ˆ… ‡€‚ˆ‘ˆ’ Ž’ €‡€„Ž‘’ˆ ”€’€
 		AND A
-		JR Z,RDFATS0
+		JR Z,RDFATS0		;……•Ž„ ‚……„ „‹Ÿ ”€’12
 		DEC A
-		JR Z,RDFATS1
-		EX DE,HL
+		JR Z,RDFATS1		;……•Ž„ ‚……„ „‹Ÿ ”€’16
+		EX DE,HL		;‡„…‘œ —’…ˆ… „‹Ÿ ”€’32
 		ADD HL,HL
 		EX DE,HL
 		LD HL,0
 		ADC HL,BC
-		ADC HL,BC
+		ADC HL,BC		;“ŒŽ†ˆ‹ˆ ŽŒ… Š‹€‘’…€ € 2
 		LD A,E
 		LD E,D
 		LD D,L
 		LD C,H
-		LD B,0
-		CALL RDFATS2
+		LD B,0			;€‡„…‹ˆ‹ˆ ŽŒ… Š‹€‘’…€ € 256
+		CALL RDFATS2		;—ˆ’€…Œ Œ‹€„˜ˆ… 16 ˆ’ ˆ‘Ž‹œ‡“Ÿ —’…ˆ… „‹Ÿ ”€’16
 		INC HL
 		LD C,(HL)
 		INC HL
-		LD B,(HL)
+		LD B,(HL)		;Ž—ˆ’€‹ˆ Ž‘‹…„“ž™ˆ… ‘’€˜ˆ… 16 ˆ’
 		RET
 
+;—’…ˆ… 16 ˆ’ŽƒŽ ŽŒ…€ Š‹€‘’…€ ˆ‡ –…Ž—Šˆ „‹Ÿ ”€’16
 RDFATS1		LD BC,0
 		LD A,E
 		LD E,D
-		LD D,C
-RDFATS2		PUSH AF
+		LD D,C			;€‡„…‹ˆ‹ˆ ŽŒ… Š‹€‘’…€ € 256, ‘’€˜ˆ… 16 ˆ’ =0
+RDFATS2		PUSH AF			;Ž™…… —’…ˆ… 16 ˆ’ŽƒŽ ŽŒ…€ Š‹€‘’…€ „‹Ÿ ”€’16/32
 		PUSH BC
 		LD HL,FATSTR
-		CALL BCDEHLP
-		CALL LOADLST
+		CALL BCDEHLP		;ˆ€‚ˆ‹ˆ ‘Œ…™…ˆ… Ž’ €—€‹€ ”€’ ’€‹ˆ–›
+		CALL LOADLST		;‡€ƒ“‡ˆ‹ˆ ‚›—ˆ‘‹…›‰ ŽŒ… ‘…Š’Ž€
 		POP BC
 		POP AF
 		LD E,A
 		LD D,0
 		ADD HL,DE
-		ADD HL,DE
+		ADD HL,DE		;‚›—ˆ‘‹ˆ‹ˆ ‘Œ…™…ˆ… „Ž “†ŽƒŽ ŽŒ…€ ‚ ‡€ƒ“†…ŽŒ ‘…Š’Ž…
 		LD E,(HL)
 		INC HL
-		LD D,(HL)
+		LD D,(HL)		;Ž‹“—ˆ‹ˆ 16 ˆ’ ŽŒ…€ Š‹€‘’…€
 		RET
 
+;—’…ˆ… 12 ˆ’ŽƒŽ ŽŒ…€ Š‹€‘’…€ ˆ‡ –…Ž—Šˆ „‹Ÿ ”€’12
 RDFATS0		LD H,D
 		LD L,E
 		ADD HL,HL
-		ADD HL,DE
+		ADD HL,DE		;HL=HL*3
 		SRL H
-		RR L
-		LD A,E
+		RR L			;HL=HL/2 - ‚ ˆ’Žƒ… “ŒŽ†ˆ‹ˆ ŽŒ… Š‹€‘’…€ € 1,5
+		LD A,E			;A-€Œ ˆ’……‘… ’Ž‹œŠŽ ˆ’ ŽŒ… ‘’€ŽƒŽ ŽŒ…€ Š‹€‘’…€
 		LD E,H
 		LD D,0
 		LD B,D
-		LD C,D
+		LD C,D			;€‡„…‹ˆ‹ˆ ŽŒ… Š‹€‘’…€ € 256
 		SRL E
 		PUSH AF
 		PUSH HL
 		LD HL,FATSTR
-		CALL BCDEHLP
-		CALL LOADLST
+		CALL BCDEHLP		;ˆ€‚ˆ‹ˆ ‘Œ…™…ˆ… Ž’ €—€‹€ ”€’ ’€‹ˆ–›
+		CALL LOADLST		;‡€ƒ“‡ˆ‹ˆ ‚›‚—ˆ‘‹…›‰ ‘…Š’Ž
 		POP BC
 		LD A,B
 		AND 1
-		LD B,A
-		ADD HL,BC
-		LD B,(HL)
-		INC HL
+		LD B,A			;BC=‘Œ…™…ˆ… ‚ ‡€ƒ“†…ŽŒ ‘…Š’Ž…
+		ADD HL,BC		;HL=€„…‘ Ž’Š“„€ —ˆ’€’œ €‰’› ŽŒ…€ Š‹€‘’…€
+		LD B,(HL)		;Ž—ˆ’€‹ˆ Œ‹€„˜“ž —€‘’œ ŽŒ…€ Š‹€‘’…€
+		INC HL			;€„…‘ ‘‹…„“ž™…ƒŽ €‰’€
 		LD A,H
-		CP LOW BUF_512+2
+		CP HIGH BUF_512+2	;Ž‚…Š€ € ……•Ž„ ƒ€ˆ–› ‡€ƒ“†…ŽƒŽ ‘…Š’Ž€
 		JR NZ,RDFATS4
-		PUSH BC
+		PUSH BC			;‚›•‹„ ‡€ …„…‹› ’…Š“™…ƒŽ ‡€ƒ“†…ŽƒŽ ‘…Š’Ž€
 		LD BC,0
 		INC DE
-		CALL LOADLST
+		CALL LOADLST		;‡€ƒ“†€…Œ ‘‹…„“ž™ˆ‰ ‘…Š’Ž ”€’ ’€‹ˆ–›
 		POP BC
 RDFATS4		POP AF
-		LD D,(HL)
-		LD E,B
+		LD D,(HL)		;—ˆ’€…Œ ‘’€˜ˆ… ˆ’› ŽŒ…€ Š‹€‘’…€
+		LD E,B			;’……œ DE=ŽŒ… ‘‹…„“ž™…ƒŽ Š‹€‘’…€ ‚ –…Ž—Š…
 		LD BC,0
-		RRA
+		RRA			;Ž‚…Ÿ…Œ ˆ’ 0 ‘’€ŽƒŽ ŽŒ…€ Š‹€‘’…€
 		JR NC,RDFATS3
-		SRL D
+		SRL D			;‘„‚ˆƒ€…Œ ŽŒ… Ž—ˆ’€ŽƒŽ ŽŒ…€ Š‹€‘’…€ ‚ Œ‹€„˜ˆ… 12 ˆ’
 		RR E
 		SRL D
 		RR E
@@ -1210,32 +1216,32 @@ RDFATS4		POP AF
 		RR E
 RDFATS3		LD A,D
 		AND #0F
-		LD D,A
+		LD D,A			;‘Ž‘ˆ‹ˆ …‡€—€™ˆ… ‘’€˜ˆ… 4 ˆ’€ “ Ž‹“—…ŽƒŽ ŽŒ…€ Š‹€‘’…€
 		RET
 
 ;‚›—ˆ‘‹…ˆ… …€‹œŽƒŽ ‘…Š’Ž€
-;€ ‚•Ž„… BCDE=ŽŒ… FAT
-;€ ‚›•Ž„… BCDE=€„…‘ ‘…Š’Ž€
+;€ ‚•Ž„… BCDE=ŽŒ… Š‹€‘’…€ FAT
+;€ ‚›•Ž„… BCDE=ŽŒ… …€‹œŽƒŽ ‘…Š’Ž€
 REALSEC		LD A,B
 		OR C
 		OR D
 		OR E
-		JR NZ,REALSE1
-		LD HL,SEC_FAT
-		LD DE,(FATSTR)
+		JR NZ,REALSE1		;BCDE=0?
+		LD HL,SEC_FAT		;’Ž ROOT „ˆ…Š’ŽˆŸ “ ”€’12/16
+		LD DE,(FATSTR)		;Œ…‘’ŽŽ‹Ž†…ˆ… ROOT „ˆ› ‘€‡“ Ž‘‹… ”€’ ’€‹ˆ–›
 		LD BC,(FATSTR+2)
 		PUSH HL
-		CALL BCDEHLP
+		CALL BCDEHLP		;ˆ€‚ˆ‹ˆ Š €—€‹“ ”€’ ’€‹ˆ–› …… €‡Œ…
 		POP HL
-		JP BCDEHLP
+		JP BCDEHLP		;ˆ€‚ˆ‹ˆ …™… €‡ ˆ Ž‹“—ˆ‹ˆ ŽŒ… ‘…Š’Ž€ €—€‹€ ROOT „ˆ›
 
 REALSE1		LD HL,#FFFE
 		EX DE,HL
 		ADD HL,DE
 		EX DE,HL
 		INC HL
-		ADC HL,BC		;ŽŒ… Š‹€‘’…€-2
-		LD A,(BYTSSEC)
+		ADC HL,BC		;HLDE=ŽŒ… Š‹€‘’…€-2
+		LD A,(BYTSSEC)		;“†Ž “ŒŽ†ˆ’œ € €‡Œ… Š‹€‘’…€
 		JR REALSE2
 
 REALSE3		SLA E
@@ -1251,6 +1257,7 @@ REALSE2		RRCA
 		LD HL,FRSTDAT
 		JP BCDEHLP		;ˆ€‚ˆ‹ˆ ‘Œ…™…ˆ… Ž’ €—€‹€ €‡„…‹€
 
+;BCDE=BCDE/512
 BCDE200		LD E,D
 		LD D,C
 		LD C,B
@@ -1312,43 +1319,45 @@ HLDEPBC		EX DE,HL
 		RET
 
 ;Ž…„…‹Ÿ’Ž €‡Ÿ„Ž‘’ˆ FAT
-RASCHET		CALL BCDE200
+RASCHET		CALL BCDE200		;€‡„…‹ˆ‹ˆ € €‡Œ… ‘…Š’Ž€
 		LD HL,SEC_FAT
-		CALL BCDEHLM
+		CALL BCDEHLM		;‚›—‹ˆ €—€‹Ž ”€’ ’€‹ˆ–›
 		LD A,E
-		AND #F0
+		AND #F0			;ˆƒŽˆ“…Œ Œ‹€„˜ˆ… 4 ˆ’€
 		OR D
 		OR C
-		OR B
+		OR B			;Ž‚…Š€ € 0
 		RET
 
 ;ƒ“‡ˆ‹Š€ Ž„ŽƒŽ ‘…Š’Ž€
-LOADLST		LD HL,BUF_512
-		LD A,1
+LOADLST		LD HL,BUF_512		;€„…‘ “”…€ ‘…Š’Ž€
+		LD A,1			;ƒ“‡ˆ’œ 1 ‘…Š’Ž
 		PUSH HL
-		CALL RDMULTI
-		POP HL
+		CALL RDMULTI		;‡€ƒ“‡ˆ‹ˆ ‘…Š’Ž
+		POP HL			;€ ‚›•Ž„… HL=€„…‘ €—€‹€ “”…€ ‡€ƒ“†…ŽƒŽ ‘…Š’Ž€
 		RET
 
+;Ž„€—€ ŠŽŒ€„› ‚ SD Š€’“ …‡ €€Œ…’Ž‚
 OUTCOM		PUSH BC
-		LD BC,#0600+SD_SEND
+		LD BC,#0600+SD_SEND	;‚›„€’œ ‚ Ž’ 6 €‰’
 		OTIR
 		POP BC
 		RET
 
+;‚›„€—€ ‚ Ž’ SD Š€’› ŠŽŒ€„› ‘ €€Œ…’ŽŒ 0
 OUT_COM		PUSH BC
 		LD BC,SD_SEND
-		OUT (C),A
+		OUT (C),A		;Ž’€‚ˆ‹ˆ ŠŽ„ ŠŽŒ€„›
 		XOR A
-		OUT (C),A
+		OUT (C),A		;ˆ’› 31-24 €€Œ…’€
 		NOP
-		OUT (C),A
+		OUT (C),A		;ˆ’› 23-16 €€Œ…’€
 		NOP
-		OUT (C),A
+		OUT (C),A		;ˆ’› 15-8 €€Œ…’€
 		NOP
-		OUT (C),A
+		OUT (C),A		;ˆ’› 7-0 €€Œ…’€
 		DEC A
-		OUT (C),A
+		OUT (C),A		;…‡ CRC16
 		POP BC
 		RET
 
@@ -1406,6 +1415,7 @@ CMD00		DB #40,#00,#00,#00,#00,#95	;GO_IDLE_STATE
 CMD08		DB #48,#00,#00,#01,#AA,#87	;SEND_IF_COND
 CMD16		DB #50,#00,#00,#02,#00,#FF	;SET_BLOCKEN
 
+;ŒŽƒŽ ‘…Š’ŽŽ… —’…ˆ… ‘ SD Š€’›
 RDMULTI		EXA
 		CALL SECM200
 		EXA
@@ -1433,12 +1443,12 @@ RDMULT1		EXA
 
 ;‚›ŽŠ€ ŽŒ…€ Š‹€‘’…€ ˆ‡ ”€‰‹Ž‚ŽƒŽ Žˆ‘€’…‹Ÿ
 RD_CLAS		EX DE,HL
-		LD DE,#14
+		LD DE,#14		;‘’€˜ˆ… 16 ˆ’ —ˆ’€…Œ ˆ‡ ‘Œ…™…ˆŸ +20
 		ADD HL,DE
 		LD C,(HL)
 		INC HL
 		LD B,(HL)
-		LD E,5
+		LD E,5			;Œ‹€„˜ˆ… 16 ˆ’ —ˆ’€…Œ ˆ‡ ‘Œ…™…ˆŸ +26
 		ADD HL,DE
 		LD E,(HL)
 		INC HL
@@ -1446,6 +1456,7 @@ RD_CLAS		EX DE,HL
 		INC HL
 		RET
 
+;Ž‚…Š€ Ž Œ€‘Š…
 COMPARE		LD DE,FB_EXT
 		LD B,#0B
 		LD A,(DE)
