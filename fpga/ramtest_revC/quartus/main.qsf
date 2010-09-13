@@ -153,26 +153,26 @@ set_global_assignment -name VERILOG_FILE ../rnd_vec_gen/rnd_vec_gen.v
 set_global_assignment -name VERILOG_FILE ../mem_tester/mem_tester.v
 set_global_assignment -name VERILOG_FILE ../resetter/resetter.v
 set_global_assignment -name VERILOG_FILE ../main.v
-set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to a[0]
-set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to a[1]
-set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to a[2]
-set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to a[3]
-set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to a[4]
-set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to a[5]
-set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to a[6]
-set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to a[7]
-set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to a[8]
-set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to a[9]
-set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to a[10]
-set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to a[11]
-set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to a[12]
-set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to a[13]
-set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to mema14
-set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to mema15
-set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to mema16
-set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to mema17
-set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to mema18
-set_instance_assignment -name TSU_REQUIREMENT "4 ns" -from clk_fpga -to d
+set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to a[0] -disable
+set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to a[1] -disable
+set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to a[2] -disable
+set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to a[3] -disable
+set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to a[4] -disable
+set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to a[5] -disable
+set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to a[6] -disable
+set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to a[7] -disable
+set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to a[8] -disable
+set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to a[9] -disable
+set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to a[10] -disable
+set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to a[11] -disable
+set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to a[12] -disable
+set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to a[13] -disable
+set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to mema14 -disable
+set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to mema15 -disable
+set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to mema16 -disable
+set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to mema17 -disable
+set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to mema18 -disable
+set_instance_assignment -name TSU_REQUIREMENT "4 ns" -from clk_fpga -to d -disable
 set_global_assignment -name NUMBER_OF_PATHS_TO_REPORT 200
 set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to a[0]
 set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to a[1]
@@ -195,6 +195,6 @@ set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to mema17
 set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to mema18
 set_instance_assignment -name FAST_INPUT_REGISTER ON -to d -disable
 set_location_assignment PIN_11 -to led_diag
-set_global_assignment -name SEED 2
+set_global_assignment -name SEED 1
 set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to mema21
-set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to mema21
+set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to mema21 -disable

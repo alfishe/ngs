@@ -109,7 +109,7 @@ parameter SRAM_ADDR_SIZE = 18;
 
 
 	inout [SRAM_DATA_SIZE-1:0] SRAM_DQ;
-	reg   [SRAM_DATA_SIZE-1:0] SRAM_DQ;
+	wire  [SRAM_DATA_SIZE-1:0] SRAM_DQ;
 
 	output [SRAM_ADDR_SIZE-1:0] SRAM_ADDR;
 	wire   [SRAM_ADDR_SIZE-1:0] SRAM_ADDR;
@@ -132,14 +132,18 @@ parameter SRAM_ADDR_SIZE = 18;
 	assign sram_addr_nxt = sram_addr_ctr + 1;
 
 
+
+
 	// data bus control
-	always @*
-	begin
-		if( dbin )
-			SRAM_DQ <= 'hZ;
-		else // !dbin
-			SRAM_DQ <= wdat2;
-	end
+	assign SRAM_DQ = dbin ? 'hZ : wdat2;
+//	always @*
+//	begin
+//		if( dbin )
+//			SRAM_DQ <= 'hZ;
+//		else // !dbin
+//			SRAM_DQ <= wdat2;
+//	end
+
 
 	always @(posedge clk)
 	begin
@@ -158,27 +162,27 @@ parameter SRAM_ADDR_SIZE = 18;
 
 	reg [4:0] curr_state,next_state;
 
-	parameter START_STATE = 4'h00; // reset state
+	parameter START_STATE = 5'h00; // reset state
 
-	parameter INIT_STATE  = 4'h01; // initialization state
+	parameter INIT_STATE  = 5'h01; // initialization state
 
-	parameter READ_BEG    = 4'h02; // read branch: prepare signals
-	parameter READ_PRE    = 4'h03;
-	parameter READ_CYCLE1 = 4'h04; // read in progress: increment address, set ready, out data, do so until all addresses done
-	parameter READ_CYCLE2 = 4'h05; // read in progress: increment address, set ready, out data, do so until all addresses done
-	parameter READ_POST   = 4'h06;
-	parameter READ_END    = 4'h07; // read end: deassert some signals, go to stop state
+	parameter READ_BEG    = 5'h02; // read branch: prepare signals
+	parameter READ_PRE    = 5'h03;
+	parameter READ_CYCLE1 = 5'h04; // read in progress: increment address, set ready, out data, do so until all addresses done
+	parameter READ_CYCLE2 = 5'h05; // read in progress: increment address, set ready, out data, do so until all addresses done
+	parameter READ_POST   = 5'h06;
+	parameter READ_END    = 5'h07; // read end: deassert some signals, go to stop state
 
-	parameter WRITE_BEG   = 4'h10; // prepare signals
-	parameter WRITE_PRE1  = 4'h11; // assert ready
-	parameter WRITE_PRE2  = 4'h12; // capture wdat, negate ready, NO INCREMENT address, next state is WRITE_CYC2
-	parameter WRITE_CYC1  = 4'h13; // capture wdat, negate ready, increment address
-	parameter WRITE_CYC2  = 4'h14; // assert SRAM_WE_N, go to WRITE_END if sram_addr_nxt is out of memory region
-	parameter WRITE_CYC3  = 4'h15; // negate SRAM_WE_N, assert ready (wdat will be captured in WRITE_CYC1)
-	parameter WRITE_END   = 4'h16; // deassert sram control signals, go to STOP_STATE
+	parameter WRITE_BEG   = 5'h10; // prepare signals
+	parameter WRITE_PRE1  = 5'h11; // assert ready
+	parameter WRITE_PRE2  = 5'h12; // capture wdat, negate ready, NO INCREMENT address, next state is WRITE_CYC2
+	parameter WRITE_CYC1  = 5'h13; // capture wdat, negate ready, increment address
+	parameter WRITE_CYC2  = 5'h14; // assert SRAM_WE_N, go to WRITE_END if sram_addr_nxt is out of memory region
+	parameter WRITE_CYC3  = 5'h15; // negate SRAM_WE_N, assert ready (wdat will be captured in WRITE_CYC1)
+	parameter WRITE_END   = 5'h16; // deassert sram control signals, go to STOP_STATE
 
 
-	parameter STOP_STATE  = 4'h1F; // full stop state
+	parameter STOP_STATE  = 5'h1F; // full stop state
 
 
 

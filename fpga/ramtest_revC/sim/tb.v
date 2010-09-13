@@ -1,6 +1,9 @@
+`timescale 1ns/100ps
+
+
+
 module tb;
 
-`timescale 1ns/100ps
 
 
 	reg clk;
@@ -8,13 +11,16 @@ module tb;
 
 
 
-	wire sram_addr[19:0];
-	wire sram_data[ 7:0];
-	wire sram_cs_n[ 3:0];
-	wire sram_oe_n      ;
-	wire sram_we_n      ;
+	wire [19:0] sram_addr;
+	wire [ 7:0] sram_data;
+	wire [ 3:0] sram_cs_n;
+	wire sram_oe_n;
+	wire sram_we_n;
 
-	wire shit[1:0];
+	wire [15:0] shit;
+
+
+	wire led;
 
 
 	initial
@@ -45,8 +51,10 @@ module tb;
 
 		.warmres_n(rst_n),
 
+		.led_diag(led),
+
 		.d(sram_data),
-		.a( {shit,sram_addr[13:0]} ),
+		.a( shit ),
 		.mema14(sram_addr[14]),
 		.mema15(sram_addr[15]),
 		.mema16(sram_addr[16]),
@@ -61,8 +69,14 @@ module tb;
 		.ram1cs_n(sram_cs_n[1]),
 		.ram2cs_n(sram_cs_n[2]),
 		.ram3cs_n(sram_cs_n[3]),
+
+
+		.zxa('d0),
+		.zxiorq_n(1'b1),
+		.zxwr_n(1'b1)
 	);
 
+	assign sram_addr[13:0] = shit[13:0];
 
 
 

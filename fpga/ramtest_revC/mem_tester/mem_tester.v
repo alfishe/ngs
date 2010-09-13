@@ -58,8 +58,11 @@ parameter SRAM_ADDR_SIZE = 19;
 
 	reg [19:0] ledflash;
 
+	reg was_error;
 
 
+	
+	initial ledflash='d0;
 
 	always @(posedge clk)
 	begin
@@ -76,7 +79,6 @@ parameter SRAM_ADDR_SIZE = 19;
 
 
 
-	reg was_error;
 	always @(posedge clk, negedge rst_n)
 	begin
 		if( !rst_n )
@@ -90,6 +92,9 @@ parameter SRAM_ADDR_SIZE = 19;
 	reg rnd_init,rnd_save,rnd_restore; // rnd_vec_gen control
 	wire [SRAM_DATA_SIZE-1:0] rnd_out; // rnd_vec_gen output
 
+	reg sram_start,sram_rnw;
+	wire sram_stop,sram_ready;
+
 	rnd_vec_gen my_rnd( .clk(clk), .init(rnd_init), .next(sram_ready), .save(rnd_save), .restore(rnd_restore), .out(rnd_out) );
 	defparam my_rnd.OUT_SIZE = SRAM_DATA_SIZE;
 	defparam my_rnd.LFSR_LENGTH = 20;
@@ -98,8 +103,6 @@ parameter SRAM_ADDR_SIZE = 19;
 
 
 
-	reg sram_start,sram_rnw;
-	wire sram_stop,sram_ready;
 	wire [SRAM_DATA_SIZE-1:0] sram_rdat;
 
 	sram_control my_sram( .clk(clk), .clk2(clk), .start(sram_start), .rnw(sram_rnw), .stop(sram_stop), .ready(sram_ready),

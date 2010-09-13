@@ -42,6 +42,20 @@ parameter LFSR_FEEDBACK = 24; //     definition
 
 
 
+	initial
+	begin : clr_arrays_for_sim
+		integer i;
+
+		for(i=0;i<LFSR_LENGTH;i=i+1)
+		begin
+			rndbase_main [i] = 'd0;
+			rndbase_store[i] = 'd0;
+		end
+	end
+
+
+
+
 	always @(posedge clk)
 	begin
 
@@ -59,7 +73,7 @@ parameter LFSR_FEEDBACK = 24; //     definition
 		begin
 
 			if( restore ) // restore event: higher priority
-			begin
+			begin : blk1
 				integer i;
 				for(i=0;i<LFSR_LENGTH;i=i+1)
 					rndbase_main[i] <= rndbase_store[i];
@@ -72,7 +86,7 @@ parameter LFSR_FEEDBACK = 24; //     definition
 				end
 
 				if( save ) // save current state
-				begin
+				begin : blk2
 					integer j;
 					for(j=0;j<LFSR_LENGTH;j=j+1)
 						rndbase_store[j] <= rndbase_main[j];
@@ -97,7 +111,7 @@ parameter LFSR_FEEDBACK = 24; //     definition
 */
 
 	task shift_lfsr;
-	begin
+	begin : blk3
 		reg [OUT_SIZE-1:0] sum;
 		reg [LFSR_LENGTH-1:0] lsbs;
 
