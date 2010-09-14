@@ -171,7 +171,7 @@ module main(
 
 	output led_diag;
 
-	always @* clksel0 <= 1'b1;
+	always @* clksel0 <= 1'b0;
 	always @* clksel1 <= 1'b0;
 
 	always @* z80res_n <= 1'b0;

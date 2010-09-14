@@ -115,8 +115,12 @@ parameter SRAM_ADDR_SIZE = 18;
 	wire   [SRAM_ADDR_SIZE-1:0] SRAM_ADDR;
 
 	output SRAM_UB_N,SRAM_LB_N,SRAM_WE_N,SRAM_CE_N,SRAM_OE_N;
-	reg    SRAM_UB_N,SRAM_LB_N,SRAM_WE_N,SRAM_CE_N,SRAM_OE_N;
+	reg    SRAM_UB_N,SRAM_LB_N, /*SRAM_WE_N,*/ SRAM_CE_N,SRAM_OE_N;
+	wire SRAM_WE_N;
 
+	reg SRAM_WE_N_reg;
+
+	assign SRAM_WE_N = SRAM_WE_N_reg; // | clk;
 
 	reg [SRAM_DATA_SIZE-1:0] wdat2;
 	reg dbin; //data bus direction control
@@ -136,13 +140,6 @@ parameter SRAM_ADDR_SIZE = 18;
 
 	// data bus control
 	assign SRAM_DQ = dbin ? 'hZ : wdat2;
-//	always @*
-//	begin
-//		if( dbin )
-//			SRAM_DQ <= 'hZ;
-//		else // !dbin
-//			SRAM_DQ <= wdat2;
-//	end
 
 
 	always @(posedge clk)
@@ -177,9 +174,10 @@ parameter SRAM_ADDR_SIZE = 18;
 	parameter WRITE_PRE1  = 5'h11; // assert ready
 	parameter WRITE_PRE2  = 5'h12; // capture wdat, negate ready, NO INCREMENT address, next state is WRITE_CYC2
 	parameter WRITE_CYC1  = 5'h13; // capture wdat, negate ready, increment address
-	parameter WRITE_CYC2  = 5'h14; // assert SRAM_WE_N, go to WRITE_END if sram_addr_nxt is out of memory region
-	parameter WRITE_CYC3  = 5'h15; // negate SRAM_WE_N, assert ready (wdat will be captured in WRITE_CYC1)
-	parameter WRITE_END   = 5'h16; // deassert sram control signals, go to STOP_STATE
+	parameter WRITE_CYC1E = 5'h14;
+	parameter WRITE_CYC2  = 5'h15; // assert SRAM_WE_N, go to WRITE_END if sram_addr_nxt is out of memory region
+	parameter WRITE_CYC3  = 5'h16; // negate SRAM_WE_N, assert ready (wdat will be captured in WRITE_CYC1)
+	parameter WRITE_END   = 5'h17; // deassert sram control signals, go to STOP_STATE
 
 
 	parameter STOP_STATE  = 5'h1F; // full stop state
@@ -242,10 +240,13 @@ parameter SRAM_ADDR_SIZE = 18;
 			next_state = WRITE_PRE2;
 
 		WRITE_PRE2:
-			next_state = WRITE_CYC2;
+			next_state = WRITE_CYC1E;
 
 
 		WRITE_CYC1:
+			next_state = WRITE_CYC1E;
+
+		WRITE_CYC1E:
 			next_state = WRITE_CYC2;
 
 		WRITE_CYC2:
@@ -303,7 +304,7 @@ parameter SRAM_ADDR_SIZE = 18;
 			SRAM_LB_N <= 1'b1;
 			SRAM_CE_N <= 1'b1;
 			SRAM_OE_N <= 1'b1;
-			SRAM_WE_N <= 1'b1;
+			SRAM_WE_N_reg <= 1'b1;
 
 			dbin <= 1'b1;
 
@@ -390,12 +391,12 @@ parameter SRAM_ADDR_SIZE = 18;
 
 		WRITE_CYC2:
 		begin
-			SRAM_WE_N <= 1'b0;
+			SRAM_WE_N_reg <= 1'b0;
 		end
 
 		WRITE_CYC3:
 		begin
-			SRAM_WE_N <= 1'b1;
+			SRAM_WE_N_reg <= 1'b1;
 
 			ready <= 1'b1;
 		end
@@ -404,7 +405,7 @@ parameter SRAM_ADDR_SIZE = 18;
 		begin
 			ready <= 1'b0;
 
-			SRAM_WE_N <= 1'b1;
+			SRAM_WE_N_reg <= 1'b1;
 			SRAM_UB_N <= 1'b1;
 			SRAM_LB_N <= 1'b1;
 			SRAM_CE_N <= 1'b1;

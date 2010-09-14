@@ -193,8 +193,15 @@ set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to mema15
 set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to mema16
 set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to mema17
 set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to mema18
-set_instance_assignment -name FAST_INPUT_REGISTER ON -to d -disable
+set_instance_assignment -name FAST_INPUT_REGISTER ON -to d
 set_location_assignment PIN_11 -to led_diag
 set_global_assignment -name SEED 1
 set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to mema21
 set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from clk_fpga -to mema21 -disable
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to memwe_n
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to memoe_n
+set_instance_assignment -name FAST_OUTPUT_REGISTER ON -to d
+set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from * -to ram0cs_n
+set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from * -to ram1cs_n
+set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from * -to ram2cs_n
+set_instance_assignment -name TCO_REQUIREMENT "11 ns" -from * -to ram3cs_n

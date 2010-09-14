@@ -61,7 +61,7 @@ parameter SRAM_ADDR_SIZE = 19;
 	reg was_error;
 
 
-	
+
 	initial ledflash='d0;
 
 	always @(posedge clk)
@@ -97,7 +97,7 @@ parameter SRAM_ADDR_SIZE = 19;
 
 	rnd_vec_gen my_rnd( .clk(clk), .init(rnd_init), .next(sram_ready), .save(rnd_save), .restore(rnd_restore), .out(rnd_out) );
 	defparam my_rnd.OUT_SIZE = SRAM_DATA_SIZE;
-	defparam my_rnd.LFSR_LENGTH = 20;
+	defparam my_rnd.LFSR_LENGTH = 41;
 	defparam my_rnd.LFSR_FEEDBACK = 3;
 
 
