@@ -24,10 +24,10 @@
 (DELAYFILE
   (SDFVERSION "2.1")
   (DESIGN "GS_cpld")
-  (DATE "07/26/2010 01:22:44")
+  (DATE "09/25/2010 12:26:15")
   (VENDOR "Altera")
   (PROGRAM "Quartus II")
-  (VERSION "Version 6.1 Build 201 11/27/2006 SJ Full Version")
+  (VERSION "Version 6.1 Build 201 11/27/2006 SJ Web Edition")
   (DIVIDER .)
   (TIMESCALE 100 ps)
 
@@ -38,9 +38,9 @@
       (ABSOLUTE
         (PORT oe (23:23:23) (23:23:23))
         (IOPATH padio dataout (14:14:14) (14:14:14))
-        (IOPATH (posedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH (negedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH (posedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH (negedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -51,9 +51,9 @@
       (ABSOLUTE
         (PORT oe (23:23:23) (23:23:23))
         (IOPATH padio dataout (14:14:14) (14:14:14))
-        (IOPATH (posedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH (negedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH (posedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH (negedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -64,9 +64,9 @@
       (ABSOLUTE
         (PORT oe (23:23:23) (23:23:23))
         (IOPATH padio dataout (14:14:14) (14:14:14))
-        (IOPATH (posedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH (negedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH (posedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH (negedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -77,9 +77,9 @@
       (ABSOLUTE
         (PORT oe (23:23:23) (23:23:23))
         (IOPATH padio dataout (14:14:14) (14:14:14))
-        (IOPATH (posedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH (negedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH (posedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH (negedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -90,9 +90,9 @@
       (ABSOLUTE
         (PORT oe (23:23:23) (23:23:23))
         (IOPATH padio dataout (14:14:14) (14:14:14))
-        (IOPATH (posedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH (negedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH (posedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH (negedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -103,9 +103,9 @@
       (ABSOLUTE
         (PORT oe (23:23:23) (23:23:23))
         (IOPATH padio dataout (14:14:14) (14:14:14))
-        (IOPATH (posedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH (negedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH (posedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH (negedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -116,9 +116,9 @@
       (ABSOLUTE
         (PORT oe (23:23:23) (23:23:23))
         (IOPATH padio dataout (14:14:14) (14:14:14))
-        (IOPATH (posedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH (negedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH (posedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH (negedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -129,9 +129,9 @@
       (ABSOLUTE
         (PORT oe (23:23:23) (23:23:23))
         (IOPATH padio dataout (14:14:14) (14:14:14))
-        (IOPATH (posedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH (negedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH (posedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH (negedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -142,9 +142,9 @@
       (ABSOLUTE
         (PORT oe (23:23:23) (23:23:23))
         (IOPATH padio dataout (14:14:14) (14:14:14))
-        (IOPATH (posedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH (negedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH (posedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH (negedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -155,9 +155,9 @@
       (ABSOLUTE
         (PORT oe (23:23:23) (23:23:23))
         (IOPATH padio dataout (14:14:14) (14:14:14))
-        (IOPATH (posedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH (negedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH (posedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH (negedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -168,9 +168,9 @@
       (ABSOLUTE
         (PORT oe (23:23:23) (23:23:23))
         (IOPATH padio dataout (14:14:14) (14:14:14))
-        (IOPATH (posedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH (negedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH (posedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH (negedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -181,9 +181,9 @@
       (ABSOLUTE
         (PORT oe (23:23:23) (23:23:23))
         (IOPATH padio dataout (14:14:14) (14:14:14))
-        (IOPATH (posedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH (negedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH (posedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH (negedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -194,9 +194,9 @@
       (ABSOLUTE
         (PORT oe (23:23:23) (23:23:23))
         (IOPATH padio dataout (14:14:14) (14:14:14))
-        (IOPATH (posedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH (negedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH (posedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH (negedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -207,9 +207,9 @@
       (ABSOLUTE
         (PORT oe (23:23:23) (23:23:23))
         (IOPATH padio dataout (14:14:14) (14:14:14))
-        (IOPATH (posedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH (negedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH (posedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH (negedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -220,9 +220,9 @@
       (ABSOLUTE
         (PORT oe (23:23:23) (23:23:23))
         (IOPATH padio dataout (14:14:14) (14:14:14))
-        (IOPATH (posedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH (negedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH (posedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH (negedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -233,9 +233,9 @@
       (ABSOLUTE
         (PORT oe (23:23:23) (23:23:23))
         (IOPATH padio dataout (14:14:14) (14:14:14))
-        (IOPATH (posedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH (negedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH (posedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH (negedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -246,9 +246,9 @@
       (ABSOLUTE
         (PORT oe (23:23:23) (23:23:23))
         (IOPATH padio dataout (14:14:14) (14:14:14))
-        (IOPATH (posedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH (negedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH (posedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH (negedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -259,9 +259,9 @@
       (ABSOLUTE
         (PORT oe (23:23:23) (23:23:23))
         (IOPATH padio dataout (14:14:14) (14:14:14))
-        (IOPATH (posedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH (negedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH (posedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH (negedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -272,9 +272,9 @@
       (ABSOLUTE
         (PORT oe (23:23:23) (23:23:23))
         (IOPATH padio dataout (14:14:14) (14:14:14))
-        (IOPATH (posedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH (negedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH (posedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH (negedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -1798,7 +1798,7 @@
     (INSTANCE ra6\~I.asynch_inst)
     (DELAY
       (ABSOLUTE
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -1807,7 +1807,7 @@
     (INSTANCE ra7\~I.asynch_inst)
     (DELAY
       (ABSOLUTE
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -1816,7 +1816,7 @@
     (INSTANCE ra10\~I.asynch_inst)
     (DELAY
       (ABSOLUTE
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -1825,7 +1825,7 @@
     (INSTANCE ra11\~I.asynch_inst)
     (DELAY
       (ABSOLUTE
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -1834,7 +1834,7 @@
     (INSTANCE ra12\~I.asynch_inst)
     (DELAY
       (ABSOLUTE
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -1843,7 +1843,7 @@
     (INSTANCE ra13\~I.asynch_inst)
     (DELAY
       (ABSOLUTE
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -1853,9 +1853,9 @@
     (DELAY
       (ABSOLUTE
         (PORT oe (23:23:23) (23:23:23))
-        (IOPATH (posedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH (negedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH (posedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH (negedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -1865,9 +1865,9 @@
     (DELAY
       (ABSOLUTE
         (PORT oe (23:23:23) (23:23:23))
-        (IOPATH (posedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH (negedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH (posedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH (negedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -1876,7 +1876,7 @@
     (INSTANCE out_ramcs1_n\~I.asynch_inst)
     (DELAY
       (ABSOLUTE
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -1885,7 +1885,7 @@
     (INSTANCE mema19\~I.asynch_inst)
     (DELAY
       (ABSOLUTE
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -1894,7 +1894,7 @@
     (INSTANCE clkout\~I.asynch_inst)
     (DELAY
       (ABSOLUTE
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -1903,7 +1903,7 @@
     (INSTANCE out_ramcs0_n\~I.asynch_inst)
     (DELAY
       (ABSOLUTE
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -1912,7 +1912,7 @@
     (INSTANCE config_n\~I.asynch_inst)
     (DELAY
       (ABSOLUTE
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
@@ -1922,9 +1922,9 @@
     (DELAY
       (ABSOLUTE
         (PORT oe (23:23:23) (23:23:23))
-        (IOPATH (posedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH (negedge oe) padio (50:50:50) (50:50:50))
-        (IOPATH datain padio (18:18:18) (18:18:18))
+        (IOPATH (posedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH (negedge oe) padio (100:100:100) (100:100:100))
+        (IOPATH datain padio (68:68:68) (68:68:68))
       )
     )
   )
