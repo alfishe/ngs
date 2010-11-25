@@ -168,8 +168,8 @@ module ports(
 
 	output reg mode_norom;
 
-	output reg [6:0] mode_pg0;
-	output reg [6:0] mode_pg1;
+	output reg [7:0] mode_pg0;
+	output reg [7:0] mode_pg1;
 
 	output reg clksel0;
 	output reg clksel1;
@@ -459,15 +459,15 @@ module ports(
 		if( port00_wr==1'b1 ) // port 00
 		begin
 			if( mode_expag==1'b0 ) // normal paging
-				mode_pg0[6:0] <= { din[5:0], 1'b0 };
+				mode_pg0[7:0] <= { din[6:0], 1'b0 };
 			else // extended paging
-				mode_pg0[6:0] <= { din[5:0], din[7] };
+				mode_pg0[7:0] <= { din[6:0], din[7] };
 		end
 
 		if( mode_expag==1'b0 && port00_wr==1'b1 ) // port 10 (when in normal mode, part of port 00)
-			mode_pg1[6:0] <= { din[5:0], 1'b1 };
+			mode_pg1[7:0] <= { din[6:0], 1'b1 };
 		else if( mode_expag==1'b1 && port10_wr==1'b1 )
-			mode_pg1[6:0] <= { din[5:0], din[7] };
+			mode_pg1[7:0] <= { din[6:0], din[7] };
 	end
 
 	// port $03 write ++

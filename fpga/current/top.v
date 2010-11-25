@@ -37,6 +37,7 @@ module top(
 	ram1cs_n, //
 	ram2cs_n, //
 	ram3cs_n, //
+	mema21,   //
 	romcs_n,  //
 	memoe_n,  //
 	memwe_n,  //
@@ -123,6 +124,7 @@ module top(
 	output reg ram1cs_n;
 	output reg ram2cs_n;
 	output reg ram3cs_n;
+	output reg mema21;
 	output reg romcs_n;
 	output reg memoe_n;
 	output reg memwe_n;
@@ -191,14 +193,14 @@ module top(
 	wire data_bit_wr;
 
 // memmap-bus interconnection
-	wire [18:14] memmap_a;
+	wire [21:14] memmap_a;
 	wire [3:0] memmap_ramcs_n;
 	wire memmap_romcs_n;
 	wire memmap_memoe_n;
 	wire memmap_memwe_n;
 
 // dma-bus interconnection
-	wire [20:0] mem_dma_addr;
+	wire [21:0] mem_dma_addr;
 	wire [7:0]  mem_dma_wd;
 
 	wire mem_dma_bus;
@@ -211,7 +213,7 @@ module top(
 	wire        dma_ack;
 	wire        dma_end;
 	wire        dma_req;
-	wire [20:0] dma_addr;
+	wire [21:0] dma_addr;
 	wire        dma_rnw;
 	wire [7:0]  dma_rd;
 	wire [7:0]  dma_wd;
@@ -235,7 +237,7 @@ module top(
 
 // ports-memmap interconnection
 	wire mode_ramro,mode_norom;
-	wire [6:0] mode_pg0,mode_pg1;
+	wire [7:0] mode_pg0,mode_pg1;
 
 // ports databus
 	wire [7:0] ports_dout;
@@ -334,7 +336,7 @@ module top(
 		begin
 			a[13:0] <= mem_dma_addr[13:0];
 
-			{mema18,mema17,mema16,mema15,mema14} <= mem_dma_addr[18:14];
+			{mema21, mema18, mema17, mema16, mema15, mema14} <= { mem_dma_addr[21], mem_dma_addr[18:14] };
 
 			{ram3cs_n,ram2cs_n,ram1cs_n,ram0cs_n} <= ~( 4'b0001<<mem_dma_addr[20:19] );
 
@@ -347,7 +349,7 @@ module top(
 		begin
 			a[13:0] <= 14'bZZ_ZZZZ_ZZZZ_ZZZZ;
 
-			{mema18,mema17,mema16,mema15,mema14} <= memmap_a[18:14];
+			{mema21, mema18, mema17, mema16, mema15, mema14} <= { memmap_a[21], memmap_a[18:14] };
 
 			ram0cs_n <= memmap_ramcs_n[0];
 			ram1cs_n <= memmap_ramcs_n[1];
@@ -473,6 +475,7 @@ module top(
 	                  .mema16(memmap_a[16]),
 	                  .mema17(memmap_a[17]),
 	                  .mema18(memmap_a[18]),
+	                  .mema21(memmap_a[21]),
 
 	                  .ram0cs_n(memmap_ramcs_n[0]),
 	                  .ram1cs_n(memmap_ramcs_n[1]),

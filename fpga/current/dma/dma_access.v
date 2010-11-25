@@ -13,7 +13,7 @@ module dma_access(
 
 
 	input            dma_req,  // DMA request
-	input     [20:0] dma_addr, // DMA address (2mb)
+	input     [21:0] dma_addr, // DMA address (2mb)
 	input            dma_rnw,  // DMA READ/nWRITE
 	input      [7:0] dma_wd,   // DMA data to write
 	output reg [7:0] dma_rd,   // DMA data just read
@@ -23,7 +23,7 @@ module dma_access(
 	output reg       dma_end, // positive pulse as dma_busynready goes low
 
 	output wire        mem_dma_bus,  // DMA taking over the bus
-	output wire [20:0] mem_dma_addr, // DMA address going to the bus
+	output wire [21:0] mem_dma_addr, // DMA address going to the bus
 	output wire  [7:0] mem_dma_wd,   // DMA data going to the bus
 	input        [7:0] mem_dma_rd,   // DMA data going from the bus
 	output wire        mem_dma_rnw,  // DMA bus direction (1=read, 0=write)
@@ -37,7 +37,7 @@ module dma_access(
 
 	reg dma_bus;
 
-	reg [20:0] int_dma_addr;
+	reg [21:0] int_dma_addr;
 	reg        int_dma_rnw;
 	reg  [7:0] int_dma_wd;
 	wire [7:0] int_dma_rd;

@@ -43,7 +43,7 @@ module dma_zx(
 
 	// signals for DMA controller
 
-      output reg [20:0] dma_addr,
+      output reg [21:0] dma_addr,
       output reg  [7:0] dma_wd,
       input       [7:0] dma_rd,
       output reg        dma_rnw,
@@ -88,7 +88,7 @@ module dma_zx(
 	// control dout bus
 	always @*
 	case( regsel[1:0] )
-		_HAD: dout = { 3'b000, dma_addr[20:16] };
+		_HAD: dout = { 2'b00, dma_addr[21:16] };
 		_MAD: dout = dma_addr[15:8];
 		_LAD: dout = dma_addr[7:0];
 		_CST: dout = { dma_on, 7'bXXXXXXX };
@@ -108,11 +108,11 @@ module dma_zx(
 
 		// dma_addr control
 		if( dma_ack && dma_on )
-			dma_addr <= dma_addr + 21'd1; // increment on beginning of DMA transfer
+			dma_addr <= dma_addr + 22'd1; // increment on beginning of DMA transfer
 		else if( module_select && write_strobe )
 		begin
 			if( regsel==_HAD )
-				dma_addr[20:16] <= din[4:0];
+				dma_addr[21:16] <= din[5:0];
 			else if( regsel==_MAD )
 				dma_addr[15:8]  <= din[7:0];
 			else if( regsel==_LAD )

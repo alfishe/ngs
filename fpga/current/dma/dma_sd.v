@@ -23,13 +23,13 @@
   2. DMA initiated as soon as spi is again ready to initiate new transfer (kind a throttling). Probably DMA pulls 2 or 4 bytes at once.
 
 Structure:
- 
+
  - FIFO based on mem512b and two pointers
- 
+
  - SD controller - FSM which either reads or writes SD-card SPI iface
- 
+
  - DMA controller - FSM which either reads or writes DMA iface
- 
+
  - overall control - Controls operation of everything above, controls muxing of data to the
    SD write port and FIFO write port, tracks operation end, maintains DMA_ADDRESS registers.
 
@@ -64,7 +64,7 @@ module dma_sd(
 
 	// signals for DMA controller/DMA sequencer
 	//
-	output reg  [20:0] dma_addr,
+	output reg  [21:0] dma_addr,
 	output wire  [7:0] dma_wd,   // data written to DMA
 	input  wire  [7:0] dma_rd,   // data read from DMA
 	output reg         dma_rnw,
@@ -89,7 +89,7 @@ module dma_sd(
 	// control dout bus
 	always @*
 	case( regsel[1:0] )
-		_HAD: dout = { 3'b000, dma_addr[20:16] };
+		_HAD: dout = { 2'b00,  dma_addr[21:16] };
 		_MAD: dout =           dma_addr[15:8];
 		_LAD: dout =           dma_addr[7:0];
 		_CST: dout = { dma_on, 5'bXXXXX, dma_burst, dma_snr};
@@ -119,11 +119,11 @@ module dma_sd(
 
 		// dma_addr control
 		if( dma_ack && dma_on )
-			dma_addr <= dma_addr + 21'd1; // increment on beginning of DMA transfer
+			dma_addr <= dma_addr + 22'd1; // increment on beginning of DMA transfer
 		else if( module_select && write_strobe )
 		begin
 			if( regsel==_HAD )
-				dma_addr[20:16] <= din[4:0];
+				dma_addr[21:16] <= din[5:0];
 			else if( regsel==_MAD )
 				dma_addr[15:8]  <= din[7:0];
 			else if( regsel==_LAD )
@@ -134,7 +134,7 @@ module dma_sd(
 
 
 // fifo,dma,sd control FSMs/etc.
-	
+
 	reg init;
 	wire wr_stb,rd_stb;
 	wire wdone,rdone,empty;
@@ -146,7 +146,7 @@ module dma_sd(
 	assign fifo_wd       = dma_snr ? dma_rd  : sd_receiveddata;
 	// MUX data to SDcard
 	assign sd_datatosend = dma_snr ? fifo_rd : 8'hFF;
-	
+
 	// connect dma in to fifo out without muxing
 	assign dma_wd = fifo_rd;
 
@@ -168,14 +168,14 @@ module dma_sd(
 	// fifo control
 	reg sd_wr_stb,sd_rd_stb;   // set in SD FSM
 	reg dma_wr_stb,dma_rd_stb; // set in DMA FSM
-	//	
+	//
 	assign wr_stb = sd_wr_stb | dma_wr_stb;
 	assign rd_stb = sd_rd_stb | dma_rd_stb;
 
 	// dma control
 	wire dma_put_req;
 	wire dma_get_req;
-	
+
 	assign dma_req = dma_put_req | dma_get_req;
 
 
@@ -192,15 +192,15 @@ module dma_sd(
 
 
 	// SD-card controlling FSM
-	
+
 	reg [2:0] sd_state, sd_next_state;
-	
+
 	localparam SD_IDLE   = 3'b000;
 	localparam SD_READ1  = 3'b100;
 	localparam SD_READ2  = 3'b101;
 	localparam SD_WRITE1 = 3'b110;
 	localparam SD_WRITE2 = 3'b111;
-	
+
 	always @(posedge clk, negedge rst_n)
 	begin
 		if( !rst_n )
@@ -294,7 +294,7 @@ module dma_sd(
 			sd_rd_stb   = 1'b0;
 			sd_start    = 1'b0;
 			sd_override = 1'b0;
-		
+
 			sd_idle     = 1'b0;
 		end
 		else // posedge clk
@@ -306,7 +306,7 @@ module dma_sd(
 				sd_rd_stb   <= 1'b0;
 				sd_start    <= 1'b0;
 				sd_override <= 1'b0;
-				
+
 				sd_idle     <= 1'b1;
 			end
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -314,7 +314,7 @@ module dma_sd(
 				sd_override <= 1'b1; // takeover SD card SPI iface
 				sd_start    <= 1'b0;
 				sd_wr_stb   <= 1'b0;
-				
+
 				sd_idle     <= 1'b0;
 			end
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -327,7 +327,7 @@ module dma_sd(
 				sd_override <= 1'b1;
 				sd_start    <= 1'b0;
 				sd_rd_str   <= 1'b0;
-				
+
 				sd_idle     <= 1'b0;
 			end
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -339,7 +339,7 @@ module dma_sd(
 			endcase
 		end
 	end
-	
+
 
 
 
@@ -348,7 +348,7 @@ module dma_sd(
 	// DMA-controlling FSM
 
 	reg [3:0] dma_state, dma_next_state
-	
+
 	localparam DMA_IDLE
 	localparam DMA_PUT_WAIT
 	localparam DMA_PUT_RUN
@@ -433,12 +433,12 @@ module dma_sd(
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		endcase
 	end
-	
+
 	always @(posedge clk, negedge rst_n)
 	begin
 		if( !rst_n )
 		begin
-		
+
 		end
 		else // posedge clk
 		begin
@@ -506,16 +506,16 @@ module fifo512_oneshot(
 
 	input  wire clk,
 	input  wire rst_n,
-	
+
 	input  wire init, // initializes fifo: wptr=rptr=0
-	
+
 	input  wire wr_stb, // write strobe: writes data from wd to the current wptr, increments wptr
 	input  wire rd_stb, // read strobe: increments rptr
-	
+
 	output wire wdone, // write done - all 512 bytes are written (end of write operation)
 	output wire rdone, // read done - all 512 bytes are read (end of read operation)
 	output wire empty, // fifo empty: when wptr==rptr (rd_stb must not be issued when empty is active, otherwise everytrhing desyncs)
-	
+
 	input  wire [7:0] wd, // data to be written
 	output wire [7:0] rd  // data just read from rptr address
 );
@@ -532,7 +532,7 @@ module fifo512_oneshot(
 		end
 		else
 		begin // posedge clk
-		
+
 			if( init )
 			begin
 				wptr <= 10'd0;
@@ -541,8 +541,8 @@ module fifo512_oneshot(
 			begin
 				wptr <= wptr + 10'd1;
 			end
-		
-		
+
+
 			if( init )
 			begin
 				rptr <= 10'd0;
@@ -551,7 +551,7 @@ module fifo512_oneshot(
 			begin
 				rptr <= rptr + 10'd1;
 			end
-		
+
 		end
 	end
 

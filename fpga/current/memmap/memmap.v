@@ -22,7 +22,7 @@ module memmap(
 
 	mema14,mema15, // memory addresses
 	mema16,mema17, //
-	mema18,        // (512kB max)
+	mema18,mema21, //
 
 	ram0cs_n, // four RAM /CS'es
 	ram1cs_n, //
@@ -46,7 +46,7 @@ module memmap(
 
 	input mreq_n,rd_n,wr_n;
 
-	output reg mema14,mema15,mema16,mema17,mema18;
+	output reg mema14, mema15, mema16, mema17, mema18, mema21;
 
 	output reg ram0cs_n,ram1cs_n,ram2cs_n,ram3cs_n;
 
@@ -55,12 +55,12 @@ module memmap(
 	output reg memoe_n,memwe_n;
 
 	input mode_ramro,mode_norom;
-	input [6:0] mode_pg0,mode_pg1;
+	input [7:0] mode_pg0,mode_pg1;
 
 
 // internal vars and regs
 
-	reg [6:0] high_addr;
+	reg [7:0] high_addr;
 
 
 
@@ -70,9 +70,9 @@ module memmap(
 	begin
         case( {a15,a14} )
 			2'b00: // $0000-$3FFF
-				high_addr <= 7'b0000000;
+				high_addr <= 8'b0000000;
 			2'b01: // $4000-$7FFF
-				high_addr <= 7'b0000011;
+				high_addr <= 8'b0000011;
 			2'b10: // $8000-$BFFF
 				high_addr <= mode_pg0;
 			2'b11: // $C000-$FFFF
@@ -85,7 +85,7 @@ module memmap(
 
 	always @*
 	begin
-		{ mema18,mema17,mema16,mema15,mema14 } <= high_addr[4:0];
+		{ mema21, mema18, mema17, mema16, mema15, mema14 } <= { high_addr[7], high_addr[4:0] };
 	end
 
 
