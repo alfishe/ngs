@@ -346,7 +346,7 @@ module ports(
 
 
 
-	// rd/wr/iorq syncing in and pulses
+	// rd/wr/iorq syncing in and pulses - old gen
 	always @(posedge cpu_clock)
 	begin
 		iowrn_reg <= iorq_n | wr_n;
@@ -363,6 +363,21 @@ module ports(
 			port_rd <= 1'b0;
 
 	end
+
+/*
+	// new gen of port_rd and port_wr
+	reg [2:0] rd_sync;
+	reg [2:0] wr_sync;
+	always @(posedge cpu_clock)
+	begin
+		rd_sync[2:0] <= { rd_sync[1:0], port_enabled&(~iorq_n)&(~rd_n) };
+		wr_sync[2:0] <= { wr_sync[1:0], port_enabled&(~iorq_n)&(~wr_n) };
+
+		port_wr <= (wr_sync[1:0]==2'b01);
+		port_rd <= (rd_sync[1:0]==2'b01);
+
+	end
+*/
 
 	// mreq syncing and mem read pulse
 	always @(negedge cpu_clock)
@@ -499,9 +514,8 @@ module ports(
 	end
 
 	// data bit handling
-    always @*
-    begin
-		case( {port02_rd,port03_wr,port0a_wrrd} )
+	always @*
+	case( {port02_rd,port03_wr,port0a_wrrd} )
 		3'b100:
 		begin
 			data_bit_output <= 1'b0;
@@ -525,14 +539,11 @@ module ports(
 			data_bit_output <= 1'bX;
 			data_bit_wr <= 1'b0;
 		end
-    	endcase
-
-    end
+	endcase
 
 	// command bit handling
 	always @*
-	begin
-		casex( {port05_wrrd,port0b_wrrd} )
+	case( {port05_wrrd,port0b_wrrd} )
 		2'b10:
 		begin
 			command_bit_output <= 1'b0;
@@ -550,8 +561,7 @@ module ports(
 			command_bit_output <= 1'bX;
 			command_bit_wr <= 1'b0;
 		end
-		endcase
-	end
+	endcase
 
 	// handle data going to sound module (volume and samples values)
 	always @*

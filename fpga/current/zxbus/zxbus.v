@@ -254,7 +254,7 @@ module zxbus(
 	assign dmawrite = dma_on & romaddr & (~zxmreq_n) & (~zxwr_n);
 
 	// store data
-	always @(negedge dmawrite) dma_data_written <= dbin;
+	always @(negedge dmawrite) dma_data_written <= dbin; // probably GLITCHES here!!!
 // +
 
 
@@ -304,8 +304,13 @@ module zxbus(
 		wrcommport[2:0] <= { wrcommport[1:0], zxcommport&(~zxiowr_n) };
 	end
 
+
 	// data_bit
-	always @(posedge cpu_clock)
+
+	wire data_bit_local_clr = (rddataport[2:1]==2'b10);
+	wire data_bit_local_set = (wrdataport[2:1]==2'b10);
+
+/*	always @(posedge cpu_clock)
 	begin
 		if( rddataport[2:1]==2'b10 )
 		begin
@@ -320,9 +325,36 @@ module zxbus(
 			data_bit <= data_bit_in; // or load from internal NGS operation
 		end
 	end
-	// +
+*/
+	always@(posedge cpu_clock)
+	case( { data_bit_local_clr, data_bit_local_set, data_bit_wr } )
+		// usual cases
+		3'b100: data_bit <= 1'b0; // clear on data port reading by ZX (after end of cycle)
+		3'b010: data_bit <= 1'b1; // set on data port writing by ZX
+		3'b001: data_bit <= data_bit_in; // or load from internal NGS operation
+
+		// combinational cases
+		3'b101: begin
+			if( data_bit_in==1'b0 )
+				data_bit <= 1'b0;
+			// else if data_bit_in==1'b1 -- leave unchanged
+		end
+
+		3'b011: begin
+			if( data_bit_in==1'b1 )
+				data_bit <= 1'b1;
+			// else if data_bit_in==1'b0 -- leave unchanged
+		end
+
+		// default: unchanged
+	endcase
+
+
 
 	// command bit
+
+	wire command_bit_local_set = (wrcommport[2:1]==2'b10);
+/*
 	always @(posedge cpu_clock)
 	begin
 		if( wrcommport[2:1]==2'b10 )
@@ -334,8 +366,19 @@ module zxbus(
 			command_bit <= command_bit_in; // or load from internal NGS operation
 		end
 	end
-	// +
+*/
+	always @(posedge cpu_clock)
+	case( { command_bit_local_set, command_bit_wr } )
 
+		2'b10: command_bit <= 1'b1;
+		2'b01: command_bit <= command_bit_in;
+
+		2'b11: begin
+			if( command_bit_in==1'b1 )
+				command_bit <= 1'b1;
+		end
+
+	endcase
 
 
 
