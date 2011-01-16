@@ -57,7 +57,7 @@ LOAD:
 ROM:
 		xor	a
 		out	(C_MCFG),a
-		ld	hl,config_data
+		ld	hl,config_data+0x8000
 		jr	loadconfig
 
 TRY_RAM:
@@ -148,8 +148,12 @@ prepare:
 		xor	a
 		out	(C_CRNCFG),a
 
+		;switch ROM in 8000-FFFF, first 32k, then check it for CRC
+		;xor	a
+		out	(C_MCFG),a
+
 		;calc and compare CRC of rom
-		ld	hl,0
+		ld	hl,0x8000
 		ld	bc,crc_is_here
 		call	CRC16
 		ld	a,(hl)
