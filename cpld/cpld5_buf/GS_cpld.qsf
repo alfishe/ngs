@@ -28,7 +28,7 @@ set_global_assignment -name FAMILY MAX3000A
 set_global_assignment -name TOP_LEVEL_ENTITY GS_cpld
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION 6.1
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "01:14:09  MARCH 18, 2010"
-set_global_assignment -name LAST_QUARTUS_VERSION 7.2
+set_global_assignment -name LAST_QUARTUS_VERSION "7.2 SP3"
 set_global_assignment -name DEVICE_FILTER_PACKAGE "ANY QFP"
 set_global_assignment -name DEVICE_FILTER_PIN_COUNT 100
 set_global_assignment -name DEVICE_FILTER_SPEED_GRADE 10
@@ -118,3 +118,4 @@ set_global_assignment -name BDF_FILE clocker.bdf
 set_global_assignment -name VERILOG_FILE GS_cpld.v
 set_global_assignment -name RESERVE_ALL_UNUSED_PINS_NO_OUTPUT_GND "AS INPUT TRI-STATED"
 set_global_assignment -name SAVE_DISK_SPACE OFF
+set_global_assignment -name AUTO_TURBO_BIT OFF
