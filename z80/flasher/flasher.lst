@@ -1,0 +1,2889 @@
+ AS V1.42 Beta [Bld 78] - source file flasher.a80 - page 1 - 1/17/2011 21:30:41
+
+
+       1/       0 :                     
+       2/       0 :                     ;LAST UPDATE: 17.01.2011 savelij
+       3/       0 :                     
+       4/       0 :                     		include macros.a80
+(1)    1/       0 :                     
+(1)    2/       0 :                     		RELAXED ON
+(1)    3/       0 :                     		CPU Z80UNDOC
+(1)    4/       0 :                     
+(1)    5/       0 :                     DZ		MACRO DEFZ
+(1)    6/       0 :                     		DB DEFZ,0
+(1)    7/       0 :                     		ENDM 
+(1)    8/       0 :                     
+(1)    9/       0 :                     DC		MACRO DEFC
+(1)   10/       0 :                     		IF STRLEN(DEFC)>1
+(1)   11/       0 :                     		DB SUBSTR(DEFC,0,STRLEN(DEFC)-1)
+(1)   12/       0 :                     		ENDIF
+(1)   13/       0 :                     		IF STRLEN(DEFC)>0
+(1)   14/       0 :                     		DB CHARFROMSTR(DEFC,STRLEN(DEFC)-1)|80H
+(1)   15/       0 :                     		ENDIF
+(1)   16/       0 :                     		ENDM
+(1)   17/       0 :                     
+(1)   18/       0 :                     SUM_HOB		MACRO STR,AA,BB,CC
+(1)   19/       0 :                     		DB STR
+(1)   20/       0 :                     		DW AA
+(1)   21/       0 :                     		DW BB
+(1)   22/       0 :                     		DW CC
+(1)   23/       0 :                     $$I := 0
+(1)   24/       0 :                     $$S := 0
+(1)   25/       0 :                     		REPT 9
+(1)   26/       0 :                     $$N := CHARFROMSTR (STR,STRLEN(STR)+$$S-9)
+(1)   27/       0 :                     $$I := ($$I+$$S+$$N+($$N*256))&0XFFFF
+(1)   28/       0 :                     $$S := $$S+1
+(1)   29/       0 :                     		ENDM
+(1)   30/       0 :                     $$I := ($$I+$$S+LOW (AA)+(LOW (AA)*0X100))&0XFFFF
+(1)   31/       0 :                     $$S := $$S+1
+(1)   32/       0 :                     $$I := ($$I+$$S+HIGH (AA)+(HIGH (AA)*0X100))&0XFFFF
+(1)   33/       0 :                     $$S := $$S+1
+(1)   34/       0 :                     $$I := ($$I+$$S+LOW (BB)+(LOW (BB)*0X100))&0XFFFF
+(1)   35/       0 :                     $$S := $$S+1
+(1)   36/       0 :                     $$I := ($$I+$$S+HIGH (BB)+(HIGH (BB)*0X100))&0XFFFF
+(1)   37/       0 :                     $$S := $$S+1
+(1)   38/       0 :                     $$I := ($$I+$$S+LOW (CC)+(LOW (CC)*0X100))&0XFFFF
+(1)   39/       0 :                     $$S := $$S+1
+(1)   40/       0 :                     $$I := ($$I+$$S+HIGH (CC)+(HIGH (CC)*0X100))&0XFFFF
+(1)   41/       0 :                     $$S := $$S+1
+(1)   42/       0 :                     		DW $$I
+(1)   43/       0 :                     		ENDM
+(1)   44/       0 :                     
+(1)   45/       0 :                     DUPL		MACRO LEN,FILL
+(1)   46/       0 :                     DUPL:
+(1)   47/       0 :                     $$N		EQU (LEN) / 1024
+(1)   48/       0 :                     $$M		EQU (LEN) # 1024
+(1)   49/       0 :                     		REPT $$N
+(1)   50/       0 :                     		DB 1024 DUP(FILL)
+(1)   51/       0 :                     		ENDM
+(1)   52/       0 :                     		IF $$M <> 0
+(1)   53/       0 :                     		DB $$M DUP(FILL)
+(1)   54/       0 :                     		ENDIF
+(1)   55/       0 :                     		ENDM
+(1)   56/       0 :                     
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(macros.a80) - page 2 - 1/17/2011 21:30:41
+
+
+(1)   57/       0 :                     HIGH		FUNCTION X,((X >> 8) & 0XFF)
+(1)   58/       0 :                     LOW		FUNCTION X,(X & 0XFF)
+(1)   59/       0 :                     
+       5/       0 :                     		include ports_ngs.a80
+(1)    1/       0 :                     
+(1)    2/       0 :                     ; ports description and include file for
+(1)    3/       0 :                     ; NeoGS software projects, v0.3
+(1)    4/       0 :                     ;
+(1)    5/       0 :                     ;
+(1)    6/       0 :                     ; bits degisnation:
+(1)    7/       0 :                     ; B_* -bit position (0,1,2,3,4,5,6,7)
+(1)    8/       0 :                     ; M_* -bit mask (1,2,4,8,0X10,
+(1)    9/       0 :                     ;                           0X20,0X40,0X80)
+(1)   10/       0 :                     ;
+(1)   11/       0 :                     ; C_* - constants to be used
+(1)   12/       0 :                     ;
+(1)   13/       0 :                     ;
+(1)   14/       0 :                     ; part of NeoGS project
+(1)   15/       0 :                     ;
+(1)   16/       0 :                     ; (c) 2008 NedoPC
+(1)   17/       0 :                     
+(1)   18/       0 :                     ;---------------------------------------
+(1)   19/       0 :                     
+(1)   20/       0 :                     ;ZX-side ports
+(1)   21/       0 :                     
+(1)   22/       0 : =BBH                GSCOM		EQU 0XBB	; write-only, command for NGS
+(1)   23/       0 :                     
+(1)   24/       0 : =BBH                GSSTAT		EQU 0XBB	; read-only, command and data bits
+(1)   25/       0 :                     				; (positions given immediately below)
+(1)   26/       0 :                     
+(1)   27/       0 : =0H                 B_CBIT		EQU 0		; Command position
+(1)   28/       0 : =1H                 M_CBIT		EQU 1		; BIT:AND Mask
+(1)   29/       0 :                     
+(1)   30/       0 : =7H                 B_DBIT		EQU 7		; Data position
+(1)   31/       0 : =80H                M_DBIT		EQU 0X80	; BIT and mask
+(1)   32/       0 :                     
+(1)   33/       0 : =B3H                GSDAT		EQU 0XB3	; read-write
+(1)   34/       0 :                     				; data transfer register for NGS
+(1)   35/       0 :                     
+(1)   36/       0 : =33H                GSCTR		EQU 0X33	; write-only, control register for NGS:
+(1)   37/       0 :                     				; constants available given immediately below
+(1)   38/       0 :                     
+(1)   39/       0 : =80H                C_GRST		EQU 0X80	; reset constant to be written into
+(1)   40/       0 :                     
+(1)   41/       0 : =40H                C_GNMI		EQU 0X40	; NMI constant to be written into GSCTR
+(1)   42/       0 :                     
+(1)   43/       0 : =20H                C_GLED		EQU 0X20	; LED toggle constant
+(1)   44/       0 :                     
+(1)   45/       0 :                     ;---------------------------------------
+(1)   46/       0 :                     
+(1)   47/       0 :                     ;GS-side ports
+(1)   48/       0 :                     
+(1)   49/       0 : =0H                 MPAG		EQU 0X00	; write-only, Memory PAGe ;port (big
+(1)   50/       0 :                     				; pages at 8000-FFFF or small at 8000-BFFF)
+(1)   51/       0 :                     
+(1)   52/       0 : =10H                MPAGEX		EQU 0X10	; write-only, Memory PAGe EXtended
+(1)   53/       0 :                     				; (only small pages at C000-FFFF)
+(1)   54/       0 :                     
+(1)   55/       0 : =1H                 ZXCMD		EQU 0X01	; read-only, ZX CoMmanD port: here is
+(1)   56/       0 :                     				; the byte written by ZX into GSCOM
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(ports_ngs.a80) - page 3 - 1/17/2011 21:30:41
+
+
+(1)   57/       0 :                     
+(1)   58/       0 : =2H                 ZXDATRD		EQU 0X02	; read-only, ZX DATa ReaD: a byte
+(1)   59/       0 :                     				; written by ZX into GSDAT appears here
+(1)   60/       0 :                     				; upon reading this port, data bit is cleared
+(1)   61/       0 :                     
+(1)   62/       0 : =3H                 ZXDATWR		EQU 0X03	; write-only, ZX DATa WRite: a byte
+(1)   63/       0 :                     				; written here is available for ZX in
+(1)   64/       0 :                     				; GSDAT upon writing here, data bit is set
+(1)   65/       0 :                     
+(1)   66/       0 : =4H                 ZXSTAT		EQU 0X04	; read-only, read ZX STATus: command and
+(1)   67/       0 :                     				; data bits. positions are defined by
+(1)   68/       0 :                     				; *_CBIT and *_DBIT above
+(1)   69/       0 :                     
+(1)   70/       0 : =5H                 CLRCBIT		EQU 0X05	; read-write, upon either reading or
+(1)   71/       0 :                     				; writing this port, the Command BIT is CLeaRed
+(1)   72/       0 : =6H                 VOL1		EQU 0X06
+(1)   73/       0 : =7H                 VOL2		EQU 0X07
+(1)   74/       0 : =8H                 VOL3		EQU 0X08
+(1)   75/       0 : =9H                 VOL4		EQU 0X09
+(1)   76/       0 : =16H                VOL5		EQU 0X16
+(1)   77/       0 : =17H                VOL6		EQU 0X17
+(1)   78/       0 : =18H                VOL7		EQU 0X18
+(1)   79/       0 : =19H                VOL8		EQU 0X19	; write-only, volumes for sound channels 1-8
+(1)   80/       0 :                     
+(1)   81/       0 :                     ; following two ports are useless and
+(1)   82/       0 :                     ; very odd. They have been made just
+(1)   83/       0 :                     ; because they were on the original GS
+(1)   84/       0 :                     ; and for that strange case when
+(1)   85/       0 :                     ; somebody too crazy have used them.
+(1)   86/       0 :                     ; Nevertheless, DO NOT USE THEM! They
+(1)   87/       0 :                     ; can disappear or even radically change
+(1)   88/       0 :                     ; functionality in future firmware
+(1)   89/       0 :                     ; releases.
+(1)   90/       0 :                     
+(1)   91/       0 : =AH                 DPORT1		EQU 0X0A	; DAMNPORT1
+(1)   92/       0 :                     				; writing or reading this port sets data
+(1)   93/       0 :                     				; bit to the inverse of bit 0 into MPAG
+(1)   94/       0 :                     				; port
+(1)   95/       0 :                     
+(1)   96/       0 : =BH                 DPORT2		EQU 0X0B	; DAMNPORT2
+(1)   97/       0 :                     				; the same as DAMNPORT1, but instead
+(1)   98/       0 :                     				; command bit involved, which is made
+(1)   99/       0 :                     				; equal to 5th bit of VOL4
+(1)  100/       0 :                     
+(1)  101/       0 : =1H                 LEDCTR		EQU 0X01	; write-only, controls on-board LED.
+(1)  102/       0 :                     				; D0=0 - LED is on, D0=1 - LED is off
+(1)  103/       0 :                     				; reset state is LED on.
+(1)  104/       0 :                     
+(1)  105/       0 : =FH                 GSCFG0		EQU 0X0F	; read-write, GS ConFiG port 0: acts as
+(1)  106/       0 :                     				; memory cell, reads previously written
+(1)  107/       0 :                     				; value. Bits and fields follow:
+(1)  108/       0 :                     
+(1)  109/       0 : =0H                 B_NOROM		EQU 0		; =0 - there is ROM everywhere except 0X4000-7FFF,
+(1)  110/       0 :                     				; =1 - the RAM is all around
+(1)  111/       0 : =1H                 M_NOROM		EQU 1
+(1)  112/       0 :                     
+(1)  113/       0 : =1H                 B_RAMRO		EQU 1		; =1 - ram absolute adresses 0X0000-7FFF
+(1)  114/       0 :                     				; (zeroth big page) are write-protected
+(1)  115/       0 : =2H                 M_RAMRO		EQU 2
+(1)  116/       0 :                     
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(ports_ngs.a80) - page 4 - 1/17/2011 21:30:41
+
+
+(1)  117/       0 : =2H                 B_8CHAN		EQU 2		; B_8CHANS
+(1)  118/       0 :                     				; =1 - 8 channels mode
+(1)  119/       0 : =4H                 M_8CHAN		EQU 4		; M_8CHANS
+(1)  120/       0 :                     
+(1)  121/       0 : =3H                 B_EXPAG		EQU 3		; =1 - extended paging: both MPAG and
+(1)  122/       0 :                     				; MPAGEX are used to switch two memory windows
+(1)  123/       0 : =8H                 M_EXPAG		EQU 8
+(1)  124/       0 :                     
+(1)  125/       0 : =4H                 B_CKSL0		EQU 4		; B_CKSEL0
+(1)  126/       0 :                     				; these bits should be set according to
+(1)  127/       0 :                     				; the C_**MHZ constants below
+(1)  128/       0 : =10H                M_CKSL0		EQU 0X10	; M_CKSEL0
+(1)  129/       0 :                     
+(1)  130/       0 : =5H                 B_CKSL1		EQU 5		; B_CKSEL1
+(1)  131/       0 : =20H                M_CKSL1		EQU 0X20	; M_CKSEL1
+(1)  132/       0 :                     
+(1)  133/       0 : =30H                C_10MHZ		EQU 0X30
+(1)  134/       0 : =10H                C_12MHZ		EQU 0X10
+(1)  135/       0 : =20H                C_20MHZ		EQU 0X20
+(1)  136/       0 : =0H                 C_24MHZ		EQU 0X00
+(1)  137/       0 :                     
+(1)  138/       0 : =6H                 B_PAN4C		EQU 6		; B_PAN4CH
+(1)  139/       0 :                     				; =1 - 4 channels, panning (every
+(1)  140/       0 :                     				; channel is on left and right with two volumes)
+(1)  141/       0 : =40H                M_PAN4C		EQU 0X40	; M_PAN4CH
+(1)  142/       0 :                     
+(1)  143/       0 : =7H                 B_INV7B		EQU 7		;B_INV7B
+(1)  144/       0 :                     				; =1 - invert 7th bit of sample before
+(1)  145/       0 :                     				; putting them to MUL/DAC
+(1)  146/       0 : =80H                M_INV7B		EQU 0X80
+(1)  147/       0 :                     
+(1)  148/       0 : =7H                 B_SNCLR		EQU 7		; B_SETNCLR
+(1)  149/       0 : =80H                M_SNCLR		EQU 0X80	; M_SETNCLR
+(1)  150/       0 :                     
+(1)  151/       0 : =11H                SCTRL		EQU 0X11	; Serial ConTRoL: read-write, read:
+(1)  152/       0 :                     				; current state of below bits, write - see GS_info
+(1)  153/       0 :                     
+(1)  154/       0 : =0H                 B_SDNCS		EQU 0
+(1)  155/       0 : =1H                 M_SDNCS		EQU 1
+(1)  156/       0 :                     
+(1)  157/       0 : =1H                 B_MCNCS		EQU 1
+(1)  158/       0 : =2H                 M_MCNCS		EQU 2
+(1)  159/       0 :                     
+(1)  160/       0 : =2H                 B_MPXRS		EQU 2
+(1)  161/       0 : =4H                 M_MPXRS		EQU 4
+(1)  162/       0 :                     
+(1)  163/       0 : =3H                 B_MCSP0		EQU 3		; B_MCSPD0
+(1)  164/       0 : =8H                 M_MCSP0		EQU 8		; M_MCSPD0
+(1)  165/       0 :                     
+(1)  166/       0 : =4H                 B_MDHLF		EQU 4
+(1)  167/       0 : =10H                M_MDHLF		EQU 0X10
+(1)  168/       0 :                     
+(1)  169/       0 : =5H                 B_MCSP1		EQU 5		; B_MCSPD1
+(1)  170/       0 : =20H                M_MCSP1		EQU 0X20	; M_MCSPD1
+(1)  171/       0 :                     
+(1)  172/       0 : =12H                SSTAT		EQU 0X12	; Serial STATus: read-only, reads state of below bits
+(1)  173/       0 :                     
+(1)  174/       0 : =0H                 B_MDDRQ		EQU 0
+(1)  175/       0 : =1H                 M_MDDRQ		EQU 1
+(1)  176/       0 :                     
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(ports_ngs.a80) - page 5 - 1/17/2011 21:30:41
+
+
+(1)  177/       0 : =1H                 B_SDDET		EQU 1
+(1)  178/       0 : =2H                 M_SDDET		EQU 2
+(1)  179/       0 :                     
+(1)  180/       0 : =2H                 B_SDWP		EQU 2
+(1)  181/       0 : =4H                 M_SDWP		EQU 4
+(1)  182/       0 :                     
+(1)  183/       0 : =3H                 B_MCRDY		EQU 3
+(1)  184/       0 : =8H                 M_MCRDY		EQU 8
+(1)  185/       0 :                     
+(1)  186/       0 : =13H                SD_SEND		EQU 0X13	; SD card SEND, write-only, when
+(1)  187/       0 :                     				; written, byte transfer starts with
+(1)  188/       0 :                     				; written byte
+(1)  189/       0 :                     
+(1)  190/       0 : =13H                SD_READ		EQU 0X13	; SD card READ, read-only, reads byte
+(1)  191/       0 :                     				; received in previous byte transfer
+(1)  192/       0 :                     
+(1)  193/       0 : =14H                SD_RSTR		EQU 0X14	; SD card Read and STaRt, read-only,
+(1)  194/       0 :                     				; reads previously received byte and
+(1)  195/       0 :                     				; starts new byte transfer with 0XFF
+(1)  196/       0 :                     
+(1)  197/       0 : =14H                MD_SEND		EQU 0X14	; Mp3 Data SEND, write-only, sends byte
+(1)  198/       0 :                     				; to the mp3 data interface
+(1)  199/       0 :                     
+(1)  200/       0 : =15H                MC_SEND		EQU 0X15	; Mp3 Control SEND, write-only, sends
+(1)  201/       0 :                     				; byte to the mp3 control interface
+(1)  202/       0 :                     
+(1)  203/       0 : =15H                MC_READ		EQU 0X15	; Mp3 Control READ, read-only, reads
+(1)  204/       0 :                     				; byte that was received during
+(1)  205/       0 :                     				; previous sending of byte
+(1)  206/       0 :                     
+(1)  207/       0 : =1BH                DMA_MOD		EQU 0X1B	; DMA MODULE
+(1)  208/       0 :                     
+(1)  209/       0 : =1CH                DMA_HAD		EQU 0X1C	; DMA High ADdress
+(1)  210/       0 :                     
+(1)  211/       0 : =1DH                DMA_MAD		EQU 0X1D	; DMA Middle ADdress
+(1)  212/       0 :                     
+(1)  213/       0 : =1EH                DMA_LAD		EQU 0X1E	; DMA Low ADdress
+(1)  214/       0 :                     
+(1)  215/       0 : =1FH                DMA_CST		EQU 0X1F	; DMA Control and STate
+(1)  216/       0 :                     
+       6/       0 :                     
+       7/       0 : =17.01.2011         DDMMYY		EQU "17.01.2011"
+       8/       0 :                     
+       9/       0 : =11H                DD		EQU 17				;óàëãé
+      10/       0 : =1H                 MM		EQU 1				;åÖëüñ
+      11/       0 : =BH                 YY		EQU 11				;ÉéÑ
+      12/       0 : =9631H              DATA		EQU DD|MM<<5|YY<<9|0X8000	;áÄäéÑàêéÇÄççÄü ÑÄíÄ
+      13/       0 :                     
+      14/       0 : =54H                SM_LDT		EQU 0X54
+      15/       0 : =5800H              ADR_PROGR	EQU 0X5800
+      16/       0 :                     
+      17/       0 : =B800H              BUFTSC		EQU 0XB800
+      18/       0 : =B980H              TXT_DEC		EQU BUFTSC+0X0180
+      19/       0 : =B990H              TXT_HEX		EQU TXT_DEC+0X10
+      20/       0 :                     
+      21/       0 : =9000H              BUF_CRC16_TABL	EQU 0X9000			;200
+      22/       0 : =9200H              BUFFER_ZAG	EQU BUF_CRC16_TABL+0X200	;200
+      23/       0 : =9400H              SKLAD		EQU BUFFER_ZAG+0X200		;100
+      24/       0 : =9500H              DRV_VAR		EQU SKLAD+0X100
+      25/       0 :                     
+ AS V1.42 Beta [Bld 78] - source file flasher.a80 - page 6 - 1/17/2011 21:30:41
+
+
+      26/       0 :                     ;îéêåÄí îãÄÉéÇéÉé ÅÄâíÄ éäçÄ
+      27/       0 :                     ;X,Y,V,H,C,C
+      28/       0 :                     ;IX+8
+      29/       0 :                     ;7-1-çàÜçàâ áÄÉéãéÇéä
+      30/       0 :                     ;6-0-ë êÄåäéâ,1-ÅÖá êÄåäà
+      31/       0 :                     ;5-1-ÇÖêïçàâ áÄÉéãéÇéä
+      32/       0 :                     ;4-0-íÖäëí éäçÄ,1-ÅÖá íÖäëíÄ
+      33/       0 :                     ;3
+      34/       0 :                     ;2-0-FILE,1-*.TRD
+      35/       0 :                     ;1-0-MENU,1-FILES
+      36/       0 :                     ;0-0-TRDOS,1-MSDOS
+      37/       0 :                     
+      38/       0 :                     ;BIT 4,(IY+55)
+      39/       0 :                     ;BIT 3,(IY+55) 1-çÖí ÑàëäÄ, 0-Öëíú
+      40/       0 :                     ;BIT 2,(IY+55) 1-çÖ çÄâÑÖçé, 0-FAT Öëíú
+      41/       0 :                     
+      42/       0 :                     ;éèàëÄíÖãú éäçÄ (ÄÑêÖë Ç IX)
+      43/       0 :                     ;+00 X
+      44/       0 :                     ;+01 Y
+      45/       0 :                     ;+02 V
+      46/       0 :                     ;+03 H
+      47/       0 :                     ;+04 C
+      48/       0 :                     ;+05 C
+      49/       0 :                     ;+06 | ÄÑêÖëÄ
+      50/       0 :                     ;+07 | èéÑèêéÉêÄåå
+      51/       0 :                     ;+08 F
+      52/       0 :                     ;+09 X
+      53/       0 :                     ;+0A Y
+      54/       0 :                     ;+0B V
+      55/       0 :                     ;+0C H
+      56/       0 :                     ;+0D | ÄÑêÖë
+      57/       0 :                     ;+0E | íÖäëíÄ
+      58/       0 :                     ;+0F : çéåÖê èìçäíÄ Ç éäçÖ
+      59/       0 :                     ;+10 : äéãàóÖëíÇé
+      60/       0 :                     ;+11 : èìçäíéÇ åÖçû
+      61/       0 :                     ;+12 "C" | íÖäìôàâ
+      62/       0 :                     ;+13 "B" | èìçäí åÖçû
+      63/       0 :                     
+      64/    6000 :                     		ORG 0X6000
+      65/    6000 : F3                  START_		DI
+      66/    6001 : 3E 10               		LD A,0X10
+      67/    6003 : 01 FD 7F            		LD BC,0X7FFD
+      68/    6006 : ED 79               		OUT (C),A			;Çäãûóàãà ëíêÄçàñì 0
+      69/    6008 : CD 6E 62            		CALL INITLOADER
+      70/    600B : F5                  		PUSH AF
+      71/    600C : 3E 0A               		LD A,0X0A
+      72/    600E : D3 BB               		OUT (GSCOM),A
+      73/    6010 : FD CB 30 DE         		SET 3,(IY+48)
+      74/    6014 : 21 10 01            		LD HL,0X0110
+      75/    6017 : 22 09 5C            		LD (0X5C09),HL			;ìëíÄçéÇàãà èÄêÄåÖíêõ éèêéëÄ äãÄÇàÄíìêõ
+      76/    601A : 3E 28               		LD A,0X28
+      77/    601C : CD 19 6E            		CALL CLS			;éóàëíäÄ ùäêÄçÄ
+      78/    601F : FD CB 01 AE         		RES 5,(IY+1)
+      79/    6023 : FD CB 30 BE         		RES 7,(IY+48)
+      80/    6027 : FD CB 37 9E         		RES 3,(IY+55)			;ìëíÄçéÇäÄ ÖôÖ çÖäéíéêõï èÄêÄåÖíêéÇ
+      81/    602B : CD E7 6D            		CALL ADRTSC			;îéêåàêéÇÄçàÖ íÄÅãàñõ ÄÑêÖëéÇ ùäêÄçÄ
+      82/    602E : F1                  		POP AF
+      83/    602F : C2 A7 60            		JP NZ,NGSNOTFOUND
+      84/    6032 : 3E 07               RESTARTUPD	LD A,7
+      85/    6034 : D3 BB               		OUT (GSCOM),A
+ AS V1.42 Beta [Bld 78] - source file flasher.a80 - page 7 - 1/17/2011 21:30:41
+
+
+      86/    6036 : CD D3 62            		CALL WC
+      87/    6039 : DB B3               		IN A,(GSDAT)
+      88/    603B : A7                  		AND A
+      89/    603C : 28 27               		JR Z,PROD001
+      90/    603E : F5                  		PUSH AF
+      91/    603F : DD 21 AA 73         		LD IX,ERROR_UPDATE
+      92/    6043 : CD F8 6E            		CALL WINW
+      93/    6046 : F1                  		POP AF
+      94/    6047 : 21 C2 73            		LD HL,TXT_ERRUPD1
+      95/    604A : FE AA               		CP 0XAA
+      96/    604C : 28 0A               		JR Z,ERRORRING
+      97/    604E : 21 D8 73            		LD HL,TXT_ERRUPD2
+      98/    6051 : FE DD               		CP 0XDD
+      99/    6053 : 28 03               		JR Z,ERRORRING
+     100/    6055 : 21 ED 73            		LD HL,TXT_ERRUPD3
+     101/    6058 : CD F8 70            ERRORRING	CALL NEXT
+     102/    605B : CD 4E 6C            		CALL KEYS
+     103/    605E : DD 21 EF 75         		LD IX,ALLSCR
+     104/    6062 : CD F8 6E            		CALL WINW			;ÇõÇéÑ éëçéÇçéÉé éäçÄ
+     105/    6065 : 3E 09               PROD001		LD A,9
+     106/    6067 : D3 BB               		OUT (GSCOM),A
+     107/    6069 : CD D3 62            		CALL WC
+     108/    606C : DB B3               		IN A,(GSDAT)			;™Æ§ ÆË®°™®
+     109/    606E : 08                  		EX AF,AF'
+     110/    606F : CD DF 62            		CALL WN
+     111/    6072 : DB B3               		IN A,(GSDAT)			;¨´†§Ë®© °†©‚ Æ‚¢•‚†
+     112/    6074 : 6F                  		LD L,A
+     113/    6075 : CD DF 62            		CALL WN
+     114/    6078 : DB B3               		IN A,(GSDAT)			;·‚†‡Ë®© °†©‚ Æ‚¢•‚†
+     115/    607A : 67                  		LD H,A
+     116/    607B : 08                  		EX AF,AF'
+     117/    607C : E6 03               		AND 3
+     118/    607E : 28 0D               		JR Z,PROD000
+     119/    6080 : DD 21 AA 73          		LD IX,ERROR_UPDATE
+     120/    6084 : CD F8 6E            		CALL WINW
+     121/    6087 : 21 06 74            		LD HL,TXT_CRC
+     122/    608A : CD F8 70            		CALL NEXT
+     123/    608D : DD 21 EF 75         PROD000		LD IX,ALLSCR
+     124/    6091 : CD F8 6E            		CALL WINW
+     125/    6094 : DD 21 B9 75         		LD IX,WEKS2
+     126/    6098 : CD F8 6E            		CALL WINW
+     127/    609B : CD 3A 61            PROD01		CALL UPDOWN
+     128/    609E : CD DD 72            		CALL CP_KEYS
+     129/    60A1 : 0D                  		DB 0X0D
+     130/    60A2 : BE 60               		DW KENTER
+     131/    60A4 : 00                  		DB 0
+     132/    60A5 : 18 F4               		JR PROD01
+     133/    60A7 :                     
+     134/    60A7 : DD 21 AA 73         NGSNOTFOUND	LD IX,ERROR_UPDATE
+     135/    60AB : CD F8 6E            		CALL WINW
+     136/    60AE : 21 17 74            		LD HL,TXT_NONGS
+     137/    60B1 : CD F8 70            		CALL NEXT
+     138/    60B4 : CD 4E 6C            		CALL KEYS
+     139/    60B7 : 21 00 00            		LD HL,0
+     140/    60BA : E5                  		PUSH HL
+     141/    60BB : C3 2F 3D            		JP 0X3D2F
+     142/    60BE :                     
+     143/    60BE :                     ;éíêÄÅéíäÄ èÖÑÄãà ENTER
+     144/    60BE : DD 7E 12            KENTER		LD A,(IX+0X12)
+     145/    60C1 : A7                  		AND A
+ AS V1.42 Beta [Bld 78] - source file flasher.a80 - page 8 - 1/17/2011 21:30:41
+
+
+     146/    60C2 : 28 03               		JR Z,KENTER1		;èÖêÖïéÑ Ñãü èìçäíÄ 1-áÄÉêìáäÄ éÅçéÇãÖçàü
+     147/    60C4 : C3 33 61            		JP KENTER4		;èÖêÖïéÑ Ñãü èìçäíÄ 3-ÇõïéÑ Ç TR-DOS
+     148/    60C7 :                     
+     149/    60C7 :                     ;ÇõÅéê à áÄÉêìáäÄ éÅçéÇãÖçàü èáì
+     150/    60C7 :                     KENTER1		
+     151/    60C7 : 3E 07               		LD A,7
+     152/    60C9 : D3 BB               		OUT (GSCOM),A
+     153/    60CB : CD D3 62            		CALL WC
+     154/    60CE : DB B3               		IN A,(GSDAT)
+     155/    60D0 : A7                  		AND A
+     156/    60D1 : C2 32 60            		JP NZ,RESTARTUPD
+     157/    60D4 : 3E 09               		LD A,9
+     158/    60D6 : D3 BB               		OUT (GSCOM),A
+     159/    60D8 : CD D3 62            		CALL WC
+     160/    60DB : DB B3               		IN A,(GSDAT)			;™Æ§ ÆË®°™®
+     161/    60DD : 08                  		EX AF,AF'
+     162/    60DE : CD DF 62            		CALL WN
+     163/    60E1 : DB B3               		IN A,(GSDAT)			;¨´†§Ë®© °†©‚ Æ‚¢•‚†
+     164/    60E3 : 6F                  		LD L,A
+     165/    60E4 : CD DF 62            		CALL WN
+     166/    60E7 : DB B3               		IN A,(GSDAT)			;·‚†‡Ë®© °†©‚ Æ‚¢•‚†
+     167/    60E9 : 67                  		LD H,A
+     168/    60EA : 08                  		EX AF,AF'
+     169/    60EB : FE 80               		CP 0X80
+     170/    60ED : C2 32 60            		JP NZ,RESTARTUPD
+     171/    60F0 :                     
+     172/    60F0 : AF                  		XOR A
+     173/    60F1 : D3 B3               		OUT (GSDAT),A
+     174/    60F3 : 3E 06               		LD A,6
+     175/    60F5 : D3 BB               		OUT (GSCOM),A
+     176/    60F7 : CD D3 62            		CALL WC
+     177/    60FA : AF                  		XOR A
+     178/    60FB : D3 B3               		OUT (GSDAT),A
+     179/    60FD : CD D9 62            		CALL WD
+     180/    6100 : 3E 58               		LD A,0X58
+     181/    6102 : D3 B3               		OUT (GSDAT),A
+     182/    6104 : CD D9 62            		CALL WD
+     183/    6107 : DB B3               		IN A,(GSDAT)
+     184/    6109 : FE 99               		CP 0X99
+     185/    610B : 20 FA               		JR NZ,$-4
+     186/    610D : FB                  		EI
+     187/    610E :                     		REPT 5
+     188/    610E :                     		HALT
+     189/    610E :                     		ENDM
+     188/    610E : 76                  		HALT
+     188/    610F : 76                  		HALT
+     188/    6110 : 76                  		HALT
+     188/    6111 : 76                  		HALT
+     188/    6112 : 76                  		HALT
+     190/    6113 : F3                  		DI
+     191/    6114 : DD 21 AA 73         		LD IX,ERROR_UPDATE
+     192/    6118 : CD F8 6E            		CALL WINW
+     193/    611B : 21 2E 74            		LD HL,TXT_OKUPDATE
+     194/    611E : CD F8 70            		CALL NEXT
+     195/    6121 : CD 4E 6C            		CALL KEYS
+     196/    6124 : C3 00 60            		JP START_
+     197/    6127 :                     
+     198/    6127 : 3E 0A               		LD A,0X0A
+     199/    6129 : D3 BB               		OUT (GSCOM),A
+     200/    612B : FB                  		EI
+ AS V1.42 Beta [Bld 78] - source file flasher.a80 - page 9 - 1/17/2011 21:30:41
+
+
+     201/    612C : 76                  		HALT
+     202/    612D : 76                  		HALT
+     203/    612E : 76                  		HALT
+     204/    612F : F3                  		DI
+     205/    6130 : C3 32 60            		JP RESTARTUPD
+     206/    6133 :                     
+     207/    6133 :                     ;ÇõïéÑ àá èêéòàÇÄãúôàäÄ
+     208/    6133 : 21 00 00            KENTER4		LD HL,0
+     209/    6136 : E5                  		PUSH HL
+     210/    6137 : C3 2F 3D            		JP 0X3D2F
+     211/    613A :                     
+     212/    613A : DD 4E 12            UPDOWN		LD C,(IX+0X12)
+     213/    613D : DD 46 13            		LD B,(IX+0X13)
+     214/    6140 : CD 0D 62            		CALL RVERT
+     215/    6143 : FD CB 37 DE         		SET 3,(IY+55)
+     216/    6147 : FD CB 37 5E         UPD04		BIT 3,(IY+55)
+     217/    614B : 28 04               		JR Z,UPD02
+     218/    614D : FD CB 37 9E         		RES 3,(IY+55)
+     219/    6151 : FB                  UPD02		EI
+     220/    6152 : 76                  		HALT
+     221/    6153 : F3                  		DI
+     222/    6154 : FD CB 01 6E         		BIT 5,(IY+1)
+     223/    6158 : 28 ED               		JR Z,UPD04
+     224/    615A : FD 7E CE            		LD A,(IY-0X32)
+     225/    615D : FD CB 01 AE         		RES 5,(IY+1)
+     226/    6161 : FE 0A               		CP 0X0A
+     227/    6163 : 20 09               		JR NZ,UPD01
+     228/    6165 : CD 8E 61            		CALL DOWN
+     229/    6168 : FD CB 37 DE         		SET 3,(IY+55)
+     230/    616C : 18 E3               		JR UPD02
+     231/    616E :                     
+     232/    616E : FE 0B               UPD01		CP 0X0B
+     233/    6170 : 20 09               		JR NZ,UPD03
+     234/    6172 : CD D6 61            		CALL UP
+     235/    6175 : FD CB 37 DE         		SET 3,(IY+55)
+     236/    6179 : 18 D6               		JR UPD02
+     237/    617B :                     
+     238/    617B : FD CB 30 BE         UPD03		RES 7,(IY+48)
+     239/    617F : DD 71 12            		LD (IX+0X12),C
+     240/    6182 : DD 70 13            		LD (IX+0X13),B
+     241/    6185 : F5                  		PUSH AF
+     242/    6186 : DD 7E 04            		LD A,(IX+4)
+     243/    6189 : CD 25 62            		CALL WYDELK
+     244/    618C : F1                  		POP AF
+     245/    618D : C9                  		RET
+     246/    618E :                     
+     247/    618E : DD 6E 10            DOWN		LD L,(IX+0X10)
+     248/    6191 : DD 66 11            		LD H,(IX+0X11)
+     249/    6194 : 7C                  		LD A,H
+     250/    6195 : B5                  		OR L
+     251/    6196 : C8                  		RET Z
+     252/    6197 : 37                  		SCF
+     253/    6198 : ED 42               		SBC HL,BC
+     254/    619A : C8                  		RET Z
+     255/    619B : 03                  		INC BC
+     256/    619C : DD 7E 02            		LD A,(IX+2)
+     257/    619F : D6 03               		SUB 3
+     258/    61A1 : DD BE 0F            		CP (IX+0X0F)
+     259/    61A4 : 28 16               		JR Z,DOWN1
+     260/    61A6 : DD 34 0F            		INC (IX+0X0F)
+ AS V1.42 Beta [Bld 78] - source file flasher.a80 - page 10 - 1/17/2011 21:30:41
+
+
+     261/    61A9 : DD 7E 04            		LD A,(IX+4)
+     262/    61AC : CD 25 62            		CALL WYDELK
+     263/    61AF : 11 20 00            		LD DE,0X20
+     264/    61B2 : 19                  		ADD HL,DE
+     265/    61B3 : 22 27 62            		LD (ADRAT+1),HL
+     266/    61B6 : DD 7E 05            		LD A,(IX+5)
+     267/    61B9 : C3 25 62            		JP WYDELK
+     268/    61BC :                     
+     269/    61BC : DD 7E 00            DOWN1		LD A,(IX)
+     270/    61BF : 87                  		ADD A,A
+     271/    61C0 : 87                  		ADD A,A
+     272/    61C1 : 87                  		ADD A,A
+     273/    61C2 : 3C                  		INC A
+     274/    61C3 : 67                  		LD H,A
+     275/    61C4 : DD 7E 01            		LD A,(IX+1)
+     276/    61C7 : DD 86 02            		ADD A,(IX+2)
+     277/    61CA : D6 02               		SUB 2
+     278/    61CC : 87                  		ADD A,A
+     279/    61CD : 87                  		ADD A,A
+     280/    61CE : 87                  		ADD A,A
+     281/    61CF : 6F                  		LD L,A
+     282/    61D0 : 22 73 71            		LD (ADRSTR+1),HL
+     283/    61D3 : C3 A6 6F            		JP SCRUP
+     284/    61D6 :                     
+     285/    61D6 : 78                  UP		LD A,B
+     286/    61D7 : B1                  		OR C
+     287/    61D8 : C8                  		RET Z
+     288/    61D9 : 0B                  		DEC BC
+     289/    61DA : DD 7E 0F            		LD A,(IX+0X0F)
+     290/    61DD : A7                  		AND A
+     291/    61DE : 28 17               		JR Z,UP1
+     292/    61E0 : DD 35 0F            		DEC (IX+0X0F)
+     293/    61E3 : DD 7E 04            		LD A,(IX+4)
+     294/    61E6 : CD 25 62            		CALL WYDELK
+     295/    61E9 : A7                  		AND A
+     296/    61EA : 11 20 00            		LD DE,0X20
+     297/    61ED : ED 52               		SBC HL,DE
+     298/    61EF : 22 27 62            		LD (ADRAT+1),HL
+     299/    61F2 : DD 7E 05            		LD A,(IX+5)
+     300/    61F5 : 18 2E               		JR WYDELK
+     301/    61F7 :                     
+     302/    61F7 : DD 7E 00            UP1		LD A,(IX)
+     303/    61FA : 87                  		ADD A,A
+     304/    61FB : 87                  		ADD A,A
+     305/    61FC : 87                  		ADD A,A
+     306/    61FD : 3C                  		INC A
+     307/    61FE : 67                  		LD H,A
+     308/    61FF : DD 7E 01            		LD A,(IX+1)
+     309/    6202 : 3C                  		INC A
+     310/    6203 : 87                  		ADD A,A
+     311/    6204 : 87                  		ADD A,A
+     312/    6205 : 87                  		ADD A,A
+     313/    6206 : 6F                  		LD L,A
+     314/    6207 : 22 73 71            		LD (ADRSTR+1),HL
+     315/    620A : C3 CE 6F            		JP SCRDN
+     316/    620D :                     
+     317/    620D : D5                  RVERT		PUSH DE
+     318/    620E : DD 66 00            		LD H,(IX)
+     319/    6211 : DD 6E 01            		LD L,(IX+1)
+     320/    6214 : DD 7E 0F            		LD A,(IX+0X0F)
+ AS V1.42 Beta [Bld 78] - source file flasher.a80 - page 11 - 1/17/2011 21:30:41
+
+
+     321/    6217 : 85                  		ADD A,L
+     322/    6218 : 6F                  		LD L,A
+     323/    6219 : 2C                  		INC L
+     324/    621A : CD AA 70            		CALL ADRDIS
+     325/    621D : EB                  		EX DE,HL
+     326/    621E : 22 27 62            		LD (ADRAT+1),HL
+     327/    6221 : DD 7E 05            		LD A,(IX+5)
+     328/    6224 : D1                  		POP DE
+     329/    6225 : C5                  WYDELK		PUSH BC
+     330/    6226 : 21 00 00            ADRAT		LD HL,0
+     331/    6229 : E5                  		PUSH HL
+     332/    622A : DD 46 03            		LD B,(IX+3)
+     333/    622D : 77                  		LD (HL),A
+     334/    622E : 23                  		INC HL
+     335/    622F : 10 FC               		DJNZ $-2
+     336/    6231 : E1                  		POP HL
+     337/    6232 : C1                  		POP BC
+     338/    6233 : C9                  		RET
+     339/    6234 :                     
+     340/    6234 : 3E 80               FINDNGS		LD A,0X80
+     341/    6236 : D3 33               		OUT (GSCTR),A
+     342/    6238 :                     
+     343/    6238 :                     ;DS 3:LD A,0X55:OUT (GSDAT),A
+     344/    6238 :                     ;OUT (GSCOM),A:CALL WC:LD A,0XAA
+     345/    6238 :                     ;OUT (GSDAT),A,(GSCOM),A:XOR A
+     346/    6238 :                     ;OUT (GSDAT),A:LD A,0X1D
+     347/    6238 :                     ;OUT (GSCOM),A:CALL WC
+     348/    6238 :                     ;IN A,(GSDAT)
+     349/    6238 :                     
+     350/    6238 : FB                  		EI
+     351/    6239 : 76                  		HALT
+     352/    623A : 76                  		HALT
+     353/    623B : F3                  		DI
+     354/    623C : 3E F3               		LD A,0XF3
+     355/    623E : D3 BB               		OUT (GSCOM),A
+     356/    6240 : FB                  		EI
+     357/    6241 : 76                  		HALT
+     358/    6242 : 76                  		HALT
+     359/    6243 : F3                  		DI
+     360/    6244 : 06 30               		LD B,0X30
+     361/    6246 : FB                  FNDNGS1		EI
+     362/    6247 : 76                  		HALT
+     363/    6248 : F3                  		DI
+     364/    6249 : 05                  		DEC B
+     365/    624A : 28 12               		JR Z,FNDNGS2
+     366/    624C : DB BB               		IN A,(GSCOM)
+     367/    624E : 1F                  		RRA
+     368/    624F : 38 F5               		JR C,FNDNGS1
+     369/    6251 : 1E 0F               		LD E,GSCFG0
+     370/    6253 : CD 61 62            		CALL INPORT
+     371/    6256 : 3C                  		INC A
+     372/    6257 : 28 02               		JR Z,NONGS
+     373/    6259 : AF                  		XOR A
+     374/    625A : C9                  		RET
+     375/    625B :                     
+     376/    625B : AF                  NONGS		XOR A
+     377/    625C : 3C                  		INC A
+     378/    625D : C9                  		RET
+     379/    625E :                     
+     380/    625E : AF                  FNDNGS2		XOR A
+ AS V1.42 Beta [Bld 78] - source file flasher.a80 - page 12 - 1/17/2011 21:30:41
+
+
+     381/    625F : 3D                  		DEC A
+     382/    6260 : C9                  		RET
+     383/    6261 :                     
+     384/    6261 : 7B                  INPORT		LD A,E
+     385/    6262 : D3 B3               		OUT (GSDAT),A
+     386/    6264 : 3E 11               		LD A,0X11
+     387/    6266 : D3 BB               		OUT (GSCOM),A
+     388/    6268 : CD D3 62            		CALL WC
+     389/    626B : DB B3               		IN A,(GSDAT)
+     390/    626D : C9                  		RET
+     391/    626E :                     
+     392/    626E : CD 34 62            INITLOADER	CALL FINDNGS
+     393/    6271 : A7                  		AND A
+     394/    6272 : C0                  		RET NZ
+     395/    6273 : 01 B3 00            		LD BC,GSDAT
+     396/    6276 : 21 00 58            		LD HL,0X5800
+     397/    6279 : 11 69 01            		LD DE,MINILDE-MINILD
+     398/    627C : ED 59               		OUT (C),E
+     399/    627E : 3E 14               		LD A,0X14
+     400/    6280 : D3 BB               		OUT (GSCOM),A
+     401/    6282 : CD D3 62            		CALL WC
+     402/    6285 : ED 51               		OUT (C),D
+     403/    6287 : CD D9 62            		CALL WD
+     404/    628A : ED 69               		OUT (C),L
+     405/    628C : CD D9 62            		CALL WD
+     406/    628F : ED 61               		OUT (C),H
+     407/    6291 : CD D9 62            		CALL WD
+     408/    6294 : 21 E5 62            		LD HL,MINISTR
+     409/    6297 : ED A3               OUTCOD		OUTI
+     410/    6299 : CD D9 62            		CALL WD
+     411/    629C : 1B                  		DEC DE
+     412/    629D : 7A                  		LD A,D
+     413/    629E : B3                  		OR E
+     414/    629F : 20 F6               		JR NZ,OUTCOD
+     415/    62A1 : 21 00 58            		LD HL,0X5800
+     416/    62A4 : ED 69               		OUT (C),L
+     417/    62A6 : 3E 13               		LD A,0X13
+     418/    62A8 : D3 BB               		OUT (GSCOM),A
+     419/    62AA : CD D3 62            		CALL WC
+     420/    62AD : ED 61               		OUT (C),H
+     421/    62AF : CD D9 62            		CALL WD
+     422/    62B2 : 11 0A 09            		LD DE,NGS_LOADERE-NGS_LOADER
+     423/    62B5 : ED 59               		OUT (C),E
+     424/    62B7 : CD D9 62            		CALL WD
+     425/    62BA : ED 51               		OUT (C),D
+     426/    62BC : CD D9 62            		CALL WD
+     427/    62BF : 21 27 79            		LD HL,NGS_LOADER
+     428/    62C2 : ED A3               OUTCOD1		OUTI
+     429/    62C4 : CD D9 62            		CALL WD
+     430/    62C7 : 1B                  		DEC DE
+     431/    62C8 : 7A                  		LD A,D
+     432/    62C9 : B3                  		OR E
+     433/    62CA : 20 F6               		JR NZ,OUTCOD1
+     434/    62CC : FB                  		EI
+     435/    62CD : 76                  		HALT
+     436/    62CE : 76                  		HALT
+     437/    62CF : 76                  		HALT
+     438/    62D0 : F3                  		DI
+     439/    62D1 : AF                  		XOR A
+     440/    62D2 : C9                  		RET
+ AS V1.42 Beta [Bld 78] - source file flasher.a80 - page 13 - 1/17/2011 21:30:41
+
+
+     441/    62D3 :                     
+     442/    62D3 : DB BB               WC		IN A,(GSCOM)
+     443/    62D5 : 1F                  		RRA
+     444/    62D6 : 38 FB               		JR C,$-3
+     445/    62D8 : C9                  		RET
+     446/    62D9 :                     
+     447/    62D9 : DB BB               WD		IN A,(GSCOM)
+     448/    62DB : 17                  		RLA
+     449/    62DC : 38 FB               		JR C,$-3
+     450/    62DE : C9                  		RET
+     451/    62DF :                     
+     452/    62DF : DB BB               WN		IN A,(GSCOM)
+     453/    62E1 : 17                  		RLA
+     454/    62E2 : 30 FB               		JR NC,$-3
+     455/    62E4 : C9                  		RET
+     456/    62E5 :                     
+     457/    62E5 :                     MINISTR
+     458/    5800 :                     		PHASE ADR_PROGR
+     459/    5800 : F3                  MINILD		DI
+     460/    5801 : DB 02               		IN A,(ZXDATRD)
+     461/    5803 : D3 05               		OUT (CLRCBIT),A
+     462/    5805 : 3E 11               		LD A,0X11
+     463/    5807 : D3 0F               		OUT (GSCFG0),A			;éíäãûóàãà èáì à Çäãûóàãà óÄëíéíñ 12åÉñ
+     464/    5809 : 21 00 00            		LD HL,0				;ÄÑêÖë áÄÉêìáäà äéÑÄ ëé ëèÖäÄ
+     465/    580C : AF                  		XOR A
+     466/    580D : D3 00               		OUT (MPAG),A			;ëíêÄçàñÄ 0
+     467/    580F : 01 02 00            		LD BC,ZXDATRD
+     468/    5812 : DB 04               		IN A,(ZXSTAT)
+     469/    5814 : 17                  		RLA
+     470/    5815 : 30 FB               		JR NC,$-3
+     471/    5817 : ED 58               		IN E,(C)
+     472/    5819 : DB 04               		IN A,(ZXSTAT)
+     473/    581B : 17                  		RLA
+     474/    581C : 30 FB               		JR NC,$-3
+     475/    581E : ED 50               		IN D,(C)			;DE=ÑãàçÄ äéÑÄ Ñãü áÄÉêìáäà Ç çÉë
+     476/    5820 : DB 04               MINILD1		IN A,(ZXSTAT)
+     477/    5822 : 17                  		RLA
+     478/    5823 : 30 FB               		JR NC,$-3
+     479/    5825 : ED A2               		INI
+     480/    5827 : 1B                  		DEC DE
+     481/    5828 : 7A                  		LD A,D
+     482/    5829 : B3                  		OR E
+     483/    582A : 20 F4               		JR NZ,MINILD1
+     484/    582C : 21 00 58            		LD HL,MINILD
+     485/    582F : 36 C3               		LD (HL),0XC3
+     486/    5831 : 23                  		INC HL
+     487/    5832 : 36 42               		LD (HL),LOW (PROGR)
+     488/    5834 : 23                  		INC HL
+     489/    5835 : 36 58               		LD (HL),HIGH (PROGR)
+     490/    5837 : 3E 11               		LD A,0X11
+     491/    5839 : D3 0F               		OUT (GSCFG0),A
+     492/    583B : 31 80 40            		LD SP,0X4080
+     493/    583E : AF                  		XOR A
+     494/    583F : C3 45 00            		JP 0X0045
+     495/    5842 :                     
+     496/    5842 : F3                  PROGR		DI
+     497/    5843 : 3E 02               		LD A,2
+     498/    5845 : D3 00               		OUT (MPAG),A
+     499/    5847 : 3E 11               		LD A,0X11
+     500/    5849 : D3 0F               		OUT (GSCFG0),A
+ AS V1.42 Beta [Bld 78] - source file flasher.a80 - page 14 - 1/17/2011 21:30:41
+
+
+     501/    584B : 21 00 80            		LD HL,0X8000
+     502/    584E : 7E                  		LD A,(HL)
+     503/    584F : 0F                  		RRCA
+     504/    5850 : 0F                  		RRCA
+     505/    5851 : 0F                  		RRCA
+     506/    5852 : 0F                  		RRCA
+     507/    5853 : E6 07               		AND 7
+     508/    5855 : 47                  		LD B,A
+     509/    5856 : 11 08 00            		LD DE,8
+     510/    5859 : 19                  		ADD HL,DE
+     511/    585A : 3E 02               PROG0		LD A,2
+     512/    585C : D3 00               		OUT (MPAG),A
+     513/    585E : C5                  		PUSH BC
+     514/    585F : 11 10 58            		LD DE,MINILD+0X10
+     515/    5862 : 01 10 00            		LD BC,0X10
+     516/    5865 : ED B0               		LDIR
+     517/    5867 : E5                  		PUSH HL
+     518/    5868 : CD 84 58            		CALL PROGR0
+     519/    586B : E1                  		POP HL
+     520/    586C : C1                  		POP BC
+     521/    586D : 10 EB               		DJNZ PROG0
+     522/    586F : 3E 99               		LD A,0X99
+     523/    5871 : D3 03               		OUT (ZXDATWR),A
+     524/    5873 : AF                  		XOR A
+     525/    5874 : D3 00               		OUT (MPAG),A
+     526/    5876 : 3E 31               		LD A,0X31
+     527/    5878 : 21 D3 80            		LD HL,0X80D3
+     528/    587B : D3 0F               		OUT (GSCFG0),A
+     529/    587D : 22 FE FF            		LD (0XFFFE),HL
+     530/    5880 : AF                  		XOR A
+     531/    5881 : C3 FE FF            		JP 0XFFFE
+     532/    5884 :                     
+     533/    5884 : 2A 12 58            PROGR0		LD HL,(MINILD+0X12)
+     534/    5887 : 7D                  		LD A,L
+     535/    5888 : E6 7F               		AND 0X7F
+     536/    588A : ED 5B 11 58         		LD DE,(MINILD+0X11)
+     537/    588E : 57                  		LD D,A
+     538/    588F : 29                  		ADD HL,HL
+     539/    5890 : 3E 02               		LD A,2
+     540/    5892 : 84                  		ADD A,H
+     541/    5893 : FD 67               		LD IYH,A;HY,A
+     542/    5895 : 21 00 00            		LD HL,0
+     543/    5898 : 3A 10 58            		LD A,(MINILD+0X10)
+     544/    589B : E6 07               		AND 7
+     545/    589D : DD 21 00 80         		LD IX,0X8000
+     546/    58A1 : DD 19               		ADD IX,DE
+     547/    58A3 : CD E5 58            		CALL SET_ADR
+     548/    58A6 : CD EC 58            		CALL ERA_BLK
+     549/    58A9 : ED 5B 14 58         		LD DE,(MINILD+0X14)
+     550/    58AD : CD C2 58            		CALL PROGR1
+     551/    58B0 : 3A 10 58            		LD A,(MINILD+0X10)
+     552/    58B3 : E6 07               		AND 7
+     553/    58B5 : 21 F8 FF            		LD HL,0XFFF8
+     554/    58B8 : CD E5 58            		CALL SET_ADR
+     555/    58BB : DD 21 18 58         		LD IX,MINILD+0X18
+     556/    58BF : 11 08 00            		LD DE,8
+     557/    58C2 :                     
+     558/    58C2 : FD 7C               PROGR1		LD A,IYH
+     559/    58C4 : D3 00               		OUT (MPAG),A
+     560/    58C6 : DD 7E 00            		LD A,(IX)
+ AS V1.42 Beta [Bld 78] - source file flasher.a80 - page 15 - 1/17/2011 21:30:41
+
+
+     561/    58C9 : DD 23               		INC IX
+     562/    58CB : D5                  		PUSH DE
+     563/    58CC : CD 2D 59            		CALL WR_BYTE
+     564/    58CF : DD 7C               		LD A,IXH
+     565/    58D1 : DD B5               		OR IXL
+     566/    58D3 : 20 06               		JR NZ,PROGR2
+     567/    58D5 : FD 24               		INC IYH
+     568/    58D7 : DD 21 00 80         		LD IX,0X8000
+     569/    58DB : D1                  PROGR2		POP DE
+     570/    58DC : 1B                  		DEC DE
+     571/    58DD : 7A                  		LD A,D
+     572/    58DE : B3                  		OR E
+     573/    58DF : 20 E1               		JR NZ,PROGR1
+     574/    58E1 : C9                  		RET
+     575/    58E2 :                     
+     576/    58E2 :                     		include flasher_ngs.a80
+(1)    1/    58E2 :                     
+(1)    2/    58E2 :                     ;îãÖòÖê Ñãü çÉë
+(1)    3/    58E2 :                     
+(1)    4/    58E2 : 00                  LOW		DB 0		;Åàíõ 7-0 ÄÑêÖëÄ
+(1)    5/    58E3 : 00                  MIDDLE		DB 0		;Åàíõ 15-8 ÄÑêÖëÄ
+(1)    6/    58E4 : 00                  HIGH		DB 0		;Åàíõ 23-16 ÄÑêÖëÄ
+(1)    7/    58E5 :                     
+(1)    8/    58E5 :                     ;ìëíÄçéÇäÄ ÄÑêÖëÄ áÄèàëà
+(1)    9/    58E5 :                     ;HL-åãÄÑòàÖ 16 Åàí ÄÑêÖë
+(1)   10/    58E5 :                     ;A-ëíÄêòàÖ 8 Åàí ÄÑêÖëÄ
+(1)   11/    58E5 : 22 E2 58            SET_ADR		LD (LOW),HL
+(1)   12/    58E8 : 32 E4 58            		LD (HIGH),A
+(1)   13/    58EB : C9                  		RET
+(1)   14/    58EC :                     
+(1)   15/    58EC :                     ;ëíàêÄçàÖ ÅãéäÄ 64ä
+(1)   16/    58EC :                     ;çÄ ÇïéÑÖ:
+(1)   17/    58EC :                     ;A-çéåÖê ÅãéäÄ Ñãü ëíàêÄçàü (0...7)
+(1)   18/    58EC : 47                  ERA_BLK		LD B,A
+(1)   19/    58ED : AF                  		XOR A
+(1)   20/    58EE : D3 00               		OUT (MPAG),A
+(1)   21/    58F0 : 3E 10               		LD A,0X10
+(1)   22/    58F2 : D3 0F               		OUT (GSCFG0),A
+(1)   23/    58F4 :                     
+(1)   24/    58F4 : 3E AA               		LD A,0XAA
+(1)   25/    58F6 : 32 55 85            		LD (0X0555+0X8000),A	;555,AA
+(1)   26/    58F9 : 3E 55               		LD A,0X55
+(1)   27/    58FB : 32 AA 82            		LD (0X02AA+0X8000),A	;2AA,55
+(1)   28/    58FE : 3E 80               		LD A,0X80
+(1)   29/    5900 : 32 55 85            		LD (0X0555+0X8000),A	;555,80
+(1)   30/    5903 : 3E AA               		LD A,0XAA
+(1)   31/    5905 : 32 55 85            		LD (0X0555+0X8000),A	;555,AA
+(1)   32/    5908 : 3E 55               		LD A,0X55
+(1)   33/    590A : 32 AA 82            		LD (0X02AA+0X8000),A	;2AA,55
+(1)   34/    590D :                     
+(1)   35/    590D : 78                  		LD A,B
+(1)   36/    590E : E6 07               		AND 7
+(1)   37/    5910 : 87                  		ADD A,A
+(1)   38/    5911 : D3 00               		OUT (MPAG),A
+(1)   39/    5913 :                     
+(1)   40/    5913 : 3E 30               		LD A,0X30
+(1)   41/    5915 : 32 00 80            		LD (0X8000),A		;BA,30
+(1)   42/    5918 :                     
+(1)   43/    5918 :                     ;50uS pause (@12MHz)
+(1)   44/    5918 : 06 32               		LD B,50
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(flasher_ngs.a80) - page 16 - 1/17/2011 21:30:41
+
+
+(1)   45/    591A : 10 FE               		DJNZ $
+(1)   46/    591C :                     
+(1)   47/    591C : 3A 00 80            WCMP		LD A,(0X8000)
+(1)   48/    591F : 47                  		LD B,A
+(1)   49/    5920 : 3A 00 80            		LD A,(0X8000)
+(1)   50/    5923 : A8                  		XOR B
+(1)   51/    5924 : E6 40               		AND 0X40
+(1)   52/    5926 : 20 F4               		JR NZ,WCMP
+(1)   53/    5928 : 3E 11               		LD A,0X11
+(1)   54/    592A : D3 0F               		OUT (GSCFG0),A
+(1)   55/    592C : C9                  		RET
+(1)   56/    592D :                     
+(1)   57/    592D :                     ;áÄèàëú ÅÄâíÄ Çé îãÖòú
+(1)   58/    592D : 47                  WR_BYTE		LD B,A
+(1)   59/    592E : AF                  		XOR A
+(1)   60/    592F : D3 00               		OUT (MPAG),A
+(1)   61/    5931 : 3E 10               		LD A,0X10
+(1)   62/    5933 : D3 0F               		OUT (GSCFG0),A
+(1)   63/    5935 :                     
+(1)   64/    5935 : 21 E2 58            		LD HL,LOW
+(1)   65/    5938 : 5E                  		LD E,(HL)
+(1)   66/    5939 : 23                  		INC HL
+(1)   67/    593A : 56                  		LD D,(HL)
+(1)   68/    593B : 23                  		INC HL
+(1)   69/    593C : 4E                  		LD C,(HL)
+(1)   70/    593D :                     
+(1)   71/    593D : 3E AA               		LD A,0XAA
+(1)   72/    593F : 32 55 85            		LD (0X0555+0X8000),A	;555,AA
+(1)   73/    5942 : 3E 55               		LD A,0X55
+(1)   74/    5944 : 32 AA 82            		LD (0X02AA+0X8000),A	;2AA,55
+(1)   75/    5947 : 3E A0               		LD A,0XA0
+(1)   76/    5949 : 32 55 85            		LD (0X0555+0X8000),A	;555,A0
+(1)   77/    594C :                     
+(1)   78/    594C : 7A                  		LD A,D
+(1)   79/    594D : 17                  		RLA
+(1)   80/    594E : 79                  		LD A,C
+(1)   81/    594F : 8F                  		ADC A,A
+(1)   82/    5950 : E6 0F               		AND 0X0F
+(1)   83/    5952 : D3 00               		OUT (MPAG),A
+(1)   84/    5954 :                     
+(1)   85/    5954 : 62                  		LD H,D
+(1)   86/    5955 : 6B                  		LD L,E
+(1)   87/    5956 : CB FC               		SET 7,H
+(1)   88/    5958 :                     
+(1)   89/    5958 : 70                  		LD (HL),B
+(1)   90/    5959 : 13                  		INC DE
+(1)   91/    595A : 7A                  		LD A,D
+(1)   92/    595B : B3                  		OR E
+(1)   93/    595C : 20 01               		JR NZ,$+3
+(1)   94/    595E : 0C                  		INC C
+(1)   95/    595F : 21 E2 58            		LD HL,LOW
+(1)   96/    5962 : 73                  		LD (HL),E
+(1)   97/    5963 : 23                  		INC HL
+(1)   98/    5964 : 72                  		LD (HL),D
+(1)   99/    5965 : 23                  		INC HL
+(1)  100/    5966 : 71                  		LD (HL),C
+(1)  101/    5967 : 18 B3               		JR WCMP
+(1)  102/    5969 :                     
+     577/    5969 :                     MINILDE
+     578/    644E :                     		DEPHASE
+ AS V1.42 Beta [Bld 78] - source file flasher.a80 - page 17 - 1/17/2011 21:30:41
+
+
+     579/    644E :                     
+     580/    644E :                     CHARS		binclude altstd.bin
+     581/    6C4E :                     		include window.a80
+(1)    1/    6C4E :                     
+(1)    2/    6C4E :                     ;LAST UPDATE: 08.12.2009 savelij
+(1)    3/    6C4E :                     
+(1)    4/    6C4E : FB                  KEYS	EI
+(1)    5/    6C4F : 76                  	HALT
+(1)    6/    6C50 : F3                  	DI
+(1)    7/    6C51 : FD CB 01 6E         	BIT 5,(IY+1)
+(1)    8/    6C55 : 28 F7               	JR Z,KEYS
+(1)    9/    6C57 : FD 7E CE            	LD A,(IY-0X32)
+(1)   10/    6C5A : FD CB 01 AE         	RES 5,(IY+1)
+(1)   11/    6C5E : C9                  	RET
+(1)   12/    6C5F :                     
+(1)   13/    6C5F : F5                  VCURS	PUSH AF
+(1)   14/    6C60 : 3A CE 6D            	LD A,(CURSOR)
+(1)   15/    6C63 : 47                  	LD B,A
+(1)   16/    6C64 : 87                  	ADD A,A
+(1)   17/    6C65 : 80                  	ADD A,B
+(1)   18/    6C66 : 87                  	ADD A,A
+(1)   19/    6C67 : 47                  	LD B,A
+(1)   20/    6C68 : 3A A3 6D            	LD A,(BUFFE+2)
+(1)   21/    6C6B : 80                  	ADD A,B
+(1)   22/    6C6C : F5                  	PUSH AF
+(1)   23/    6C6D : 11 00 B8            	LD DE,BUFTSC
+(1)   24/    6C70 : 2A A2 6D            	LD HL,(BUFFE+1)
+(1)   25/    6C73 : 26 00               	LD H,0
+(1)   26/    6C75 : 29                  	ADD HL,HL
+(1)   27/    6C76 : 19                  	ADD HL,DE
+(1)   28/    6C77 : 5E                  	LD E,(HL)
+(1)   29/    6C78 : 23                  	INC HL
+(1)   30/    6C79 : 56                  	LD D,(HL)
+(1)   31/    6C7A : 0F                  	RRCA
+(1)   32/    6C7B : 0F                  	RRCA
+(1)   33/    6C7C : 0F                  	RRCA
+(1)   34/    6C7D : E6 1F               	AND 0X1F
+(1)   35/    6C7F : 83                  	ADD A,E
+(1)   36/    6C80 : 6F                  	LD L,A
+(1)   37/    6C81 : 62                  	LD H,D
+(1)   38/    6C82 : F1                  	POP AF
+(1)   39/    6C83 : E6 07               	AND 7
+(1)   40/    6C85 : 47                  	LD B,A
+(1)   41/    6C86 : 3E 80               	LD A,0X80
+(1)   42/    6C88 : 28 03               	JR Z,$+5
+(1)   43/    6C8A : 0F                  	RRCA
+(1)   44/    6C8B : 10 FD               	DJNZ $-1
+(1)   45/    6C8D : 06 08               	LD B,8
+(1)   46/    6C8F : 4F                  	LD C,A
+(1)   47/    6C90 : 79                  	LD A,C
+(1)   48/    6C91 : AE                  	XOR (HL)
+(1)   49/    6C92 : 77                  	LD (HL),A
+(1)   50/    6C93 : 24                  	INC H
+(1)   51/    6C94 : 10 FA               	DJNZ $-4
+(1)   52/    6C96 : F1                  	POP AF
+(1)   53/    6C97 : C9                  	RET
+(1)   54/    6C98 :                     
+(1)   55/    6C98 : 3E 0F               ZADER	LD A,15
+(1)   56/    6C9A : 3D                  	DEC A
+(1)   57/    6C9B : 32 99 6C            	LD (ZADER+1),A
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(window.a80) - page 18 - 1/17/2011 21:30:41
+
+
+(1)   58/    6C9E : C0                  	RET NZ
+(1)   59/    6C9F : 3E 0F               	LD A,15
+(1)   60/    6CA1 : 32 99 6C            	LD (ZADER+1),A
+(1)   61/    6CA4 : C3 5F 6C            	JP VCURS
+(1)   62/    6CA7 :                     
+(1)   63/    6CA7 : 22 A2 6D            INPUTT	LD (BUFFE+1),HL
+(1)   64/    6CAA : 32 D0 6D            	LD (LENGHT),A
+(1)   65/    6CAD : 6F                  	LD L,A
+(1)   66/    6CAE : 3C                  	INC A
+(1)   67/    6CAF : 32 DC 6D            	LD (PRIBUF+1),A
+(1)   68/    6CB2 : E5                  	PUSH HL
+(1)   69/    6CB3 : AF                  	XOR A
+(1)   70/    6CB4 : 21 A4 6D            	LD HL,BUFFER
+(1)   71/    6CB7 : 5D                  	LD E,L
+(1)   72/    6CB8 : 54                  	LD D,H
+(1)   73/    6CB9 : 13                  	INC DE
+(1)   74/    6CBA : 01 27 00            	LD BC,39
+(1)   75/    6CBD : 77                  	LD (HL),A
+(1)   76/    6CBE : ED B0               	LDIR
+(1)   77/    6CC0 : FD CB 30 DE         	SET 3,(IY+48)
+(1)   78/    6CC4 : E1                  	POP HL
+(1)   79/    6CC5 : 32 CE 6D            	LD (CURSOR),A
+(1)   80/    6CC8 : 67                  	LD H,A
+(1)   81/    6CC9 : 11 A4 6D            	LD DE,BUFFER
+(1)   82/    6CCC : 19                  	ADD HL,DE
+(1)   83/    6CCD : 22 CC 6D            	LD (BUFEND),HL
+(1)   84/    6CD0 : 3A D0 6D            	LD A,(LENGHT)
+(1)   85/    6CD3 : 47                  	LD B,A
+(1)   86/    6CD4 : 21 A4 6D            	LD HL,BUFFER
+(1)   87/    6CD7 : 36 20               CLEAR	LD (HL),0X20
+(1)   88/    6CD9 : 23                  	INC HL
+(1)   89/    6CDA : 10 FB               	DJNZ CLEAR
+(1)   90/    6CDC : 21 A1 6D            ACCEPT	LD HL,BUFFE
+(1)   91/    6CDF : CD DB 6D            	CALL PRIBUF
+(1)   92/    6CE2 : CD 5F 6C            GETKEY	CALL VCURS
+(1)   93/    6CE5 : CD 4E 6C            	CALL KEYS
+(1)   94/    6CE8 : CD 5F 6C            	CALL VCURS
+(1)   95/    6CEB : FE 07               	CP 7
+(1)   96/    6CED : C8                  	RET Z
+(1)   97/    6CEE :                     ;	CP 6
+(1)   98/    6CEE :                     ;	JR C,GETKEY
+(1)   99/    6CEE : FE 0D               	CP 0X0D
+(1)  100/    6CF0 : CA 8C 6D            	JP Z,ENTER
+(1)  101/    6CF3 : FE 08               	CP 8
+(1)  102/    6CF5 : 28 3A               	JR Z,CRLEFT
+(1)  103/    6CF7 : FE 09               	CP 9
+(1)  104/    6CF9 : 28 43               	JR Z,CRRIGT
+(1)  105/    6CFB : FE 0C               	CP 0X0C
+(1)  106/    6CFD : 28 51               	JR Z,DELETE
+(1)  107/    6CFF :                     ;	CP 0X0F
+(1)  108/    6CFF :                     ;	JP Z,INSOVR
+(1)  109/    6CFF : FE 06               	CP 0X06
+(1)  110/    6D01 : CA 81 6D            	JP Z,CAPSLK
+(1)  111/    6D04 : FE 21               	CP 0X21
+(1)  112/    6D06 : 38 DA               	JR C,GETKEY
+(1)  113/    6D08 : FE 80               	CP 0X80
+(1)  114/    6D0A : 30 D6               	JR NC,GETKEY
+(1)  115/    6D0C : 5F                  	LD E,A
+(1)  116/    6D0D : 3A CE 6D            	LD A,(CURSOR)
+(1)  117/    6D10 : 47                  	LD B,A
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(window.a80) - page 19 - 1/17/2011 21:30:41
+
+
+(1)  118/    6D11 : 3A D0 6D            	LD A,(LENGHT)
+(1)  119/    6D14 : 90                  	SUB B
+(1)  120/    6D15 : 28 CB               	JR Z,GETKEY
+(1)  121/    6D17 : 4F                  	LD C,A
+(1)  122/    6D18 : 78                  	LD A,B
+(1)  123/    6D19 : 3C                  	INC A
+(1)  124/    6D1A : 32 CE 6D            	LD (CURSOR),A
+(1)  125/    6D1D : 7B                  	LD A,E
+(1)  126/    6D1E : 2A CC 6D            	LD HL,(BUFEND)
+(1)  127/    6D21 : 54                  	LD D,H
+(1)  128/    6D22 : 5D                  	LD E,L
+(1)  129/    6D23 : FD CB 30 76         	BIT 6,(IY+48)
+(1)  130/    6D27 : 20 01               	JR NZ,$+3
+(1)  131/    6D29 : 2B                  	DEC HL
+(1)  132/    6D2A : 06 00               	LD B,0
+(1)  133/    6D2C : ED B8               	LDDR
+(1)  134/    6D2E : 12                  	LD (DE),A
+(1)  135/    6D2F : 18 AB               	JR ACCEPT
+(1)  136/    6D31 :                     
+(1)  137/    6D31 : 3A CE 6D            CRLEFT	LD A,(CURSOR)
+(1)  138/    6D34 : A7                  	AND A
+(1)  139/    6D35 : 28 AB               	JR Z,GETKEY
+(1)  140/    6D37 : 3D                  	DEC A
+(1)  141/    6D38 : 32 CE 6D            	LD (CURSOR),A
+(1)  142/    6D3B : C3 DC 6C            	JP ACCEPT
+(1)  143/    6D3E :                     
+(1)  144/    6D3E : 3A D0 6D            CRRIGT	LD A,(LENGHT)
+(1)  145/    6D41 : 4F                  	LD C,A
+(1)  146/    6D42 : 3A CE 6D            	LD A,(CURSOR)
+(1)  147/    6D45 : B9                  	CP C
+(1)  148/    6D46 : CA E2 6C            	JP Z,GETKEY
+(1)  149/    6D49 : 3C                  	INC A
+(1)  150/    6D4A : 32 CE 6D            	LD (CURSOR),A
+(1)  151/    6D4D : C3 DC 6C            	JP ACCEPT
+(1)  152/    6D50 : 3A CE 6D            DELETE	LD A,(CURSOR)
+(1)  153/    6D53 : A7                  	AND A
+(1)  154/    6D54 : CA E2 6C            	JP Z,GETKEY
+(1)  155/    6D57 : 5F                  	LD E,A
+(1)  156/    6D58 : 3A D0 6D            	LD A,(LENGHT)
+(1)  157/    6D5B : 93                  	SUB E
+(1)  158/    6D5C : 3C                  	INC A
+(1)  159/    6D5D : 4F                  	LD C,A
+(1)  160/    6D5E : 7B                  	LD A,E
+(1)  161/    6D5F : 3D                  	DEC A
+(1)  162/    6D60 : 32 CE 6D            	LD (CURSOR),A
+(1)  163/    6D63 : 21 A4 6D            	LD HL,BUFFER
+(1)  164/    6D66 : 16 00               	LD D,0
+(1)  165/    6D68 : 19                  	ADD HL,DE
+(1)  166/    6D69 : 54                  	LD D,H
+(1)  167/    6D6A : 5D                  	LD E,L
+(1)  168/    6D6B : 1B                  	DEC DE
+(1)  169/    6D6C : 06 00               	LD B,0
+(1)  170/    6D6E : ED B0               	LDIR
+(1)  171/    6D70 : 3E 20               	LD A,0X20
+(1)  172/    6D72 : 12                  	LD (DE),A
+(1)  173/    6D73 : C3 DC 6C            	JP ACCEPT
+(1)  174/    6D76 :                     
+(1)  175/    6D76 : 3E 40               INSOVR	LD A,0X40
+(1)  176/    6D78 : FD AE 30            	XOR (IY+48)
+(1)  177/    6D7B : FD 77 30            	LD (IY+48),A
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(window.a80) - page 20 - 1/17/2011 21:30:41
+
+
+(1)  178/    6D7E : C3 DC 6C            	JP ACCEPT
+(1)  179/    6D81 :                     
+(1)  180/    6D81 : 3E 08               CAPSLK	LD A,8
+(1)  181/    6D83 : FD AE 30            	XOR (IY+48)
+(1)  182/    6D86 : FD 77 30            	LD (IY+48),A
+(1)  183/    6D89 : C3 DC 6C            	JP ACCEPT
+(1)  184/    6D8C :                     
+(1)  185/    6D8C : 11 A4 6D            ENTER	LD DE,BUFFER
+(1)  186/    6D8F : 21 CB 6D            	LD HL,BUFEND-1
+(1)  187/    6D92 : 7E                  CLEAN	LD A,(HL)
+(1)  188/    6D93 : FE 21               	CP 0X21
+(1)  189/    6D95 : 30 05               	JR NC,ENDEDIT
+(1)  190/    6D97 : 36 00               	LD (HL),0
+(1)  191/    6D99 : 2B                  	DEC HL
+(1)  192/    6D9A : 18 F6               	JR CLEAN
+(1)  193/    6D9C :                     
+(1)  194/    6D9C : AF                  ENDEDIT	XOR A
+(1)  195/    6D9D : 21 A4 6D            	LD HL,BUFFER
+(1)  196/    6DA0 : C9                  	RET
+(1)  197/    6DA1 :                     
+(1)  198/    6DA1 : 16 00 00            BUFFE	DB 0X16,0,0
+(1)  199/    6DA4 :                     BUFFER	DS 40
+(1)  200/    6DCC : 00 00               BUFEND	DW 0
+(1)  201/    6DCE : 00                  CURSOR	DB 0
+(1)  202/    6DCF : 00                  LETTER	DB 0
+(1)  203/    6DD0 : 00                  LENGHT	DB 0
+(1)  204/    6DD1 :                     
+(1)  205/    6DD1 : 11 A4 6D            MOVI	LD DE,BUFFER
+(1)  206/    6DD4 : EB                  	EX DE,HL
+(1)  207/    6DD5 : 06 00               	LD B,0
+(1)  208/    6DD7 : ED B0               	LDIR
+(1)  209/    6DD9 : EB                  	EX DE,HL
+(1)  210/    6DDA : C9                  	RET
+(1)  211/    6DDB :                     
+(1)  212/    6DDB : 06 00               PRIBUF	LD B,0
+(1)  213/    6DDD : 7E                  	LD A,(HL)
+(1)  214/    6DDE : 23                  	INC HL
+(1)  215/    6DDF : C5                  	PUSH BC
+(1)  216/    6DE0 : CD 01 71            	CALL PRINT
+(1)  217/    6DE3 : C1                  	POP BC
+(1)  218/    6DE4 : 10 F7               	DJNZ PRIBUF+2
+(1)  219/    6DE6 : C9                  	RET
+(1)  220/    6DE7 :                     
+(1)  221/    6DE7 : 06 18               ADRTSC	LD B,0X18
+(1)  222/    6DE9 : 11 00 40            	LD DE,0X4000
+(1)  223/    6DEC : 21 00 B8            	LD HL,BUFTSC
+(1)  224/    6DEF : 0E 08               	LD C,8
+(1)  225/    6DF1 : 73                  	LD (HL),E
+(1)  226/    6DF2 : 23                  	INC HL
+(1)  227/    6DF3 : 72                  	LD (HL),D
+(1)  228/    6DF4 : 23                  	INC HL
+(1)  229/    6DF5 : 14                  	INC D
+(1)  230/    6DF6 : 0D                  	DEC C
+(1)  231/    6DF7 : 20 F8               	JR NZ,$-6
+(1)  232/    6DF9 : 3E 20               	LD A,0X20
+(1)  233/    6DFB : 83                  	ADD A,E
+(1)  234/    6DFC : 5F                  	LD E,A
+(1)  235/    6DFD : 38 04               	JR C,$+6
+(1)  236/    6DFF : 7A                  	LD A,D
+(1)  237/    6E00 : D6 08               	SUB 8
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(window.a80) - page 21 - 1/17/2011 21:30:41
+
+
+(1)  238/    6E02 : 57                  	LD D,A
+(1)  239/    6E03 : 10 EA               	DJNZ $-20
+(1)  240/    6E05 : C9                  	RET
+(1)  241/    6E06 :                     
+(1)  242/    6E06 : DD 6E 06            WTABL	LD L,(IX+6)
+(1)  243/    6E09 : DD 66 07            	LD H,(IX+7)
+(1)  244/    6E0C : 87                  	ADD A,A
+(1)  245/    6E0D : 16 00               	LD D,0
+(1)  246/    6E0F : 5F                  	LD E,A
+(1)  247/    6E10 : 19                  	ADD HL,DE
+(1)  248/    6E11 : 5E                  	LD E,(HL)
+(1)  249/    6E12 : 23                  	INC HL
+(1)  250/    6E13 : 56                  	LD D,(HL)
+(1)  251/    6E14 : EB                  	EX DE,HL
+(1)  252/    6E15 : 7D                  	LD A,L
+(1)  253/    6E16 : B4                  	OR H
+(1)  254/    6E17 : C8                  	RET Z
+(1)  255/    6E18 : E9                  	JP (HL)
+(1)  256/    6E19 :                     
+(1)  257/    6E19 : 21 00 40            CLS	LD HL,0X4000
+(1)  258/    6E1C : 5D                  	LD E,L
+(1)  259/    6E1D : 54                  	LD D,H
+(1)  260/    6E1E : 75                  	LD (HL),L
+(1)  261/    6E1F : 1C                  	INC E
+(1)  262/    6E20 : 01 00 18            	LD BC,0X1800
+(1)  263/    6E23 : ED B0               	LDIR
+(1)  264/    6E25 : 32 8D 5C            CLSCLR	LD (0X5C8D),A
+(1)  265/    6E28 : 32 48 5C            	LD (0X5C48),A
+(1)  266/    6E2B : 21 00 58            	LD HL,0X5800
+(1)  267/    6E2E : 54                  	LD D,H
+(1)  268/    6E2F : 5D                  	LD E,L
+(1)  269/    6E30 : 77                  	LD (HL),A
+(1)  270/    6E31 : 01 FF 02            	LD BC,0X02FF
+(1)  271/    6E34 : 1C                  	INC E
+(1)  272/    6E35 : ED B0               	LDIR
+(1)  273/    6E37 : 0F                  	RRCA
+(1)  274/    6E38 : 0F                  	RRCA
+(1)  275/    6E39 : 0F                  	RRCA
+(1)  276/    6E3A : E6 07               	AND 7
+(1)  277/    6E3C : D3 FE               	OUT (0XFE),A
+(1)  278/    6E3E : C9                  	RET
+(1)  279/    6E3F :                     
+(1)  280/    6E3F : DD 7E 00            INWERT	LD A,(IX)
+(1)  281/    6E42 : DD 23               	INC IX
+(1)  282/    6E44 : 81                  	ADD A,C
+(1)  283/    6E45 : 6F                  	LD L,A
+(1)  284/    6E46 : DD 66 00            	LD H,(IX)
+(1)  285/    6E49 : DD 23               	INC IX
+(1)  286/    6E4B : 54                  	LD D,H
+(1)  287/    6E4C : 5D                  	LD E,L
+(1)  288/    6E4D : 1C                  	INC E
+(1)  289/    6E4E : 36 FF               	LD (HL),0XFF
+(1)  290/    6E50 : C5                  	PUSH BC
+(1)  291/    6E51 : CD 46 70            	CALL LDIST
+(1)  292/    6E54 : C1                  	POP BC
+(1)  293/    6E55 : 10 E8               	DJNZ INWERT
+(1)  294/    6E57 : C9                  	RET
+(1)  295/    6E58 :                     
+(1)  296/    6E58 :                     ;X-L,Y-H,H-B,V-C
+(1)  297/    6E58 : E5                  WINOUT	PUSH HL
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(window.a80) - page 22 - 1/17/2011 21:30:41
+
+
+(1)  298/    6E59 : C5                  	PUSH BC
+(1)  299/    6E5A : DD E5               	PUSH IX
+(1)  300/    6E5C : F5                  	PUSH AF
+(1)  301/    6E5D : 3E 22               	LD A,0X22
+(1)  302/    6E5F : 90                  	SUB B
+(1)  303/    6E60 : 87                  	ADD A,A
+(1)  304/    6E61 : 32 47 70            	LD (LDIST+1),A
+(1)  305/    6E64 : C5                  			PUSH BC
+(1)  306/    6E65 : 79                  	LD A,C
+(1)  307/    6E66 : 07                  	RLCA
+(1)  308/    6E67 : 07                  	RLCA
+(1)  309/    6E68 : 07                  	RLCA
+(1)  310/    6E69 : 3D                  	DEC A
+(1)  311/    6E6A : 3D                  	DEC A
+(1)  312/    6E6B : 47                  	LD B,A
+(1)  313/    6E6C : DD 21 00 B8         	LD IX,BUFTSC
+(1)  314/    6E70 : EB                  	EX DE,HL
+(1)  315/    6E71 : 6A                  	LD L,D
+(1)  316/    6E72 : 26 00               	LD H,0
+(1)  317/    6E74 : 29                  	ADD HL,HL
+(1)  318/    6E75 : 29                  	ADD HL,HL
+(1)  319/    6E76 : 29                  	ADD HL,HL
+(1)  320/    6E77 : 29                  	ADD HL,HL
+(1)  321/    6E78 : EB                  	EX DE,HL
+(1)  322/    6E79 : DD 19               	ADD IX,DE
+(1)  323/    6E7B : DD E5               			PUSH IX
+(1)  324/    6E7D : 4D                  	LD C,L
+(1)  325/    6E7E : DD 23               POWT1	INC IX
+(1)  326/    6E80 : DD 23               	INC IX
+(1)  327/    6E82 : DD 5E 00            	LD E,(IX)
+(1)  328/    6E85 : DD 56 01            	LD D,(IX+1)
+(1)  329/    6E88 : 79                  	LD A,C
+(1)  330/    6E89 : 83                  	ADD A,E
+(1)  331/    6E8A : 5F                  	LD E,A
+(1)  332/    6E8B : EB                  	EX DE,HL
+(1)  333/    6E8C : 36 80               	LD (HL),0X80
+(1)  334/    6E8E : =6E8DH              RAMK0	EQU $-1
+(1)  335/    6E8E : 23                  	INC HL
+(1)  336/    6E8F : 36 00               	LD (HL),0
+(1)  337/    6E91 : 54                  	LD D,H
+(1)  338/    6E92 : 5D                  	LD E,L
+(1)  339/    6E93 : 1C                  	INC E
+(1)  340/    6E94 : C5                  			PUSH BC
+(1)  341/    6E95 : CD 46 70            	CALL LDIST
+(1)  342/    6E98 : C1                  			POP BC
+(1)  343/    6E99 : 36 01               	LD (HL),1
+(1)  344/    6E9B : =6E9AH              RAMK1	EQU $-1
+(1)  345/    6E9B : 10 E1               	DJNZ POWT1
+(1)  346/    6E9D : DD 5E 00            	LD E,(IX)
+(1)  347/    6EA0 : DD 56 01            	LD D,(IX+1)
+(1)  348/    6EA3 : 14                  	INC D
+(1)  349/    6EA4 : 79                  	LD A,C
+(1)  350/    6EA5 : 83                  	ADD A,E
+(1)  351/    6EA6 : 5F                  	LD E,A
+(1)  352/    6EA7 : EB                  	EX DE,HL
+(1)  353/    6EA8 : 36 FF               	LD (HL),0XFF
+(1)  354/    6EAA : =6EA9H              RAMK2	EQU $-1
+(1)  355/    6EAA : 54                  	LD D,H
+(1)  356/    6EAB : 5D                  	LD E,L
+(1)  357/    6EAC : 1C                  	INC E
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(window.a80) - page 23 - 1/17/2011 21:30:41
+
+
+(1)  358/    6EAD : C5                  			PUSH BC
+(1)  359/    6EAE : CD 46 70            	CALL LDIST
+(1)  360/    6EB1 : ED A0               	LDI
+(1)  361/    6EB3 : C1                  			POP BC
+(1)  362/    6EB4 : DD E1               			POP IX
+(1)  363/    6EB6 : DD 5E 00            	LD E,(IX)
+(1)  364/    6EB9 : DD 56 01            	LD D,(IX+1)
+(1)  365/    6EBC : 79                  	LD A,C
+(1)  366/    6EBD : 83                  	ADD A,E
+(1)  367/    6EBE : 5F                  	LD E,A
+(1)  368/    6EBF : EB                  	EX DE,HL
+(1)  369/    6EC0 : 36 FF               	LD (HL),0XFF
+(1)  370/    6EC2 : =6EC1H              RAMK3	EQU $-1
+(1)  371/    6EC2 : 54                  	LD D,H
+(1)  372/    6EC3 : 5D                  	LD E,L
+(1)  373/    6EC4 : 1C                  	INC E
+(1)  374/    6EC5 : C5                  			PUSH BC
+(1)  375/    6EC6 : CD 46 70            	CALL LDIST
+(1)  376/    6EC9 : ED A0               	LDI
+(1)  377/    6ECB : C1                  			POP BC
+(1)  378/    6ECC : DD 7E 00            	LD A,(IX)
+(1)  379/    6ECF : 81                  	ADD A,C
+(1)  380/    6ED0 : 5F                  	LD E,A
+(1)  381/    6ED1 : DD 7E 01            	LD A,(IX+1)
+(1)  382/    6ED4 : 1F                  	RRA
+(1)  383/    6ED5 : 1F                  	RRA
+(1)  384/    6ED6 : 1F                  	RRA
+(1)  385/    6ED7 : E6 0F               	AND 0X0F
+(1)  386/    6ED9 : F6 50               	OR 0X50
+(1)  387/    6EDB : 57                  	LD D,A
+(1)  388/    6EDC : EB                  	EX DE,HL
+(1)  389/    6EDD : D1                  			POP DE
+(1)  390/    6EDE : 43                  	LD B,E
+(1)  391/    6EDF : F1                  			POP AF
+(1)  392/    6EE0 : E5                  POWT2	PUSH HL
+(1)  393/    6EE1 : 54                  	LD D,H
+(1)  394/    6EE2 : 5D                  	LD E,L
+(1)  395/    6EE3 : 1C                  	INC E
+(1)  396/    6EE4 : 77                  	LD (HL),A
+(1)  397/    6EE5 : C5                  			PUSH BC
+(1)  398/    6EE6 : CD 46 70            	CALL LDIST
+(1)  399/    6EE9 : ED A0               	LDI
+(1)  400/    6EEB : C1                  			POP BC
+(1)  401/    6EEC : E1                  			POP HL
+(1)  402/    6EED : 11 20 00            	LD DE,0X20
+(1)  403/    6EF0 : 19                  	ADD HL,DE
+(1)  404/    6EF1 : 10 ED               	DJNZ POWT2
+(1)  405/    6EF3 : DD E1               	POP IX
+(1)  406/    6EF5 : C1                  	POP BC
+(1)  407/    6EF6 : E1                  	POP HL
+(1)  408/    6EF7 : C9                  	RET
+(1)  409/    6EF8 :                     
+(1)  410/    6EF8 : DD CB 08 76         WINW	BIT 6,(IX+8)
+(1)  411/    6EFC : 21 01 80            	LD HL,0X8001
+(1)  412/    6EFF : 06 FF               	LD B,0XFF
+(1)  413/    6F01 : 28 04               	JR Z,WINW1
+(1)  414/    6F03 : 21 00 00            	LD HL,0
+(1)  415/    6F06 : 45                  	LD B,L
+(1)  416/    6F07 : 7C                  WINW1	LD A,H
+(1)  417/    6F08 : 32 8D 6E            	LD (RAMK0),A
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(window.a80) - page 24 - 1/17/2011 21:30:41
+
+
+(1)  418/    6F0B : 7D                  	LD A,L
+(1)  419/    6F0C : 32 9A 6E            	LD (RAMK1),A
+(1)  420/    6F0F : 78                  	LD A,B
+(1)  421/    6F10 : 32 C1 6E            	LD (RAMK3),A
+(1)  422/    6F13 : 32 A9 6E            	LD (RAMK2),A
+(1)  423/    6F16 : DD 6E 00            	LD L,(IX+0)
+(1)  424/    6F19 : DD 66 01            	LD H,(IX+1)
+(1)  425/    6F1C : DD 4E 02            	LD C,(IX+2)
+(1)  426/    6F1F : DD 46 03            	LD B,(IX+3)
+(1)  427/    6F22 : DD 7E 04            	LD A,(IX+4)
+(1)  428/    6F25 : CD 58 6E            	CALL WINOUT
+(1)  429/    6F28 : DD CB 08 6E         	BIT 5,(IX+8)
+(1)  430/    6F2C : 28 21               	JR Z,W_NIZ
+(1)  431/    6F2E : 21 47 70            	LD HL,LDIST+1
+(1)  432/    6F31 : 35                  	DEC (HL)
+(1)  433/    6F32 : 35                  	DEC (HL)
+(1)  434/    6F33 : DD E5               	PUSH IX
+(1)  435/    6F35 : DD 4E 00            	LD C,(IX)
+(1)  436/    6F38 : 06 08               	LD B,8
+(1)  437/    6F3A : DD 6E 01            	LD L,(IX+1)
+(1)  438/    6F3D : 26 00               	LD H,0
+(1)  439/    6F3F : DD 21 00 B8         	LD IX,BUFTSC
+(1)  440/    6F43 : 29                  	ADD HL,HL
+(1)  441/    6F44 : 29                  	ADD HL,HL
+(1)  442/    6F45 : 29                  	ADD HL,HL
+(1)  443/    6F46 : 29                  	ADD HL,HL
+(1)  444/    6F47 : EB                  	EX DE,HL
+(1)  445/    6F48 : DD 19               	ADD IX,DE
+(1)  446/    6F4A : CD 3F 6E            	CALL INWERT
+(1)  447/    6F4D : DD E1               	POP IX
+(1)  448/    6F4F : DD CB 08 7E         W_NIZ	BIT 7,(IX+8)
+(1)  449/    6F53 : 28 21               	JR Z,RASCH
+(1)  450/    6F55 : DD E5               	PUSH IX
+(1)  451/    6F57 : DD 4E 00            	LD C,(IX)
+(1)  452/    6F5A : 06 08               	LD B,8
+(1)  453/    6F5C : DD 7E 01            	LD A,(IX+1)
+(1)  454/    6F5F : DD 86 02            	ADD A,(IX+2)
+(1)  455/    6F62 : 3D                  	DEC A
+(1)  456/    6F63 : 6F                  	LD L,A
+(1)  457/    6F64 : 26 00               	LD H,0
+(1)  458/    6F66 : 29                  	ADD HL,HL
+(1)  459/    6F67 : 29                  	ADD HL,HL
+(1)  460/    6F68 : 29                  	ADD HL,HL
+(1)  461/    6F69 : 29                  	ADD HL,HL
+(1)  462/    6F6A : DD 21 00 B8         	LD IX,BUFTSC
+(1)  463/    6F6E : EB                  	EX DE,HL
+(1)  464/    6F6F : DD 19               	ADD IX,DE
+(1)  465/    6F71 : CD 3F 6E            	CALL INWERT
+(1)  466/    6F74 : DD E1               	POP IX
+(1)  467/    6F76 : DD 7E 00            RASCH   LD A,(IX)
+(1)  468/    6F79 : 87                  	ADD A,A
+(1)  469/    6F7A : 87                  	ADD A,A
+(1)  470/    6F7B : 87                  	ADD A,A
+(1)  471/    6F7C : 3C                  	INC A
+(1)  472/    6F7D : 57                  	LD D,A
+(1)  473/    6F7E : 32 3D 71            	LD (XNEW+1),A
+(1)  474/    6F81 : 32 1F 71            	LD (EX2+1),A
+(1)  475/    6F84 : DD 7E 01            	LD A,(IX+1)
+(1)  476/    6F87 : 87                  	ADD A,A
+(1)  477/    6F88 : 87                  	ADD A,A
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(window.a80) - page 25 - 1/17/2011 21:30:41
+
+
+(1)  478/    6F89 : 87                  	ADD A,A
+(1)  479/    6F8A : 5F                  	LD E,A
+(1)  480/    6F8B : ED 53 73 71         	LD (ADRSTR+1),DE
+(1)  481/    6F8F : DD 7E 03            	LD A,(IX+3)
+(1)  482/    6F92 : 87                  	ADD A,A
+(1)  483/    6F93 : 87                  	ADD A,A
+(1)  484/    6F94 : 87                  	ADD A,A
+(1)  485/    6F95 : 32 19 71            	LD (EX1+1),A
+(1)  486/    6F98 : DD CB 08 66         	BIT 4,(IX+8)
+(1)  487/    6F9C : C0                  	RET NZ
+(1)  488/    6F9D : DD 6E 0D            	LD L,(IX+13)
+(1)  489/    6FA0 : DD 66 0E            	LD H,(IX+14)
+(1)  490/    6FA3 : C3 F8 70            	JP NEXT
+(1)  491/    6FA6 :                     
+(1)  492/    6FA6 : C5                  SCRUP	PUSH BC
+(1)  493/    6FA7 : DD E5               	PUSH IX
+(1)  494/    6FA9 : DD 6E 01            	LD L,(IX+1)
+(1)  495/    6FAC : 2C                  	INC L
+(1)  496/    6FAD : CD 89 70            	CALL USTAN
+(1)  497/    6FB0 : DD 7E 10            	LD A,(IX+0X10)
+(1)  498/    6FB3 : 81                  	ADD A,C
+(1)  499/    6FB4 : 6F                  	LD L,A
+(1)  500/    6FB5 : DD 66 11            	LD H,(IX+0X11)
+(1)  501/    6FB8 : DD 7E 00            	LD A,(IX)
+(1)  502/    6FBB : 81                  	ADD A,C
+(1)  503/    6FBC : 5F                  	LD E,A
+(1)  504/    6FBD : DD 56 01            	LD D,(IX+1)
+(1)  505/    6FC0 : CD FB 6F            	CALL SHIFT
+(1)  506/    6FC3 : 11 10 00            	LD DE,0X10
+(1)  507/    6FC6 : DD 19               	ADD IX,DE
+(1)  508/    6FC8 : 10 E6               	DJNZ $-24
+(1)  509/    6FCA : DD E1               	POP IX
+(1)  510/    6FCC : C1                  	POP BC
+(1)  511/    6FCD : C9                  	RET
+(1)  512/    6FCE :                     
+(1)  513/    6FCE : C5                  SCRDN	PUSH BC
+(1)  514/    6FCF : DD E5               	PUSH IX
+(1)  515/    6FD1 : DD 7E 02            	LD A,(IX+2)
+(1)  516/    6FD4 : DD 86 01            	ADD A,(IX+1)
+(1)  517/    6FD7 : D6 03               	SUB 3
+(1)  518/    6FD9 : 6F                  	LD L,A
+(1)  519/    6FDA : CD 89 70            	CALL USTAN
+(1)  520/    6FDD : DD 7E 00            	LD A,(IX)
+(1)  521/    6FE0 : 81                  	ADD A,C
+(1)  522/    6FE1 : 6F                  	LD L,A
+(1)  523/    6FE2 : DD 66 01            	LD H,(IX+1)
+(1)  524/    6FE5 : DD 7E 10            	LD A,(IX+0X10)
+(1)  525/    6FE8 : 81                  	ADD A,C
+(1)  526/    6FE9 : 5F                  	LD E,A
+(1)  527/    6FEA : DD 56 11            	LD D,(IX+0X11)
+(1)  528/    6FED : CD FB 6F            	CALL SHIFT
+(1)  529/    6FF0 : 11 F0 FF            	LD DE,0XFFF0
+(1)  530/    6FF3 : DD 19               	ADD IX,DE
+(1)  531/    6FF5 : 10 E6               	DJNZ $-24
+(1)  532/    6FF7 : DD E1               	POP IX
+(1)  533/    6FF9 : C1                  	POP BC
+(1)  534/    6FFA : C9                  	RET
+(1)  535/    6FFB :                     
+(1)  536/    6FFB : C5                  SHIFT	PUSH BC
+(1)  537/    6FFC :                     	REPT 8
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(window.a80) - page 26 - 1/17/2011 21:30:41
+
+
+(1)  538/    6FFC :                     	PUSH HL
+(1)  539/    6FFC :                     	PUSH DE
+(1)  540/    6FFC :                     	CALL LDIST
+(1)  541/    6FFC :                     	POP DE
+(1)  542/    6FFC :                     	POP HL
+(1)  543/    6FFC :                     	INC H
+(1)  544/    6FFC :                     	INC D
+(1)  545/    6FFC :                     	ENDM
+(1)  538/    6FFC : E5                  	PUSH HL
+(1)  539/    6FFD : D5                  	PUSH DE
+(1)  540/    6FFE : CD 46 70            	CALL LDIST
+(1)  541/    7001 : D1                  	POP DE
+(1)  542/    7002 : E1                  	POP HL
+(1)  543/    7003 : 24                  	INC H
+(1)  544/    7004 : 14                  	INC D
+(1)  538/    7005 : E5                  	PUSH HL
+(1)  539/    7006 : D5                  	PUSH DE
+(1)  540/    7007 : CD 46 70            	CALL LDIST
+(1)  541/    700A : D1                  	POP DE
+(1)  542/    700B : E1                  	POP HL
+(1)  543/    700C : 24                  	INC H
+(1)  544/    700D : 14                  	INC D
+(1)  538/    700E : E5                  	PUSH HL
+(1)  539/    700F : D5                  	PUSH DE
+(1)  540/    7010 : CD 46 70            	CALL LDIST
+(1)  541/    7013 : D1                  	POP DE
+(1)  542/    7014 : E1                  	POP HL
+(1)  543/    7015 : 24                  	INC H
+(1)  544/    7016 : 14                  	INC D
+(1)  538/    7017 : E5                  	PUSH HL
+(1)  539/    7018 : D5                  	PUSH DE
+(1)  540/    7019 : CD 46 70            	CALL LDIST
+(1)  541/    701C : D1                  	POP DE
+(1)  542/    701D : E1                  	POP HL
+(1)  543/    701E : 24                  	INC H
+(1)  544/    701F : 14                  	INC D
+(1)  538/    7020 : E5                  	PUSH HL
+(1)  539/    7021 : D5                  	PUSH DE
+(1)  540/    7022 : CD 46 70            	CALL LDIST
+(1)  541/    7025 : D1                  	POP DE
+(1)  542/    7026 : E1                  	POP HL
+(1)  543/    7027 : 24                  	INC H
+(1)  544/    7028 : 14                  	INC D
+(1)  538/    7029 : E5                  	PUSH HL
+(1)  539/    702A : D5                  	PUSH DE
+(1)  540/    702B : CD 46 70            	CALL LDIST
+(1)  541/    702E : D1                  	POP DE
+(1)  542/    702F : E1                  	POP HL
+(1)  543/    7030 : 24                  	INC H
+(1)  544/    7031 : 14                  	INC D
+(1)  538/    7032 : E5                  	PUSH HL
+(1)  539/    7033 : D5                  	PUSH DE
+(1)  540/    7034 : CD 46 70            	CALL LDIST
+(1)  541/    7037 : D1                  	POP DE
+(1)  542/    7038 : E1                  	POP HL
+(1)  543/    7039 : 24                  	INC H
+(1)  544/    703A : 14                  	INC D
+(1)  538/    703B : E5                  	PUSH HL
+(1)  539/    703C : D5                  	PUSH DE
+(1)  540/    703D : CD 46 70            	CALL LDIST
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(window.a80) - page 27 - 1/17/2011 21:30:41
+
+
+(1)  541/    7040 : D1                  	POP DE
+(1)  542/    7041 : E1                  	POP HL
+(1)  543/    7042 : 24                  	INC H
+(1)  544/    7043 : 14                  	INC D
+(1)  546/    7044 : C1                  	POP BC
+(1)  547/    7045 : C9                  	RET
+(1)  548/    7046 :                     
+(1)  549/    7046 : 18 FE               LDIST	JR $
+(1)  550/    7048 :                     	REPT 32
+(1)  551/    7048 :                     	LDI
+(1)  552/    7048 :                     	ENDM
+(1)  551/    7048 : ED A0               	LDI
+(1)  551/    704A : ED A0               	LDI
+(1)  551/    704C : ED A0               	LDI
+(1)  551/    704E : ED A0               	LDI
+(1)  551/    7050 : ED A0               	LDI
+(1)  551/    7052 : ED A0               	LDI
+(1)  551/    7054 : ED A0               	LDI
+(1)  551/    7056 : ED A0               	LDI
+(1)  551/    7058 : ED A0               	LDI
+(1)  551/    705A : ED A0               	LDI
+(1)  551/    705C : ED A0               	LDI
+(1)  551/    705E : ED A0               	LDI
+(1)  551/    7060 : ED A0               	LDI
+(1)  551/    7062 : ED A0               	LDI
+(1)  551/    7064 : ED A0               	LDI
+(1)  551/    7066 : ED A0               	LDI
+(1)  551/    7068 : ED A0               	LDI
+(1)  551/    706A : ED A0               	LDI
+(1)  551/    706C : ED A0               	LDI
+(1)  551/    706E : ED A0               	LDI
+(1)  551/    7070 : ED A0               	LDI
+(1)  551/    7072 : ED A0               	LDI
+(1)  551/    7074 : ED A0               	LDI
+(1)  551/    7076 : ED A0               	LDI
+(1)  551/    7078 : ED A0               	LDI
+(1)  551/    707A : ED A0               	LDI
+(1)  551/    707C : ED A0               	LDI
+(1)  551/    707E : ED A0               	LDI
+(1)  551/    7080 : ED A0               	LDI
+(1)  551/    7082 : ED A0               	LDI
+(1)  551/    7084 : ED A0               	LDI
+(1)  551/    7086 : ED A0               	LDI
+(1)  553/    7088 : C9                  	RET
+(1)  554/    7089 :                     
+(1)  555/    7089 : 3E 20               USTAN	LD A,0X20
+(1)  556/    708B : DD 96 03            	SUB (IX+3)
+(1)  557/    708E : 87                  	ADD A,A
+(1)  558/    708F : 32 47 70            	LD (LDIST+1),A
+(1)  559/    7092 : DD 4E 00            	LD C,(IX)		;ëåÖôÖçàÖ èé X
+(1)  560/    7095 : DD 46 02            	LD B,(IX+2)		;ÇõëéíÄ Ç áçÄäéåÖëíÄï
+(1)  561/    7098 : 05                  	DEC B
+(1)  562/    7099 : 05                  	DEC B
+(1)  563/    709A : 05                  	DEC B
+(1)  564/    709B : 26 00               	LD H,0
+(1)  565/    709D : 29                  	ADD HL,HL
+(1)  566/    709E : 29                  	ADD HL,HL
+(1)  567/    709F : 29                  	ADD HL,HL
+(1)  568/    70A0 : DD 21 00 B8         	LD IX,BUFTSC
+(1)  569/    70A4 : EB                  	EX DE,HL
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(window.a80) - page 28 - 1/17/2011 21:30:41
+
+
+(1)  570/    70A5 : DD 19               	ADD IX,DE
+(1)  571/    70A7 : DD 19               	ADD IX,DE
+(1)  572/    70A9 : C9                  	RET
+(1)  573/    70AA :                     
+(1)  574/    70AA : 32 C8 70            ADRDIS	LD (ASD+1),A
+(1)  575/    70AD : 7D                  	LD A,L
+(1)  576/    70AE : E6 18               	AND 0X18
+(1)  577/    70B0 : F6 40               	OR 0X40
+(1)  578/    70B2 : 08                  	EX AF,AF'
+(1)  579/    70B3 : 7D                  	LD A,L
+(1)  580/    70B4 : E6 07               	AND 7
+(1)  581/    70B6 : 0F                  	RRCA
+(1)  582/    70B7 : 0F                  	RRCA
+(1)  583/    70B8 : 0F                  	RRCA
+(1)  584/    70B9 : 84                  	ADD A,H
+(1)  585/    70BA : 6F                  	LD L,A
+(1)  586/    70BB : 08                  	EX AF,AF'
+(1)  587/    70BC : 67                  	LD H,A
+(1)  588/    70BD : 5D                  	LD E,L
+(1)  589/    70BE : 7C                  ADRATR	LD A,H
+(1)  590/    70BF : 0F                  	RRCA
+(1)  591/    70C0 : 0F                  	RRCA
+(1)  592/    70C1 : 0F                  	RRCA
+(1)  593/    70C2 : E6 03               	AND 3
+(1)  594/    70C4 : F6 58               	OR 0X58
+(1)  595/    70C6 : 57                  	LD D,A
+(1)  596/    70C7 : 3E 00               ASD	LD A,0
+(1)  597/    70C9 : C9                  	RET
+(1)  598/    70CA :                     
+(1)  599/    70CA : 24                  INCHL	INC H
+(1)  600/    70CB : 7C                  	LD A,H
+(1)  601/    70CC : E6 07               	AND 7
+(1)  602/    70CE : C0                  	RET NZ
+(1)  603/    70CF : 7D                  	LD A,L
+(1)  604/    70D0 : C6 20               	ADD A,0X20
+(1)  605/    70D2 : 6F                  	LD L,A
+(1)  606/    70D3 : D8                  	RET C
+(1)  607/    70D4 : 7C                  UMEHL1	LD A,H
+(1)  608/    70D5 : D6 08               	SUB 8
+(1)  609/    70D7 : 67                  	LD H,A
+(1)  610/    70D8 : C9                  	RET
+(1)  611/    70D9 :                     
+(1)  612/    70D9 : 25                  DECHL	DEC H
+(1)  613/    70DA : 7C                  	LD A,H
+(1)  614/    70DB : E6 07               	AND 7
+(1)  615/    70DD : FE 07               	CP 7
+(1)  616/    70DF : C0                  	RET NZ
+(1)  617/    70E0 : 7D                  	LD A,L
+(1)  618/    70E1 : D6 20               	SUB 0X20
+(1)  619/    70E3 : 6F                  	LD L,A
+(1)  620/    70E4 : D8                  	RET C
+(1)  621/    70E5 : 7C                  UVEHL1	LD A,H
+(1)  622/    70E6 : C6 08               	ADD A,8
+(1)  623/    70E8 : 67                  	LD H,A
+(1)  624/    70E9 : C9                  	RET
+(1)  625/    70EA :                     
+(1)  626/    70EA : 3E 20               UVEHL	LD A,0X20
+(1)  627/    70EC : 85                  	ADD A,L
+(1)  628/    70ED : 6F                  	LD L,A
+(1)  629/    70EE : D0                  	RET NC
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(window.a80) - page 29 - 1/17/2011 21:30:41
+
+
+(1)  630/    70EF : 18 F4               	JR UVEHL1
+(1)  631/    70F1 :                     
+(1)  632/    70F1 : 7D                  UMEHL	LD A,L
+(1)  633/    70F2 : D6 20               	SUB 0X20
+(1)  634/    70F4 : 6F                  	LD L,A
+(1)  635/    70F5 : D0                  	RET NC
+(1)  636/    70F6 : 18 DC               	JR UMEHL1
+(1)  637/    70F8 :                     
+(1)  638/    70F8 : 7E                  NEXT	LD A,(HL)
+(1)  639/    70F9 : 23                  	INC HL
+(1)  640/    70FA : A7                  	AND A
+(1)  641/    70FB : C8                  	RET Z
+(1)  642/    70FC : CD 01 71            	CALL PRINT
+(1)  643/    70FF : 18 F7               	JR NEXT
+(1)  644/    7101 :                     
+(1)  645/    7101 : FE 20               PRINT	CP 0X20
+(1)  646/    7103 : 30 60               	JR NC,PRINTA
+(1)  647/    7105 : FE 03               	CP 3
+(1)  648/    7107 : 20 1C               	JR NZ,COD9
+(1)  649/    7109 : 06 00               CENTR	LD B,0		;ñÖçíêéÇäÄ ëíêéäà Ç éäçÖ
+(1)  650/    710B : E5                  	PUSH HL
+(1)  651/    710C : 7E                  CEN2	LD A,(HL)
+(1)  652/    710D : FE 20               	CP 0X20
+(1)  653/    710F : 38 07               	JR C,EX1
+(1)  654/    7111 : 3E 06               	LD A,6
+(1)  655/    7113 : 80                  	ADD A,B
+(1)  656/    7114 : 47                  	LD B,A
+(1)  657/    7115 : 23                  	INC HL
+(1)  658/    7116 : 18 F4               	JR CEN2
+(1)  659/    7118 :                     
+(1)  660/    7118 : 3E 00               EX1	LD A,0
+(1)  661/    711A : 90                  	SUB B
+(1)  662/    711B : CB 3F               	SRL A
+(1)  663/    711D : 3D                  	DEC A
+(1)  664/    711E : C6 00               EX2	ADD A,0
+(1)  665/    7120 : 32 74 71            	LD (ADRSTR+2),A
+(1)  666/    7123 : E1                  	POP HL
+(1)  667/    7124 : C9                  	RET
+(1)  668/    7125 :                     
+(1)  669/    7125 : FE 09               COD9	CP 9
+(1)  670/    7127 : 20 0F               	JR NZ,COD13
+(1)  671/    7129 : 7E                  	LD A,(HL)		;íÄÅìãüñàü çÄ N èéáàñàâ
+(1)  672/    712A : 23                  	INC HL
+(1)  673/    712B : 47                  	LD B,A
+(1)  674/    712C : 87                  	ADD A,A
+(1)  675/    712D : 80                  	ADD A,B
+(1)  676/    712E : 87                  	ADD A,A
+(1)  677/    712F : 47                  	LD B,A
+(1)  678/    7130 : 3A 74 71            	LD A,(ADRSTR+2)
+(1)  679/    7133 : 80                  	ADD A,B
+(1)  680/    7134 : 32 74 71            	LD (ADRSTR+2),A
+(1)  681/    7137 : C9                  	RET
+(1)  682/    7138 :                     
+(1)  683/    7138 : FE 0D               COD13	CP 0X0D
+(1)  684/    713A : 20 0E               	JR NZ,COD14
+(1)  685/    713C : 3E 00               XNEW	LD A,0			;èÖêÖÇéÑ ëíêéäà 
+(1)  686/    713E : 32 74 71            	LD (ADRSTR+2),A
+(1)  687/    7141 : 3A 73 71            	LD A,(ADRSTR+1)
+(1)  688/    7144 : C6 08               	ADD A,8
+(1)  689/    7146 : 32 73 71            	LD (ADRSTR+1),A
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(window.a80) - page 30 - 1/17/2011 21:30:41
+
+
+(1)  690/    7149 : C9                  	RET
+(1)  691/    714A :                     
+(1)  692/    714A : FE 14               COD14	CP 0X14
+(1)  693/    714C : 20 0B               	JR NZ,COD16
+(1)  694/    714E : 7E                  	LD A,(HL)		;Çäã/Çõäã àçÇÖêëàà èÖóÄíà
+(1)  695/    714F : 23                  	INC HL
+(1)  696/    7150 : A7                  	AND A
+(1)  697/    7151 : 28 02               	JR Z,$+4
+(1)  698/    7153 : 3E FC               	LD A,0XFC
+(1)  699/    7155 : 32 AE 71            	LD (NO_INW+1),A
+(1)  700/    7158 : C9                  	RET
+(1)  701/    7159 :                     
+(1)  702/    7159 : FE 16               COD16	CP 0X16
+(1)  703/    715B : C0                  	RET NZ
+(1)  704/    715C : 5E                  	LD E,(HL)		;èÖóÄíú Ç ìäÄáÄççéâ èéáàñàà
+(1)  705/    715D : 23                  	INC HL
+(1)  706/    715E : 56                  	LD D,(HL)
+(1)  707/    715F : 23                  	INC HL
+(1)  708/    7160 : ED 53 73 71         	LD (ADRSTR+1),DE
+(1)  709/    7164 : C9                  	RET
+(1)  710/    7165 :                     
+(1)  711/    7165 :                     ;èÖóÄíú ëàåÇéãÄ Ç "A"
+(1)  712/    7165 : E5                  PRINTA	PUSH HL
+(1)  713/    7166 : D5                  	PUSH DE
+(1)  714/    7167 : 11 4E 64            	LD DE,CHARS
+(1)  715/    716A : 6F                  	LD L,A
+(1)  716/    716B : AF                  	XOR A
+(1)  717/    716C : 67                  	LD H,A
+(1)  718/    716D : 29                  	ADD HL,HL
+(1)  719/    716E : 29                  	ADD HL,HL
+(1)  720/    716F : 29                  	ADD HL,HL
+(1)  721/    7170 : 19                  	ADD HL,DE
+(1)  722/    7171 : D9                  	EXX
+(1)  723/    7172 : 21 00 00            ADRSTR	LD HL,0			;H=X L=Y
+(1)  724/    7175 : 57                  	LD D,A
+(1)  725/    7176 : 7C                  	LD A,H
+(1)  726/    7177 : E6 F8               	AND 0XF8
+(1)  727/    7179 : 47                  	LD B,A
+(1)  728/    717A : 7C                  	LD A,H
+(1)  729/    717B : E6 07               	AND 7
+(1)  730/    717D : 4F                  	LD C,A
+(1)  731/    717E : 3E 06               	LD A,6
+(1)  732/    7180 : 84                  	ADD A,H
+(1)  733/    7181 : 67                  	LD H,A
+(1)  734/    7182 : 22 73 71            	LD (ADRSTR+1),HL
+(1)  735/    7185 : 5D                  	LD E,L
+(1)  736/    7186 : 78                  	LD A,B
+(1)  737/    7187 : 21 00 B8            	LD HL,BUFTSC
+(1)  738/    718A : 42                  	LD B,D
+(1)  739/    718B : 19                  	ADD HL,DE
+(1)  740/    718C : 19                  	ADD HL,DE
+(1)  741/    718D : 0F                  	RRCA
+(1)  742/    718E : 0F                  	RRCA
+(1)  743/    718F : 0F                  	RRCA
+(1)  744/    7190 : 86                  	ADD A,(HL)
+(1)  745/    7191 : 23                  	INC HL
+(1)  746/    7192 : 5F                  	LD E,A
+(1)  747/    7193 : 56                  	LD D,(HL)
+(1)  748/    7194 : 3E 15               	LD A,21
+(1)  749/    7196 : 91                  	SUB C
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(window.a80) - page 31 - 1/17/2011 21:30:41
+
+
+(1)  750/    7197 : 91                  	SUB C
+(1)  751/    7198 : 91                  	SUB C
+(1)  752/    7199 : 32 B2 71            	LD (SKOLKO+1),A
+(1)  753/    719C : 21 DD 71            	LD HL,BUFMSK
+(1)  754/    719F : 09                  	ADD HL,BC
+(1)  755/    71A0 : 09                  	ADD HL,BC
+(1)  756/    71A1 : 7E                  	LD A,(HL)
+(1)  757/    71A2 : 23                  	INC HL
+(1)  758/    71A3 : 66                  	LD H,(HL)
+(1)  759/    71A4 : 6F                  	LD L,A
+(1)  760/    71A5 : EB                  	EX DE,HL
+(1)  761/    71A6 : 3E 08               	LD A,8
+(1)  762/    71A8 : 08                  SLEDU	EX AF,AF'
+(1)  763/    71A9 : D9                  	EXX
+(1)  764/    71AA : 7E                  	LD A,(HL)
+(1)  765/    71AB : 23                  	INC HL
+(1)  766/    71AC : D9                  	EXX
+(1)  767/    71AD : EE 00               NO_INW	XOR 0
+(1)  768/    71AF : 4F                  	LD C,A
+(1)  769/    71B0 : AF                  	XOR A
+(1)  770/    71B1 : 18 13               SKOLKO	JR $+21
+(1)  771/    71B3 :                     	REPT 7
+(1)  772/    71B3 :                     	SRL C	;8
+(1)  773/    71B3 :                     	RRA	;4
+(1)  774/    71B3 :                     	ENDM
+(1)  772/    71B3 : CB 39               	SRL C	;8
+(1)  773/    71B5 : 1F                  	RRA	;4
+(1)  772/    71B6 : CB 39               	SRL C	;8
+(1)  773/    71B8 : 1F                  	RRA	;4
+(1)  772/    71B9 : CB 39               	SRL C	;8
+(1)  773/    71BB : 1F                  	RRA	;4
+(1)  772/    71BC : CB 39               	SRL C	;8
+(1)  773/    71BE : 1F                  	RRA	;4
+(1)  772/    71BF : CB 39               	SRL C	;8
+(1)  773/    71C1 : 1F                  	RRA	;4
+(1)  772/    71C2 : CB 39               	SRL C	;8
+(1)  773/    71C4 : 1F                  	RRA	;4
+(1)  772/    71C5 : CB 39               	SRL C	;8
+(1)  773/    71C7 : 1F                  	RRA	;4
+(1)  775/    71C8 : 47                  	LD B,A
+(1)  776/    71C9 : 7E                  	LD A,(HL)
+(1)  777/    71CA : A3                  	AND E
+(1)  778/    71CB : B1                  	OR C
+(1)  779/    71CC : 77                  	LD (HL),A
+(1)  780/    71CD : 2C                  	INC L
+(1)  781/    71CE : 7E                  	LD A,(HL)
+(1)  782/    71CF : A2                  	AND D
+(1)  783/    71D0 : B0                  	OR B
+(1)  784/    71D1 : 77                  	LD (HL),A
+(1)  785/    71D2 : 2D                  	DEC L
+(1)  786/    71D3 : 24                  	INC H
+(1)  787/    71D4 : 08                  	EX AF,AF'
+(1)  788/    71D5 : 3D                  	DEC A
+(1)  789/    71D6 : C2 A8 71            	JP NZ,SLEDU
+(1)  790/    71D9 : D9                  	EXX
+(1)  791/    71DA : D1                  	POP DE
+(1)  792/    71DB : E1                  	POP HL
+(1)  793/    71DC : C9                  	RET
+(1)  794/    71DD :                     
+(1)  795/    71DD : 03 FF               BUFMSK	DB 0X03,0XFF
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(window.a80) - page 32 - 1/17/2011 21:30:41
+
+
+(1)  796/    71DF : 81 FF               	DB 0X81,0XFF
+(1)  797/    71E1 : C0 FF               	DB 0XC0,0XFF
+(1)  798/    71E3 : E0 7F               	DB 0XE0,0X7F
+(1)  799/    71E5 : F0 3F               	DB 0XF0,0X3F
+(1)  800/    71E7 : F8 1F               	DB 0XF8,0X1F
+(1)  801/    71E9 : FC 0F               	DB 0XFC,0X0F
+(1)  802/    71EB : FE 07               	DB 0XFE,0X07
+(1)  803/    71ED :                     
+(1)  804/    71ED :                     ;KOI2ALT DB 0XCF,0XD0,0XD1,0XB5,0XB6,0XB7,0XB8
+(1)  805/    71ED :                     ;DB 0XD2,0XD3,0XD4,0XD5,0XBD,0XBE,0XC6
+(1)  806/    71ED :                     ;DB 0XC7,0XD6,0XC9,0XBB,0XBC,0XC8,0XCD
+(1)  807/    71ED :                     ;DB 0XBA,0XCB,0XB9,0XCA,0XCC,0XCE,0XB0
+(1)  808/    71ED :                     ;DB 0XB1,0XB2,0XD7,0XD8,0XDA,0XBF,0XD9
+(1)  809/    71ED :                     ;DB 0XDA,0XC4,0XB3,0XC2,0XB4,0XC1,0XC3
+(1)  810/    71ED :                     ;DB 0XC5,0XDB,0XDC,0XDD,0XDE,0XDF
+(1)  811/    71ED :                     ;DB 0X80,0X81,0X82,0X83,0X84,0X85,0X86
+(1)  812/    71ED :                     ;DB 0X87,0X88,0X89,0X8A,0X8B,0X8C,0X8D
+(1)  813/    71ED :                     ;DB 0X8E,0X8F,0X90,0X91,0X92,0X93,0X94
+(1)  814/    71ED :                     ;DB 0X95,0X96,0X97,0X98,0X99,0X9A,0X9B
+(1)  815/    71ED :                     ;DB 0X9C,0X9D,0X9E,0X9F,0XA0,0XA1,0XA2
+(1)  816/    71ED :                     ;DB 0XA3,0XA4,0XA5,0XA6,0XA7,0XA8,0XA9
+(1)  817/    71ED :                     ;DB 0XAA,0XAB,0XAC,0XAD,0XAE,0XAF,0XE0
+(1)  818/    71ED :                     ;DB 0XE1,0XE2,0XE3,0XE4,0XE5,0XE6,0XE7
+(1)  819/    71ED :                     ;DB 0XE8,0XE9,0XEA,0XEB,0XEC,0XED,0XEE
+(1)  820/    71ED :                     ;DB 0XEF,0XF0,0XF1,0XF2,0XF3,0XF4,0XF5
+(1)  821/    71ED :                     ;DB 0XF6,0XF7,0XF8,0XF9,0XFA,0XFB,0XFC
+(1)  822/    71ED :                     ;DB 0XFD,0XFE,0XFF
+(1)  823/    71ED :                     ;ALT2KOI DB 0XB0,0XB1,0XB2,0XB3,0XB4,0XB5,0XB6
+(1)  824/    71ED :                     ;DB 0XB7,0XB8,0XB9,0XBA,0XBB,0XBC,0XBD
+(1)  825/    71ED :                     ;DB 0XBE,0XBF,0XC0,0XC1,0XC2,0XC3,0XC4
+(1)  826/    71ED :                     ;DB 0XC5,0XC6,0XC7,0XC8,0XC9,0XCA,0XCB
+(1)  827/    71ED :                     ;DB 0XCC,0XCD,0XCE,0XCF,0XD0,0XD1,0XD2
+(1)  828/    71ED :                     ;DB 0XD3,0XD4,0XD5,0XD6,0XD7,0XD8,0XD9
+(1)  829/    71ED :                     ;DB 0XDA,0XDB,0XDC,0XDD,0XDE,0XDF,0X9B
+(1)  830/    71ED :                     ;DB 0X9C,0X9D,0XA5,0XA7,0X83,0X84,0X85
+(1)  831/    71ED :                     ;DB 0X86,0X97,0X95,0X91,0X92,0X8B,0X8C
+(1)  832/    71ED :                     ;DB 0XA1,0XA3,0XA8,0XA6,0XA9,0XA4,0XAA
+(1)  833/    71ED :                     ;DB 0X8D,0X8E,0X93,0X90,0X98,0X96,0X99
+(1)  834/    71ED :                     ;DB 0X94,0X9A,0X80,0X81,0X82,0X87,0X88
+(1)  835/    71ED :                     ;DB 0X89,0X8A,0X8F,0X9E,0X9F,0XA2,0XA0
+(1)  836/    71ED :                     ;DB 0XAB,0XAC,0XAD,0XAE,0XAF
+(1)  837/    71ED :                     ;DB 0XE0,0XE1,0XE2,0XE3,0XE4,0XE5,0XE6
+(1)  838/    71ED :                     ;DB 0XE7,0XE8,0XE9,0XEA,0XEB,0XEC,0XED
+(1)  839/    71ED :                     ;DB 0XEE,0XEF,0XF0,0XF1,0XF2,0XF3,0XF4
+(1)  840/    71ED :                     ;DB 0XF5,0XF6,0XF7,0XF8,0XF9,0XFA,0XFB
+(1)  841/    71ED :                     ;DB 0XFC,0XFD,0XFE,0XFF
+(1)  842/    71ED :                     
+(1)  843/    71ED : 21 90 B9            HEX2TXT	LD HL,TXT_HEX
+(1)  844/    71F0 : E5                  	PUSH HL
+(1)  845/    71F1 : 78                  	LD A,B
+(1)  846/    71F2 : CD 05 72            	CALL HEX_CON
+(1)  847/    71F5 : 79                  	LD A,C
+(1)  848/    71F6 : CD 05 72            	CALL HEX_CON
+(1)  849/    71F9 : 7A                  	LD A,D
+(1)  850/    71FA : CD 05 72            	CALL HEX_CON
+(1)  851/    71FD : 7B                  	LD A,E
+(1)  852/    71FE : CD 05 72            	CALL HEX_CON
+(1)  853/    7201 : 36 00               	LD (HL),0
+(1)  854/    7203 : E1                  	POP HL
+(1)  855/    7204 : C9                  	RET
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(window.a80) - page 33 - 1/17/2011 21:30:41
+
+
+(1)  856/    7205 :                     
+(1)  857/    7205 : 47                  HEX_CON	LD B,A
+(1)  858/    7206 : 0F                  	RRCA
+(1)  859/    7207 : 0F                  	RRCA
+(1)  860/    7208 : 0F                  	RRCA
+(1)  861/    7209 : 0F                  	RRCA
+(1)  862/    720A : CD 0E 72            	CALL ML_BYT
+(1)  863/    720D : 78                  	LD A,B
+(1)  864/    720E : E6 0F               ML_BYT	AND 0X0F
+(1)  865/    7210 : C6 30               	ADD A,0X30
+(1)  866/    7212 : FE 3A               	CP 0X3A
+(1)  867/    7214 : 38 02               	JR C,$+4
+(1)  868/    7216 : C6 07               	ADD A,7
+(1)  869/    7218 : 77                  	LD (HL),A
+(1)  870/    7219 : 23                  	INC HL
+(1)  871/    721A : C9                  	RET
+(1)  872/    721B :                     
+(1)  873/    721B : D9                  HEX4DEC	EXX
+(1)  874/    721C : 21 80 B9            	LD HL,TXT_DEC
+(1)  875/    721F : E5                  	PUSH HL
+(1)  876/    7220 : E5                  	PUSH HL
+(1)  877/    7221 : 06 09               	LD B,9
+(1)  878/    7223 : D9                  	EXX
+(1)  879/    7224 : 21 7E 72            	LD HL,CHISLA4
+(1)  880/    7227 :                     	REPT 9
+(1)  881/    7227 :                     	CALL BCDEMHL
+(1)  882/    7227 :                     	ENDM
+(1)  881/    7227 : CD A2 72            	CALL BCDEMHL
+(1)  881/    722A : CD A2 72            	CALL BCDEMHL
+(1)  881/    722D : CD A2 72            	CALL BCDEMHL
+(1)  881/    7230 : CD A2 72            	CALL BCDEMHL
+(1)  881/    7233 : CD A2 72            	CALL BCDEMHL
+(1)  881/    7236 : CD A2 72            	CALL BCDEMHL
+(1)  881/    7239 : CD A2 72            	CALL BCDEMHL
+(1)  881/    723C : CD A2 72            	CALL BCDEMHL
+(1)  881/    723F : CD A2 72            	CALL BCDEMHL
+(1)  883/    7242 : 3E 30               H2D1	LD A,0X30
+(1)  884/    7244 : 83                  	ADD A,E
+(1)  885/    7245 : D9                  	EXX
+(1)  886/    7246 : 77                  	LD (HL),A
+(1)  887/    7247 : 23                  	INC HL
+(1)  888/    7248 : 36 00               	LD (HL),0
+(1)  889/    724A : 78                  	LD A,B
+(1)  890/    724B : D9                  	EXX
+(1)  891/    724C : E1                  	POP HL
+(1)  892/    724D : 47                  	LD B,A
+(1)  893/    724E : 7E                  	LD A,(HL)
+(1)  894/    724F : FE 30               	CP 0X30
+(1)  895/    7251 : 20 05               	JR NZ,$+7
+(1)  896/    7253 : 36 20               	LD (HL),0X20
+(1)  897/    7255 : 23                  	INC HL
+(1)  898/    7256 : 10 F6               	DJNZ $-8
+(1)  899/    7258 : E1                  	POP HL
+(1)  900/    7259 : C9                  	RET
+(1)  901/    725A :                     
+(1)  902/    725A : D9                  HEX2DEC	EXX
+(1)  903/    725B : 21 80 B9            	LD HL,TXT_DEC
+(1)  904/    725E : E5                  	PUSH HL
+(1)  905/    725F : E5                  	PUSH HL
+(1)  906/    7260 : 06 04               	LD B,4
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(window.a80) - page 34 - 1/17/2011 21:30:41
+
+
+(1)  907/    7262 : D9                  	EXX
+(1)  908/    7263 : 21 92 72            	LD HL,CHISLA2
+(1)  909/    7266 : 01 00 00            	LD BC,0
+(1)  910/    7269 : 18 CB               	JR H2D1-(4*3)
+(1)  911/    726B :                     
+(1)  912/    726B : D9                  HEX1DEC	EXX
+(1)  913/    726C : 21 80 B9            	LD HL,TXT_DEC
+(1)  914/    726F : E5                  	PUSH HL
+(1)  915/    7270 : E5                  	PUSH HL
+(1)  916/    7271 : 06 02               	LD B,2
+(1)  917/    7273 : D9                  	EXX
+(1)  918/    7274 : 21 9A 72            	LD HL,CHISLA1
+(1)  919/    7277 : 01 00 00            	LD BC,0
+(1)  920/    727A : 16 00               	LD D,0
+(1)  921/    727C : 18 BE               	JR H2D1-(2*3)
+(1)  922/    727E :                     
+(1)  923/    727E : 00 CA 9A 3B         CHISLA4	DB 0X00,0XCA,0X9A,0X3B;1000000000
+(1)  924/    7282 : 00 E1 F5 05         	DB 0X00,0XE1,0XF5,0X05;100000000
+(1)  925/    7286 : 80 96 98 00         	DB 0X80,0X96,0X98,0X00;10000000
+(1)  926/    728A : 40 42 0F 00         	DB 0X40,0X42,0X0F,0X00;1000000
+(1)  927/    728E : A0 86 01 00         	DB 0XA0,0X86,0X01,0X00;100000
+(1)  928/    7292 : 10 27 00 00         CHISLA2	DB 0X10,0X27,0X00,0X00;10000
+(1)  929/    7296 : E8 03 00 00         	DB 0XE8,0X03,0X00,0X00;1000
+(1)  930/    729A : 64 00 00 00         CHISLA1	DB 0X64,0X00,0X00,0X00;100
+(1)  931/    729E : 0A 00 00 00         	DB 0X0A,0X00,0X00,0X00;10
+(1)  932/    72A2 :                     
+(1)  933/    72A2 :                     ;BCDE-(ADR)=BCDE
+(1)  934/    72A2 : AF                  BCDEMHL	XOR A
+(1)  935/    72A3 : 08                  	EX AF,AF'
+(1)  936/    72A4 : 7B                  	LD A,E
+(1)  937/    72A5 : 96                  	SUB (HL)
+(1)  938/    72A6 : 23                  	INC HL
+(1)  939/    72A7 : 5F                  	LD E,A
+(1)  940/    72A8 : 7A                  	LD A,D
+(1)  941/    72A9 : 9E                  	SBC A,(HL)
+(1)  942/    72AA : 23                  	INC HL
+(1)  943/    72AB : 57                  	LD D,A
+(1)  944/    72AC : 79                  	LD A,C
+(1)  945/    72AD : 9E                  	SBC A,(HL)
+(1)  946/    72AE : 23                  	INC HL
+(1)  947/    72AF : 4F                  	LD C,A
+(1)  948/    72B0 : 78                  	LD A,B
+(1)  949/    72B1 : 9E                  	SBC A,(HL)
+(1)  950/    72B2 : 47                  	LD B,A
+(1)  951/    72B3 : 2B                  	DEC HL
+(1)  952/    72B4 : 2B                  	DEC HL
+(1)  953/    72B5 : 2B                  	DEC HL
+(1)  954/    72B6 : 08                  	EX AF,AF'
+(1)  955/    72B7 : 3C                  	INC A
+(1)  956/    72B8 : 08                  	EX AF,AF'
+(1)  957/    72B9 : 78                  	LD A,B
+(1)  958/    72BA : FE C4               	CP 0XC4
+(1)  959/    72BC : 38 E6               	JR C,BCDEMHL+2
+(1)  960/    72BE : 7E                  	LD A,(HL)
+(1)  961/    72BF : 83                  	ADD A,E
+(1)  962/    72C0 : 5F                  	LD E,A
+(1)  963/    72C1 : 23                  	INC HL
+(1)  964/    72C2 : 7E                  	LD A,(HL)
+(1)  965/    72C3 : 8A                  	ADC A,D
+(1)  966/    72C4 : 57                  	LD D,A
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(window.a80) - page 35 - 1/17/2011 21:30:41
+
+
+(1)  967/    72C5 : 23                  	INC HL
+(1)  968/    72C6 : 7E                  	LD A,(HL)
+(1)  969/    72C7 : 89                  	ADC A,C
+(1)  970/    72C8 : 4F                  	LD C,A
+(1)  971/    72C9 : 23                  	INC HL
+(1)  972/    72CA : 7E                  	LD A,(HL)
+(1)  973/    72CB : 88                  	ADC A,B
+(1)  974/    72CC : 47                  	LD B,A
+(1)  975/    72CD : 2B                  	DEC HL
+(1)  976/    72CE : 2B                  	DEC HL
+(1)  977/    72CF : 2B                  	DEC HL
+(1)  978/    72D0 : 08                  	EX AF,AF'
+(1)  979/    72D1 : 3D                  	DEC A
+(1)  980/    72D2 : C6 30               	ADD A,0X30
+(1)  981/    72D4 : 23                  	INC HL
+(1)  982/    72D5 : 23                  	INC HL
+(1)  983/    72D6 : 23                  	INC HL
+(1)  984/    72D7 : 23                  	INC HL
+(1)  985/    72D8 : D9                  	EXX
+(1)  986/    72D9 : 77                  	LD (HL),A
+(1)  987/    72DA : 23                  	INC HL
+(1)  988/    72DB : D9                  	EXX
+(1)  989/    72DC : C9                  	RET
+(1)  990/    72DD :                     
+(1)  991/    72DD : E1                  CP_KEYS	POP HL
+(1)  992/    72DE : 47                  	LD B,A
+(1)  993/    72DF : 7E                  CPKEYS1	LD A,(HL)
+(1)  994/    72E0 : 23                  	INC HL
+(1)  995/    72E1 : A7                  	AND A
+(1)  996/    72E2 : 20 01               	JR NZ,$+3
+(1)  997/    72E4 : E9                  	JP (HL)
+(1)  998/    72E5 :                     	
+(1)  999/    72E5 : 5E                  	LD E,(HL)
+(1) 1000/    72E6 : 23                  	INC HL
+(1) 1001/    72E7 : 56                  	LD D,(HL)
+(1) 1002/    72E8 : 23                  	INC HL
+(1) 1003/    72E9 : B8                  	CP B
+(1) 1004/    72EA : 20 F3               	JR NZ,CPKEYS1
+(1) 1005/    72EC : D5                  	PUSH DE
+(1) 1006/    72ED : 7E                  CPKEYS2	LD A,(HL)
+(1) 1007/    72EE : 23                  	INC HL
+(1) 1008/    72EF : A7                  	AND A
+(1) 1009/    72F0 : 20 02               	JR NZ,$+4
+(1) 1010/    72F2 : E3                  	EX (SP),HL
+(1) 1011/    72F3 : E9                  	JP (HL)
+(1) 1012/    72F4 :                     
+(1) 1013/    72F4 : 23                          INC HL
+(1) 1014/    72F5 : 23                          INC HL
+(1) 1015/    72F6 : 18 F5                       JR CPKEYS2
+(1) 1016/    72F8 :                     
+(1) 1017/    72F8 : C5                  PAG_128	PUSH BC
+(1) 1018/    72F9 : 01 FD 7F            	LD BC,0X7FFD
+(1) 1019/    72FC : F6 10               	OR 0X10
+(1) 1020/    72FE : ED 79               	OUT (C),A
+(1) 1021/    7300 :                     ;	LD (PAGE128),A
+(1) 1022/    7300 : C1                  	POP BC
+(1) 1023/    7301 : C9                  	RET
+(1) 1024/    7302 :                     
+     582/    7302 :                     		include flasher_data.a80
+(1)    1/    7302 :                     
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(flasher_data.a80) - page 36 - 1/17/2011 21:30:41
+
+
+(1)    2/    7302 :                     ;îéêåÄí îãÄÉéÇéÉé ÅÄâíÄ éäçÄ
+(1)    3/    7302 :                     ;X,Y,V,H,C,C
+(1)    4/    7302 :                     ;IX+8
+(1)    5/    7302 :                     ;7-1-çàÜçàâ áÄÉéãéÇéä
+(1)    6/    7302 :                     ;6-0-ë êÄåäéâ,1-ÅÖá êÄåäà
+(1)    7/    7302 :                     ;5-1-ÇÖêïçàâ áÄÉéãéÇéä
+(1)    8/    7302 :                     ;4-0-íÖäëí éäçÄ,1-ÅÖá íÖäëíÄ
+(1)    9/    7302 :                     ;3
+(1)   10/    7302 :                     ;2-0-FILE,1-*.TRD
+(1)   11/    7302 :                     ;1-0-MENU,1-FILES
+(1)   12/    7302 :                     ;0-0-TRDOS,1-MSDOS
+(1)   13/    7302 :                     
+(1)   14/    7302 :                     ;BIT 4,(IY+55)
+(1)   15/    7302 :                     ;BIT 3,(IY+55) 1-çÖí ÑàëäÄ, 0-Öëíú
+(1)   16/    7302 :                     ;BIT 2,(IY+55) 1-çÖ çÄâÑÖçé, 0-FAT Öëíú
+(1)   17/    7302 :                     
+(1)   18/    7302 :                     ;éèàëÄíÖãú éäçÄ (ÄÑêÖë Ç IX)
+(1)   19/    7302 :                     ;+00 X
+(1)   20/    7302 :                     ;+01 Y
+(1)   21/    7302 :                     ;+02 V
+(1)   22/    7302 :                     ;+03 H
+(1)   23/    7302 :                     ;+04 C
+(1)   24/    7302 :                     ;+05 C
+(1)   25/    7302 :                     ;+06 | ÄÑêÖëÄ
+(1)   26/    7302 :                     ;+07 | èéÑèêéÉêÄåå
+(1)   27/    7302 :                     ;+08 F
+(1)   28/    7302 :                     ;+09 X
+(1)   29/    7302 :                     ;+0A Y
+(1)   30/    7302 :                     ;+0B V
+(1)   31/    7302 :                     ;+0C H
+(1)   32/    7302 :                     ;+0D | ÄÑêÖë
+(1)   33/    7302 :                     ;+0E | íÖäëíÄ
+(1)   34/    7302 :                     ;+0F : çéåÖê èìçäíÄ Ç éäçÖ
+(1)   35/    7302 :                     ;+10 : äéãàóÖëíÇé
+(1)   36/    7302 :                     ;+11 : èìçäíéÇ åÖçû
+(1)   37/    7302 :                     ;+12 "C" | íÖäìôàâ
+(1)   38/    7302 :                     ;+13 "B" | èìçäí åÖçû
+(1)   39/    7302 :                     
+(1)   40/    7302 : 03 0A 0A 1A 0F 1F   WIN_INDICAT	DB 0X03,0X0A,0X0A,0X1A,0X0F,0X1F
+(1)   41/    7308 : 00 00               		DW 0
+(1)   42/    730A : 10 00 00 00 00      		DB %00010000,0,0,0,0
+(1)   43/    730F : 00 00               		DW 0
+(1)   44/    7311 : 00                  		DB 0
+(1)   45/    7312 : 00 00 00 00         		DW 0,0
+(1)   46/    7316 :                     		;   12345678901234567890123456789012
+(1)   47/    7316 : 87 A0 A3 E0 E3 A7   TLOADPAGE1	DB "á†£‡„ß™† Æ°≠Æ¢´•≠®Ô             ",0
+                    AA A0 20 AE A1 AD 
+                    AE A2 AB A5 AD A8 
+                    EF 20 20 20 20 20 
+                    20 20 20 20 20 20 
+                    20 20 00 
+(1)   48/    7337 : 8F E0 AE A2 A5 E0   TLOADPAGE2	DB "è‡Æ¢•‡™† CRC16 ·‚‡†≠®ÊÎ         ",0
+                    AA A0 20 43 52 43 
+                    31 36 20 E1 E2 E0 
+                    A0 AD A8 E6 EB 20 
+                    20 20 20 20 20 20 
+                    20 20 00 
+(1)   49/    7358 : =734FH              NUMTLDP2	EQU $-9
+(1)   50/    7358 : 43 52 43 31 36 20   TLOADPAGE3	DB "CRC16 ·‚‡†≠®ÊÎ éä               ",0
+                    E1 E2 E0 A0 AD A8 
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(flasher_data.a80) - page 37 - 1/17/2011 21:30:41
+
+
+                    E6 EB 20 8E 8A 20 
+                    20 20 20 20 20 20 
+                    20 20 20 20 20 20 
+                    20 20 00 
+(1)   51/    7379 : 20 20 4F 4B 00      TLOADPAGE4	DB "  OK",0
+(1)   52/    737E : 20 20 45 52 52 4F   TLOADPAGE5	DB "  ERROR",0
+                    52 00 
+(1)   53/    7386 :                     
+(1)   54/    7386 : 0D 20 20 20 00      NEW_STROKA	DB 0X0D,"   ",0
+(1)   55/    738B :                     
+(1)   56/    738B : 0C 09 03 08 17 00   NO_UPDATE	DB 0X0C,0X09,0X03,0X08,0X17,0X00
+(1)   57/    7391 : 00 00               		DW 0
+(1)   58/    7393 : 00 00 00 00 00      		DB 0,0,0,0,0
+(1)   59/    7398 : 9F 73               		DW NOTUPDATE
+(1)   60/    739A : 00                  		DB 0
+(1)   61/    739B : 00 00 00 00         		DW 0,0
+(1)   62/    739F : 0D 03 4E 6F 20 66   NOTUPDATE	DB 0X0D,3,"No files",0
+                    69 6C 65 73 00 
+(1)   63/    73AA :                     
+(1)   64/    73AA : 06 05 03 14 17 00   ERROR_UPDATE	DB 0X06,0X05,0X03,0X14,0X17,0X00
+(1)   65/    73B0 : 00 00               		DW 0
+(1)   66/    73B2 : 00 00 00 00 00      		DB 0,0,0,0,0
+(1)   67/    73B7 : BE 73               		DW TXT_ERRUPDATE
+(1)   68/    73B9 : 00                  		DB 0
+(1)   69/    73BA : 00 00 00 00         		DW 0,0
+(1)   70/    73BE : 0D 20 20 00         TXT_ERRUPDATE	DB 0X0D,"  ",0
+(1)   71/    73C2 : 45 52 52 4F 52 3A   TXT_ERRUPD1	DB "ERROR: File not found",0
+                    20 46 69 6C 65 20 
+                    6E 6F 74 20 66 6F 
+                    75 6E 64 00 
+(1)   72/    73D8 : 45 52 52 4F 52 3A   TXT_ERRUPD2	DB "ERROR: FAT not found",0
+                    20 46 41 54 20 6E 
+                    6F 74 20 66 6F 75 
+                    6E 64 00 
+(1)   73/    73ED : 45 52 52 4F 52 3A   TXT_ERRUPD3	DB "ERROR: SD card not found",0
+                    20 53 44 20 63 61 
+                    72 64 20 6E 6F 74 
+                    20 66 6F 75 6E 64 
+                    00 
+(1)   74/    7406 :                     
+(1)   75/    7406 : 45 52 52 4F 52 3A   TXT_CRC		DB "ERROR: CRC error",0
+                    20 43 52 43 20 65 
+                    72 72 6F 72 00 
+(1)   76/    7417 : 45 52 52 4F 52 3A   TXT_NONGS	DB "ERROR: NeoGS not found",0
+                    20 4E 65 6F 47 53 
+                    20 6E 6F 74 20 66 
+                    6F 75 6E 64 00 
+(1)   77/    742E : 46 6C 61 73 68 20   TXT_OKUPDATE	DB "Flash ROM NeoGS updated",0
+                    52 4F 4D 20 4E 65 
+                    6F 47 53 20 75 70 
+                    64 61 74 65 64 00 
+(1)   78/    7446 :                     
+(1)   79/    7446 : 00 00 18 0A 0F 1F   FILE_SELECT	DB 0,0,24,10,0X0F,0X1F,0,0,%00010001
+                    00 00 11 
+(1)   80/    744F : (MACRO)             		DUPL 11,0
+(1)   80/    744F :                     DUPL:
+(1)   80/    744F : =0H                 $$N             EQU (11) / 1024
+(1)   80/    744F : =BH                 $$M             EQU (11) # 1024
+(1)   80/    744F :                                     REPT $$N
+(1)   80/    744F :                                     DB 1024 DUP(0)
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(flasher_data.a80) - page 38 - 1/17/2011 21:30:41
+
+
+(1)   80/    744F :                                     ENDM
+(1)   80/    744F : =>TRUE                              IF $$M <> 0
+(1)   80/    744F : 00 00 00 00 00 00                   DB $$M DUP(0)
+                    00 00 00 00 00 
+(1)   80/    745A : [80]                                ENDIF
+(1)   81/    745A :                     
+(1)   82/    745A : 00                  PAGE128		DB 0
+(1)   83/    745B :                     
+(1)   84/    745B : 08 07 05 10 17 1F   PROGERS		DB 8,7,5,16,0X17,0X1F
+(1)   85/    7461 : (MACRO)             		DUPL 7,0
+(1)   85/    7461 :                     DUPL:
+(1)   85/    7461 : =0H                 $$N             EQU (7) / 1024
+(1)   85/    7461 : =7H                 $$M             EQU (7) # 1024
+(1)   85/    7461 :                                     REPT $$N
+(1)   85/    7461 :                                     DB 1024 DUP(0)
+(1)   85/    7461 :                                     ENDM
+(1)   85/    7461 : =>TRUE                              IF $$M <> 0
+(1)   85/    7461 : 00 00 00 00 00 00                   DB $$M DUP(0)
+                    00 
+(1)   85/    7468 : [85]                                ENDIF
+(1)   86/    7468 : 6F 74               		DW PROGERT
+(1)   87/    746A : (MACRO)             		DUPL 5,0
+(1)   87/    746A :                     DUPL:
+(1)   87/    746A : =0H                 $$N             EQU (5) / 1024
+(1)   87/    746A : =5H                 $$M             EQU (5) # 1024
+(1)   87/    746A :                                     REPT $$N
+(1)   87/    746A :                                     DB 1024 DUP(0)
+(1)   87/    746A :                                     ENDM
+(1)   87/    746A : =>TRUE                              IF $$M <> 0
+(1)   87/    746A : 00 00 00 00 00                      DB $$M DUP(0)
+(1)   87/    746F : [87]                                ENDIF
+(1)   88/    746F : 0D 0D 03 8F E0 AE   PROGERT		DB 0X0D,0X0D,3,"è‡ÆË®¢†Ó...",0
+                    E8 A8 A2 A0 EE 2E 
+                    2E 2E 00 
+(1)   89/    747E :                     
+(1)   90/    747E : 0D 0D 03 91 E2 E0   THLPL0		DB 0X0D,0X0D,3,"ë‚‡†≠®Ê† Ø‡ÆË®¢Æ™ Pentagon ‡•¶®¨†",0
+                    A0 AD A8 E6 A0 20 
+                    AF E0 AE E8 A8 A2 
+                    AE AA 20 50 65 6E 
+                    74 61 67 6F 6E 20 
+                    E0 A5 A6 A8 AC A0 
+                    00 
+(1)   91/    74A3 :                     
+(1)   92/    74A3 :                     THLPL1
+(1)   93/    74A3 :                     THLPL2
+(1)   94/    74A3 :                     THLPL3
+(1)   95/    74A3 :                     THLPL4
+(1)   96/    74A3 :                     THLPL5
+(1)   97/    74A3 : 00                  THLPL6		DB 0
+(1)   98/    74A4 :                     
+(1)   99/    74A4 : 0D 0D 03 91 E2 E0   THLPL7		DB 0X0D,0X0D,3,"ë‚‡†≠®Ê† Ø‡ÆË®¢Æ™ ATM ‡•¶®¨†",0
+                    A0 AD A8 E6 A0 20 
+                    AF E0 AE E8 A8 A2 
+                    AE AA 20 41 54 4D 
+                    20 E0 A5 A6 A8 AC 
+                    A0 00 
+(1)  100/    74C4 :                     
+(1)  101/    74C4 : 0D 0D 03 87 A0 A3   THLPR0		DB 0X0D,0X0D,3,"á†£‡„ß®‚Ï Æ°≠Æ¢´•≠®•",0
+                    E0 E3 A7 A8 E2 EC 
+                    20 AE A1 AD AE A2 
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(flasher_data.a80) - page 39 - 1/17/2011 21:30:41
+
+
+                    AB A5 AD A8 A5 00 
+(1)  102/    74DC :                     
+(1)  103/    74DC : 0D 0D 03 8E A1 AD   THLPR1		DB 0X0D,0X0D,3,"é°≠Æ¢®‚Ï ¢·• ·‚‡†≠®ÊÎ",0
+                    AE A2 A8 E2 EC 20 
+                    A2 E1 A5 20 E1 E2 
+                    E0 A0 AD A8 E6 EB 
+                    00 
+(1)  104/    74F5 :                     
+(1)  105/    74F5 : 0D 0D 03 8D A5 A1   THLPR2		DB 0X0D,0X0D,3,"ç•°Æ´ÏËÆ© ¢·‚‡Æ•≠≠Î© HELP",0
+                    AE AB EC E8 AE A9 
+                    20 A2 E1 E2 E0 AE 
+                    A5 AD AD EB A9 20 
+                    48 45 4C 50 00 
+(1)  106/    7512 :                     
+(1)  107/    7512 : 0D 0D 03 82 EB E5   THLPR3		DB 0X0D,0X0D,3,"ÇÎÂÆ§ ®ß Ø‡Æ£‡†¨¨Î",0
+                    AE A4 20 A8 A7 20 
+                    AF E0 AE A3 E0 A0 
+                    AC AC EB 00 
+(1)  108/    7528 :                     
+(1)  109/    7528 : 01 0D 06 1E 0F 1F   WHELP		DB 1,13,6,30,0X0F,0X1F,0,0,0X10
+                    00 00 10 
+(1)  110/    7531 : (MACRO)             		DUPL 11,0
+(1)  110/    7531 :                     DUPL:
+(1)  110/    7531 : =0H                 $$N             EQU (11) / 1024
+(1)  110/    7531 : =BH                 $$M             EQU (11) # 1024
+(1)  110/    7531 :                                     REPT $$N
+(1)  110/    7531 :                                     DB 1024 DUP(0)
+(1)  110/    7531 :                                     ENDM
+(1)  110/    7531 : =>TRUE                              IF $$M <> 0
+(1)  110/    7531 : 00 00 00 00 00 00                   DB $$M DUP(0)
+                    00 00 00 00 00 
+(1)  110/    753C : [110]                               ENDIF
+(1)  111/    753C :                     
+(1)  112/    753C : 7E 74 A3 74 A3 74   THELP1		DW THLPL0,THLPL1,THLPL2,THLPL3,THLPL4,THLPL5,THLPL6,THLPL7
+                    A3 74 A3 74 A3 74 
+                    A3 74 A4 74 
+(1)  113/    754C :                     
+(1)  114/    754C : C4 74 DC 74 F5 74   THELP2		DW THLPR0,THLPR1,THLPR2,THLPR3
+                    12 75 
+(1)  115/    7554 :                     
+(1)  116/    7554 : 01 02 0A 0A 0F 1F   WEKS1		DB 0X01,0X02,0X0A,0X0A,0X0F,0X1F
+(1)  117/    755A : 3C 75               		DW THELP1
+(1)  118/    755C : 22 00 00 00 00      		DB %00100010,0,0,0,0
+(1)  119/    7561 : 68 75               		DW DNAME
+(1)  120/    7563 : 00                  		DB 0
+(1)  121/    7564 : 08 00 00 00         		DW 8,0			;äéãàóÖëíÇé èìçäíéÇ åÖçû			
+(1)  122/    7568 : 14 01 03            DNAME		DB 0X14,1,3
+(1)  123/    756B : 46 4C 41 53 48 20   		DB "FLASH Pages",0X14,0
+                    50 61 67 65 73 14 
+                    00 
+(1)  124/    7578 : 0D 03 50 61 67 65   		DB 0X0D,3,"Page 0"
+                    20 30 
+(1)  125/    7580 : 0D 03 50 61 67 65   		DB 0X0D,3,"Page 1"
+                    20 31 
+(1)  126/    7588 : 0D 03 50 61 67 65   		DB 0X0D,3,"Page 2"
+                    20 32 
+(1)  127/    7590 : 0D 03 50 61 67 65   		DB 0X0D,3,"Page 3"
+                    20 33 
+(1)  128/    7598 : 0D 03 50 61 67 65   		DB 0X0D,3,"Page 4"
+                    20 34 
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(flasher_data.a80) - page 40 - 1/17/2011 21:30:41
+
+
+(1)  129/    75A0 : 0D 03 50 61 67 65   		DB 0X0D,3,"Page 5"
+                    20 35 
+(1)  130/    75A8 : 0D 03 50 61 67 65   		DB 0X0D,3,"Page 6"
+                    20 36 
+(1)  131/    75B0 : 0D 03 50 61 67 65   		DB 0X0D,3,"Page 7",0
+                    20 37 00 
+(1)  132/    75B9 :                     
+(1)  133/    75B9 : 08 08 04 0F 0F 1F   WEKS2		DB 0X08,0X08,0X04,0X0F,0X0F,0X1F
+(1)  134/    75BF : 4C 75               		DW THELP2
+(1)  135/    75C1 : 20 00 00 00 00      		DB %00100000,0,0,0,0
+(1)  136/    75C6 : CD 75               		DW SDNAME
+(1)  137/    75C8 : 00                  		DB 0
+(1)  138/    75C9 : 02 00 00 00         		DW 2,0				;äéãàóÖëíÇé èìçäíéÇ åÖçû
+(1)  139/    75CD : 14 01 03 84 A5 A9   SDNAME		DB 0X14,1,3,"Ñ•©·‚¢®•",0X14,0
+                    E1 E2 A2 A8 A5 14 
+                    00 
+(1)  140/    75DA : 0D 03 8E A1 AD AE   		DB 0X0D,3,"é°≠Æ¢®‚Ï ¢·•"
+                    A2 A8 E2 EC 20 A2 
+                    E1 A5 
+(1)  141/    75E8 : 0D 03 45 78 69 74   		DB 0X0D,3,"Exit",0
+                    00 
+(1)  142/    75EF :                     
+(1)  143/    75EF : 00 00 18 20 29 1F   ALLSCR		DB 0X00,0X00,0X18,0X20,0X29,0X1F
+(1)  144/    75F5 : 00 00               		DW 0
+(1)  145/    75F7 : 22 00 00 00 00      		DB %00100010,0,0,0,0
+(1)  146/    75FC : 03 76               		DW SCRTXT
+(1)  147/    75FE : 00                  		DB 0
+(1)  148/    75FF : 00 00 00 00         		DW 0,0
+(1)  149/    7603 : 14 01 03 46 4C 41   SCRTXT		DB 0X14,1,3,"FLASHER for NeoGS v0.2",0X14,0,0
+                    53 48 45 52 20 66 
+                    6F 72 20 4E 65 6F 
+                    47 53 20 76 30 2E 
+                    32 14 00 00 
+(1)  150/    761F :                     
+(1)  151/    761F : 00 00 18 20 28 1F   MEGHELP		DB 0,0,24,32,0X28,0X1F
+(1)  152/    7625 : (MACRO)             		DUPL 7,0
+(1)  152/    7625 :                     DUPL:
+(1)  152/    7625 : =0H                 $$N             EQU (7) / 1024
+(1)  152/    7625 : =7H                 $$M             EQU (7) # 1024
+(1)  152/    7625 :                                     REPT $$N
+(1)  152/    7625 :                                     DB 1024 DUP(0)
+(1)  152/    7625 :                                     ENDM
+(1)  152/    7625 : =>TRUE                              IF $$M <> 0
+(1)  152/    7625 : 00 00 00 00 00 00                   DB $$M DUP(0)
+                    00 
+(1)  152/    762C : [152]                               ENDIF
+(1)  153/    762C : 33 76               		DW MEGATXT
+(1)  154/    762E : (MACRO)             		DUPL 5,0
+(1)  154/    762E :                     DUPL:
+(1)  154/    762E : =0H                 $$N             EQU (5) / 1024
+(1)  154/    762E : =5H                 $$M             EQU (5) # 1024
+(1)  154/    762E :                                     REPT $$N
+(1)  154/    762E :                                     DB 1024 DUP(0)
+(1)  154/    762E :                                     ENDM
+(1)  154/    762E : =>TRUE                              IF $$M <> 0
+(1)  154/    762E : 00 00 00 00 00                      DB $$M DUP(0)
+(1)  154/    7633 : [154]                               ENDIF
+(1)  155/    7633 :                     		;       123456789012345678901234567890123456789012
+(1)  156/    7633 : 0D 20 20 20 9D E2   MEGATXT		DB 0X0D,"   ù‚† Ø‡Æ£‡†¨¨† Ø‡•§≠†ß≠†Á•≠† §´Ô Æ°≠Æ¢- "
+                    A0 20 AF E0 AE A3 
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(flasher_data.a80) - page 41 - 1/17/2011 21:30:41
+
+
+                    E0 A0 AC AC A0 20 
+                    AF E0 A5 A4 AD A0 
+                    A7 AD A0 E7 A5 AD 
+                    A0 20 A4 AB EF 20 
+                    AE A1 AD AE A2 2D 
+                    20 
+(1)  157/    765E : 0D 20 AB A5 AD A8   		DB 0X0D," ´•≠®Ô Ø‡ÆË®¢™® FLASH ROM, ≠†ÂÆ§ÔÈ•©·Ô ≠† "
+                    EF 20 AF E0 AE E8 
+                    A8 A2 AA A8 20 46 
+                    4C 41 53 48 20 52 
+                    4F 4D 2C 20 AD A0 
+                    E5 AE A4 EF E9 A5 
+                    A9 E1 EF 20 AD A0 
+                    20 
+(1)  158/    7689 : 0D 20 AF AB A0 E2   		DB 0X0D," Ø´†‚• NeoGS. Ç Ì‚Æ© ¢•‡·®® Æ°≠Æ¢´Ô•‚·Ô:  "
+                    A5 20 4E 65 6F 47 
+                    53 2E 20 82 20 ED 
+                    E2 AE A9 20 A2 A5 
+                    E0 E1 A8 A8 20 AE 
+                    A1 AD AE A2 AB EF 
+                    A5 E2 E1 EF 3A 20 
+                    20 
+(1)  159/    76B4 : 0D 20 AF E0 AE E8   		DB 0X0D," Ø‡ÆË®¢™† FPGA - §Æ°†¢´Ô•‚·Ô ‡•¶®¨ DMA;   "
+                    A8 A2 AA A0 20 46 
+                    50 47 41 20 2D 20 
+                    A4 AE A1 A0 A2 AB 
+                    EF A5 E2 E1 EF 20 
+                    E0 A5 A6 A8 AC 20 
+                    44 4D 41 3B 20 20 
+                    20 
+(1)  160/    76DF : 0D 20 A7 A0 A3 E0   		DB 0X0D," ß†£‡„ßÁ®™ - §Æ°†¢´•≠Î ≠•·™Æ´Ï™Æ ¢Æß¨Æ¶-  "
+                    E3 A7 E7 A8 AA 20 
+                    2D 20 A4 AE A1 A0 
+                    A2 AB A5 AD EB 20 
+                    AD A5 E1 AA AE AB 
+                    EC AA AE 20 A2 AE 
+                    A7 AC AE A6 2D 20 
+                    20 
+(1)  161/    770A : 0D 20 AD AE E1 E2   		DB 0X0D," ≠Æ·‚•©, ØÆ§‡Æ°≠•• ¢ Ø‡®´†£†ÓÈ•¨·Ô PDF-   "
+                    A5 A9 2C 20 AF AE 
+                    A4 E0 AE A1 AD A5 
+                    A5 20 A2 20 AF E0 
+                    A8 AB A0 A3 A0 EE 
+                    E9 A5 AC E1 EF 20 
+                    50 44 46 2D 20 20 
+                    20 
+(1)  162/    7735 : 0D 20 E4 A0 A9 AB   		DB 0X0D," ‰†©´•.                                   "
+                    A5 2E 20 20 20 20 
+                    20 20 20 20 20 20 
+                    20 20 20 20 20 20 
+                    20 20 20 20 20 20 
+                    20 20 20 20 20 20 
+                    20 20 20 20 20 20 
+                    20 
+(1)  163/    7760 : 0D                  		DB 0X0D
+(1)  164/    7761 : 0D 20 20 20 8B A5   		DB 0X0D,"   ã•¢Æ• Æ™≠Æ ·´„¶®‚ ‚Æ´Ï™Æ §´Ô Ø‡Æ·¨Æ‚‡† "
+                    A2 AE A5 20 AE AA 
+                    AD AE 20 E1 AB E3 
+                    A6 A8 E2 20 E2 AE 
+                    AB EC AA AE 20 A4 
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(flasher_data.a80) - page 42 - 1/17/2011 21:30:41
+
+
+                    AB EF 20 AF E0 AE 
+                    E1 AC AE E2 E0 A0 
+                    20 
+(1)  165/    778C : 0D 20 A2 A5 E0 E1   		DB 0X0D," ¢•‡·®® Ø‡ÆË®¢™® ¢ ·‚‡†≠®Ê†Â FLASH ROM.   "
+                    A8 A8 20 AF E0 AE 
+                    E8 A8 A2 AA A8 20 
+                    A2 20 E1 E2 E0 A0 
+                    AD A8 E6 A0 E5 20 
+                    46 4C 41 53 48 20 
+                    52 4F 4D 2E 20 20 
+                    20 
+(1)  166/    77B7 : 0D                  		DB 0X0D
+(1)  167/    77B8 : 0D 20 20 20 8F E0   		DB 0X0D,"   è‡†¢Æ• Æ™≠Æ Ø‡•§≠†ß≠†Á•≠Æ §´Ô Æ°≠Æ¢´•- "
+                    A0 A2 AE A5 20 AE 
+                    AA AD AE 20 AF E0 
+                    A5 A4 AD A0 A7 AD 
+                    A0 E7 A5 AD AE 20 
+                    A4 AB EF 20 AE A1 
+                    AD AE A2 AB A5 2D 
+                    20 
+(1)  168/    77E3 : 0D 20 AD A8 EF 20   		DB 0X0D," ≠®Ô Ø‡ÆË®¢™® FLASH ROM, Ø‡Æ·¨Æ‚‡† Ì‚Æ£Æ  "
+                    AF E0 AE E8 A8 A2 
+                    AA A8 20 46 4C 41 
+                    53 48 20 52 4F 4D 
+                    2C 20 AF E0 AE E1 
+                    AC AE E2 E0 A0 20 
+                    ED E2 AE A3 AE 20 
+                    20 
+(1)  169/    780E : 0D 20 E2 A5 AA E1   		DB 0X0D," ‚•™·‚† ®´® ¢ÎÂÆ§† ®ß Ø‡Æ£‡†¨¨Î · ØÆ´≠Î¨  "
+                    E2 A0 20 A8 AB A8 
+                    20 A2 EB E5 AE A4 
+                    A0 20 A8 A7 20 AF 
+                    E0 AE A3 E0 A0 AC 
+                    AC EB 20 E1 20 AF 
+                    AE AB AD EB AC 20 
+                    20 
+(1)  170/    7839 : 0D 20 AF A5 E0 A5   		DB 0X0D," Ø•‡•ß†Ø„·™Æ¨ NeoGS.                      "
+                    A7 A0 AF E3 E1 AA 
+                    AE AC 20 4E 65 6F 
+                    47 53 2E 20 20 20 
+                    20 20 20 20 20 20 
+                    20 20 20 20 20 20 
+                    20 20 20 20 20 20 
+                    20 
+(1)  171/    7864 : 0D                  		DB 0X0D
+(1)  172/    7865 : 0D 20 20 20 8D A8   		DB 0X0D,"   ç®¶≠•• Æ™≠Æ ØÆ™†ßÎ¢†•‚: ≠Æ¨•‡ ¢•‡·®®   "
+                    A6 AD A5 A5 20 AE 
+                    AA AD AE 20 AF AE 
+                    AA A0 A7 EB A2 A0 
+                    A5 E2 3A 20 AD AE 
+                    AC A5 E0 20 A2 A5 
+                    E0 E1 A8 A8 20 20 
+                    20 
+(1)  173/    7890 : 0D 20 AF E0 AE E8   		DB 0X0D," Ø‡ÆË®¢™® „¶• ß†Ë®‚Æ© ¢Æ FLASH ROM ®´®    "
+                    A8 A2 AA A8 20 E3 
+                    A6 A5 20 A7 A0 E8 
+                    A8 E2 AE A9 20 A2 
+                    AE 20 46 4C 41 53 
+                    48 20 52 4F 4D 20 
+                    A8 AB A8 20 20 20 
+ AS V1.42 Beta [Bld 78] - source file flasher.a80(flasher_data.a80) - page 43 - 1/17/2011 21:30:41
+
+
+                    20 
+(1)  174/    78BB : 0D 20 AA E0 A0 E2   		DB 0X0D," ™‡†‚™Æ© ØÆ¨ÆÈ® ‚Æ£Æ, Á‚Æ ¨Æ¶≠Æ ·§•´†‚Ï   "
+                    AA AE A9 20 AF AE 
+                    AC AE E9 A8 20 E2 
+                    AE A3 AE 2C 20 E7 
+                    E2 AE 20 AC AE A6 
+                    AD AE 20 E1 A4 A5 
+                    AB A0 E2 EC 20 20 
+                    20 
+(1)  175/    78E6 : 0D 20 A2 20 AC A5   		DB 0X0D," ¢ ¨•≠Ó ",0X22,"Ñ•©·‚¢®•.",0X22
+                    AD EE 20 22 84 A5 
+                    A9 E1 E2 A2 A8 A5 
+                    2E 22 
+(1)  176/    78FA : 0D                  		DB 0X0D
+(1)  177/    78FB : 0D 20 20 20 20 20   		DB 0X0D,"                     ",DDMMYY,"   savelij "
+                    20 20 20 20 20 20 
+                    20 20 20 20 20 20 
+                    20 20 20 20 31 37 
+                    2E 30 31 2E 32 30 
+                    31 31 20 20 20 73 
+                    61 76 65 6C 69 6A 
+                    20 
+(1)  178/    7926 : 00                  		DB 0
+(1)  179/    7927 :                     		;       123456789012345678901234567890123456789012
+(1)  180/    7927 :                     
+     583/    7927 :                     NGS_LOADER	binclude ../loader_ngs/loader_ngs.rom
+     584/    8231 :                     NGS_LOADERE
+     585/    8231 :                     
+ AS V1.42 Beta [Bld 78] - source file flasher.a80 - page 44 - 1/17/2011 21:30:41
+
+
+  symbol table (* = unused):
+  ------------------------
+
+ ACCEPT :                      6CDC C |  ADRAT :                       6226 C |
+*ADRATR :                      70BE C |  ADRDIS :                      70AA C |
+ ADRSTR :                      7172 C |  ADRTSC :                      6DE7 C |
+ ADR_PROGR :                   5800 - |  ALLSCR :                      75EF C |
+*ARCHITECTURE :  i386-unknown-win32 - |  ASD :                         70C7 C |
+ BCDEMHL :                     72A2 C | *BIGENDIAN :                      0 - |
+*BRANCHEXT :                      0 - |  BUFEND :                      6DCC C |
+ BUFFE :                       6DA1 C |  BUFFER :                      6DA4 C |
+ BUFFER_ZAG :                  9200 - |  BUFMSK :                      71DD C |
+ BUFTSC :                      B800 - |  BUF_CRC16_TABL :              9000 - |
+*B_8CHAN :                        2 - | *B_CBIT :                         0 - |
+*B_CKSL0 :                        4 - | *B_CKSL1 :                        5 - |
+*B_DBIT :                         7 - | *B_EXPAG :                        3 - |
+*B_INV7B :                        7 - | *B_MCNCS :                        1 - |
+*B_MCRDY :                        3 - | *B_MCSP0 :                        3 - |
+*B_MCSP1 :                        5 - | *B_MDDRQ :                        0 - |
+*B_MDHLF :                        4 - | *B_MPXRS :                        2 - |
+*B_NOROM :                        0 - | *B_PAN4C :                        6 - |
+*B_RAMRO :                        1 - | *B_SDDET :                        1 - |
+*B_SDNCS :                        0 - | *B_SDWP :                         2 - |
+*B_SNCLR :                        7 - |  CAPSLK :                      6D81 C |
+*CASESENSITIVE :                  1 - |  CEN2 :                        710C C |
+*CENTR :                       7109 C |  CHARS :                       644E C |
+ CHISLA1 :                     729A C |  CHISLA2 :                     7292 C |
+ CHISLA4 :                     727E C |  CLEAN :                       6D92 C |
+ CLEAR :                       6CD7 C |  CLRCBIT :                        5 - |
+ CLS :                         6E19 C | *CLSCLR :                      6E25 C |
+ COD13 :                       7138 C |  COD14 :                       714A C |
+ COD16 :                       7159 C |  COD9 :                        7125 C |
+*CONSTPI :        3.141592653589793 - |  CPKEYS1 :                     72DF C |
+ CPKEYS2 :                     72ED C |  CP_KEYS :                     72DD C |
+ CRLEFT :                      6D31 C |  CRRIGT :                      6D3E C |
+ CURSOR :                      6DCE C | *C_10MHZ :                       30 - |
+*C_12MHZ :                       10 - | *C_20MHZ :                       20 - |
+*C_24MHZ :                        0 - | *C_GLED :                        20 - |
+*C_GNMI :                        40 - | *C_GRST :                        80 - |
+*DATA :                        9631 - | *DATE :                   1/17/2011 - |
+ DD :                            11 - |  DDMMYY :                17.01.2011 - |
+*DECHL :                       70D9 C |  DELETE :                      6D50 C |
+*DMA_CST :                       1F - | *DMA_HAD :                       1C - |
+*DMA_LAD :                       1E - | *DMA_MAD :                       1D - |
+*DMA_MOD :                       1B - |  DNAME :                       7568 C |
+ DOWN :                        618E C |  DOWN1 :                       61BC C |
+*DPORT1 :                         A - | *DPORT2 :                         B - |
+*DRV_VAR :                     9500 - |  ENDEDIT :                     6D9C C |
+ ENTER :                       6D8C C |  ERA_BLK :                     58EC C |
+ ERRORRING :                   6058 C |  ERROR_UPDATE :                73AA C |
+ EX1 :                         7118 C |  EX2 :                         711E C |
+*FALSE :                          0 - | *FILE_SELECT :                 7446 C |
+ FINDNGS :                     6234 C |  FNDNGS1 :                     6246 C |
+ FNDNGS2 :                     625E C | *FULLPMMU :                       1 - |
+ GETKEY :                      6CE2 C |  GSCFG0 :                         F - |
+ GSCOM :                         BB - |  GSCTR :                         33 - |
+ GSDAT :                         B3 - | *GSSTAT :                        BB - |
+ H2D1 :                        7242 C | *HAS64 :                          1 - |
+*HASDSP :                         0 - | *HASFPU :                         0 - |
+*HASPMMU :                        0 - | *HEX1DEC :                     726B C |
+ AS V1.42 Beta [Bld 78] - source file flasher.a80 - page 45 - 1/17/2011 21:30:41
+
+
+*HEX2DEC :                     725A C | *HEX2TXT :                     71ED C |
+*HEX4DEC :                     721B C |  HEX_CON :                     7205 C |
+ HIGH :                        58E4 C | *INCHL :                       70CA C |
+*INEXTMODE :                      0 - |  INITLOADER :                  626E C |
+*INLWORDMODE :                    0 - | *INMAXMODE :                      0 - |
+ INPORT :                      6261 C | *INPUTT :                      6CA7 C |
+*INSOVR :                      6D76 C | *INSRCMODE :                      0 - |
+*INSUPMODE :                      0 - |  INWERT :                      6E3F C |
+ KENTER :                      60BE C |  KENTER1 :                     60C7 C |
+ KENTER4 :                     6133 C |  KEYS :                        6C4E C |
+ LDIST :                       7046 C | *LEDCTR :                         1 - |
+ LENGHT :                      6DD0 C | *LETTER :                      6DCF C |
+*LISTON :                         1 - |  LOW :                         58E2 C |
+ M259 :                           B - |  M262 :                           7 - |
+ M263 :                           5 - |  M278 :                           B - |
+ M288 :                           7 - |  M289 :                           5 - |
+*MACEXP :                         1 - | *MC_READ :                       15 - |
+*MC_SEND :                       15 - | *MD_SEND :                       14 - |
+ MEGATXT :                     7633 C | *MEGHELP :                     761F C |
+*MIDDLE :                      58E3 C |  MINILD :                      5800 C |
+ MINILD1 :                     5820 C |  MINILDE :                     5969 C |
+ MINISTR :                     62E5 C |  ML_BYT :                      720E C |
+ MM :                             1 - | *MOMCPU :                      80DC - |
+*MOMCPUNAME :              Z80UNDOC - | *MOVI :                        6DD1 C |
+ MPAG :                           0 - | *MPAGEX :                        10 - |
+*M_8CHAN :                        4 - | *M_CBIT :                         1 - |
+*M_CKSL0 :                       10 - | *M_CKSL1 :                       20 - |
+*M_DBIT :                        80 - | *M_EXPAG :                        8 - |
+*M_INV7B :                       80 - | *M_MCNCS :                        2 - |
+*M_MCRDY :                        8 - | *M_MCSP0 :                        8 - |
+*M_MCSP1 :                       20 - | *M_MDDRQ :                        1 - |
+*M_MDHLF :                       10 - | *M_MPXRS :                        4 - |
+*M_NOROM :                        1 - | *M_PAN4C :                       40 - |
+*M_RAMRO :                        2 - | *M_SDDET :                        2 - |
+*M_SDNCS :                        1 - | *M_SDWP :                         4 - |
+*M_SNCLR :                       80 - |  N259 :                           0 - |
+ N262 :                           0 - |  N263 :                           0 - |
+ N278 :                           0 - |  N288 :                           0 - |
+ N289 :                           0 - | *NESTMAX :                      100 - |
+*NEW_STROKA :                  7386 C |  NEXT :                        70F8 C |
+ NGSNOTFOUND :                 60A7 C |  NGS_LOADER :                  7927 C |
+ NGS_LOADERE :                 8231 C |  NONGS :                       625B C |
+ NOTUPDATE :                   739F C |  NO_INW :                      71AD C |
+*NO_UPDATE :                   738B C | *NUMTLDP2 :                    734F - |
+ OUTCOD :                      6297 C |  OUTCOD1 :                     62C2 C |
+*PACKING :                        0 - | *PADDING :                        1 - |
+*PAGE128 :                     745A C | *PAG_128 :                     72F8 C |
+ POWT1 :                       6E7E C |  POWT2 :                       6EE0 C |
+ PRIBUF :                      6DDB C |  PRINT :                       7101 C |
+ PRINTA :                      7165 C |  PROD000 :                     608D C |
+ PROD001 :                     6065 C |  PROD01 :                      609B C |
+ PROG0 :                       585A C | *PROGERS :                     745B C |
+ PROGERT :                     746F C |  PROGR :                       5842 C |
+ PROGR0 :                      5884 C |  PROGR1 :                      58C2 C |
+ PROGR2 :                      58DB C |  RAMK0 :                       6E8D - |
+ RAMK1 :                       6E9A - |  RAMK2 :                       6EA9 - |
+ RAMK3 :                       6EC1 - |  RASCH :                       6F76 C |
+*RELAXED :                        1 - |  RESTARTUPD :                  6032 C |
+ RVERT :                       620D C |  SCRDN :                       6FCE C |
+ SCRTXT :                      7603 C |  SCRUP :                       6FA6 C |
+ AS V1.42 Beta [Bld 78] - source file flasher.a80 - page 46 - 1/17/2011 21:30:41
+
+
+*SCTRL :                         11 - |  SDNAME :                      75CD C |
+*SD_READ :                       13 - | *SD_RSTR :                       14 - |
+*SD_SEND :                       13 - |  SET_ADR :                     58E5 C |
+ SHIFT :                       6FFB C |  SKLAD :                       9400 - |
+ SKOLKO :                      71B1 C |  SLEDU :                       71A8 C |
+*SM_LDT :                        54 - | *SSTAT :                         12 - |
+ START_ :                      6000 C |  THELP1 :                      753C C |
+ THELP2 :                      754C C |  THLPL0 :                      747E C |
+ THLPL1 :                      74A3 C |  THLPL2 :                      74A3 C |
+ THLPL3 :                      74A3 C |  THLPL4 :                      74A3 C |
+ THLPL5 :                      74A3 C |  THLPL6 :                      74A3 C |
+ THLPL7 :                      74A4 C |  THLPR0 :                      74C4 C |
+ THLPR1 :                      74DC C |  THLPR2 :                      74F5 C |
+ THLPR3 :                      7512 C | *TIME :                    21:30:41 - |
+*TLOADPAGE1 :                  7316 C | *TLOADPAGE2 :                  7337 C |
+*TLOADPAGE3 :                  7358 C | *TLOADPAGE4 :                  7379 C |
+*TLOADPAGE5 :                  737E C | *TRUE :                           1 - |
+ TXT_CRC :                     7406 C |  TXT_DEC :                     B980 - |
+ TXT_ERRUPD1 :                 73C2 C |  TXT_ERRUPD2 :                 73D8 C |
+ TXT_ERRUPD3 :                 73ED C |  TXT_ERRUPDATE :               73BE C |
+ TXT_HEX :                     B990 - |  TXT_NONGS :                   7417 C |
+ TXT_OKUPDATE :                742E C | *UMEHL :                       70F1 C |
+ UMEHL1 :                      70D4 C |  UP :                          61D6 C |
+ UP1 :                         61F7 C |  UPD01 :                       616E C |
+ UPD02 :                       6151 C |  UPD03 :                       617B C |
+ UPD04 :                       6147 C |  UPDOWN :                      613A C |
+ USTAN :                       7089 C | *UVEHL :                       70EA C |
+ UVEHL1 :                      70E5 C |  VCURS :                       6C5F C |
+*VERSION :                     142F - | *VOL1 :                           6 - |
+*VOL2 :                           7 - | *VOL3 :                           8 - |
+*VOL4 :                           9 - | *VOL5 :                          16 - |
+*VOL6 :                          17 - | *VOL7 :                          18 - |
+*VOL8 :                          19 - |  WC :                          62D3 C |
+ WCMP :                        591C C |  WD :                          62D9 C |
+*WEKS1 :                       7554 C |  WEKS2 :                       75B9 C |
+*WHELP :                       7528 C |  WINOUT :                      6E58 C |
+ WINW :                        6EF8 C |  WINW1 :                       6F07 C |
+*WIN_INDICAT :                 7302 C |  WN :                          62DF C |
+ WR_BYTE :                     592D C | *WTABL :                       6E06 C |
+ WYDELK :                      6225 C |  W_NIZ :                       6F4F C |
+ XNEW :                        713C C |  YY :                             B - |
+ ZADER :                       6C98 C | *ZXCMD :                          1 - |
+ ZXDATRD :                        2 - |  ZXDATWR :                        3 - |
+ ZXSTAT :                         4 - |
+
+    321 symbols
+    140 unused symbols
+
+ AS V1.42 Beta [Bld 78] - source file flasher.a80 - page 47 - 1/17/2011 21:30:41
+
+
+  defined macros:
+  ---------------
+
+DC                                    | DUPL                                 
+DZ                                    | SUM_HOB                              
+
+      4 macros
+
+ AS V1.42 Beta [Bld 78] - source file flasher.a80 - page 48 - 1/17/2011 21:30:41
+
+
+  defined functions:
+  ------------------
+
+LOW                                   | HIGH                                 
+
+ AS V1.42 Beta [Bld 78] - source file flasher.a80 - page 49 - 1/17/2011 21:30:41
+
+
+  codepages:
+  ----------
+
+STANDARD (0 changed characters)
+
+
+0.16 seconds assembly time
+
+   2166 lines source file
+   2336 lines incl. macro expansions
+      2 passes
+      0 errors
+      0 warnings

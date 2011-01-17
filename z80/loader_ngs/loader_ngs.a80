@@ -1,21 +1,23 @@
 
-;LAST UPDATE: 27.04.2010 savelij
+;LAST UPDATE: 17.01.2011 savelij
 
-DD		EQU 27				;„€’€
-MM		EQU 4				;Œ…‘Ÿ–
-YY		EQU 10				;ƒŽ„
-DATA		EQU DD|MM<<5|YY<<9|#8000	;“€ŠŽ‚€‹ˆ ‚ 16 ˆ’
+		include macros.a80
+		include ports_ngs.a80
+		include sdcomand.a80
 
-		INCLUDE "ports_ngs.a80"
-		INCLUDE "sdcomand.a80"
+DD		EQU 17				;„€’€
+MM		EQU 1				;Œ…‘Ÿ–
+YY		EQU 11				;ƒŽ„
+DATA		EQU DD|MM<<5|YY<<9|0X8000	;“€ŠŽ‚€‹ˆ ‚ 16 ˆ’
 
 ;€„…‘ ‡€ƒ“‡Šˆ €‰„…Ž‰ Ž˜ˆ‚Šˆ
-ADRLOAD		EQU #8000
+ADRLOAD		EQU 0X8000
 
-RAMCOD		EQU #4080			;€„…‘ €Ž’› Ž‘Ž‚ŽƒŽ ŠŽ„€
-RAM8KB		EQU #6000			;€„…‘ “”…€ „‹Ÿ ……Ž‘Šˆ ŠŽ„€
-STRPAG		EQU #8000			;€„…‘ Š“„€ ‡€ƒ“‡Šˆ
+RAMCOD		EQU 0X4080			;€„…‘ €Ž’› Ž‘Ž‚ŽƒŽ ŠŽ„€
+RAM8KB		EQU 0X6000			;€„…‘ “”…€ „‹Ÿ ……Ž‘Šˆ ŠŽ„€
+STRPAG		EQU 0X8000			;€„…‘ Š“„€ ‡€ƒ“‡Šˆ
 
+		ORG 0
 		DI
 		LD SP,RAMCOD
 		XOR A
@@ -26,231 +28,233 @@ STRPAG		EQU #8000			;€„…‘ Š“„€ ‡€ƒ“‡Šˆ
 		OUT (VOL5),A
 		OUT (VOL6),A
 		OUT (VOL7),A
-		OUT (VOL8),A		;‡€ƒ‹“˜ˆ‹ˆ ŒŽ„ Ž’› „‹Ÿ ˆ‘Ž‹œ‡Ž‚€ˆŸ “”…€
+		OUT (VOL8),A			;‡€ƒ‹“˜ˆ‹ˆ ŒŽ„ Ž’› „‹Ÿ ˆ‘Ž‹œ‡Ž‚€ˆŸ “”…€
 
 ;	JP RDBYT03-2	Ž’‹€„Ž—€Ÿ ”ˆƒŸ
 
 ;Ž†ˆ„€ˆ… ‡€ƒ“‡Šˆ Ž˜ˆ‚Šˆ ‘Ž ‘…Š€
-		LD B,0			;—ˆ’€…Œ 256 Ž’ ‘’€’“‘€
-		IN A,(ZXSTAT)		;€ …„Œ…’ ˆ‡Œ……ˆŸ ‘Ž‘’ŽŸˆŸ 
+		LD B,0				;—ˆ’€…Œ 256 Ž’ ‘’€’“‘€
+		IN A,(ZXSTAT)			;€ …„Œ…’ ˆ‡Œ……ˆŸ ‘Ž‘’ŽŸˆŸ 
 		RRA
 		JR C,RDBYT01
 		DJNZ $-5
-		DEC B			;‘—…’—ˆŠ Ž“‹ˆ‹‘Ÿ, ‘Ž‘’ŽŸˆ… Ž’€ … ˆ‡Œ…ˆ‹Ž‘œ
-		JR RDBYT03		;ƒ“‡ˆŒ ‘’€„€’“ž Ž˜ˆ‚Š“
+		DEC B				;‘—…’—ˆŠ Ž“‹ˆ‹‘Ÿ, ‘Ž‘’ŽŸˆ… Ž’€ … ˆ‡Œ…ˆ‹Ž‘œ
+		JR RDBYT03			;ƒ“‡ˆŒ ‘’€„€’“ž Ž˜ˆ‚Š“
 
-RDBYT01		IN A,(ZXCMD)		;—ˆ’…Œ ˆ˜…„˜ˆ‰ €‰’ ˆ‡ Ž’€ ŠŽŒ€„
-		LD C,A			;‘Ž•€ˆ‹ˆ „‹Ÿ Ž‚…Šˆ
-		IN A,(ZXDATRD)		;—ˆ’…Œ €‰’ ˆ‡ Ž’€ „€›•
-		OUT (CLRCBIT),A		;‘Ž‘ˆ‹ˆ ŠŽŒ€„ ˆ’
-		CP C			;‘€‚ˆ‚€…Œ ˆ˜…„˜ˆ… €‰’›
-		JR NZ,RDBYT03		;… ‘Ž‚€‹ˆ, ƒ“‡ˆŒ ‘’€„€’“ž Ž˜ˆ‚Š“
-		CP #55			;ˆ˜…‹ €‰’ #55?
-		JR NZ,RDBYT03		;…‘‹ˆ …’, ƒ“‡ˆŒ ‘’€„€’“ž Ž˜ˆ‚Š“
-		LD B,0			;—ˆ’€…Œ 256 €‡ ˆ‡Œ……ˆ… Ž’€ ŠŽŒ€„
+RDBYT01		IN A,(ZXCMD)			;—ˆ’…Œ ˆ˜…„˜ˆ‰ €‰’ ˆ‡ Ž’€ ŠŽŒ€„
+		LD C,A				;‘Ž•€ˆ‹ˆ „‹Ÿ Ž‚…Šˆ
+		IN A,(ZXDATRD)			;—ˆ’…Œ €‰’ ˆ‡ Ž’€ „€›•
+		OUT (CLRCBIT),A			;‘Ž‘ˆ‹ˆ ŠŽŒ€„ ˆ’
+		CP C				;‘€‚ˆ‚€…Œ ˆ˜…„˜ˆ… €‰’›
+		JR NZ,RDBYT03			;… ‘Ž‚€‹ˆ, ƒ“‡ˆŒ ‘’€„€’“ž Ž˜ˆ‚Š“
+		CP 0X55				;ˆ˜…‹ €‰’ 0X55?
+		JR NZ,RDBYT03			;…‘‹ˆ …’, ƒ“‡ˆŒ ‘’€„€’“ž Ž˜ˆ‚Š“
+		LD B,0				;—ˆ’€…Œ 256 €‡ ˆ‡Œ……ˆ… Ž’€ ŠŽŒ€„
 		IN A,(ZXSTAT)
 		RRA
 		JR C,RDBYT02
 		DJNZ $-5
 		DEC B
-		JR RDBYT03		;… „Ž†„€‹ˆ‘œ, ƒ“‡ˆŒ ‘’€„€’“ž Ž˜ˆ‚Š“
+		JR RDBYT03			;… „Ž†„€‹ˆ‘œ, ƒ“‡ˆŒ ‘’€„€’“ž Ž˜ˆ‚Š“
 
-RDBYT02		IN A,(ZXCMD)		;‡€€‹ˆ €‰’ ˆ‡ Ž’€ ŠŽŒ€„
-		LD C,A			;‘Ž•€ˆ‹ˆ „‹Ÿ Ž‚…Šˆ
-		IN A,(ZXDATRD)		;‡€€‹ˆ €‰’ ˆ‡ Ž’€ „€›•
-		CP C			;‘€‚ˆ‹ˆ
-		JR NZ,RDBYT03		;…‘‹ˆ … ‘Ž‚€„€ž’, ƒ“‡ˆŒ ‘’€„€’“ž Ž˜ˆ‚Š“
-		CP #AA			;’Ž #AA?
-RDBYT03		EXA			;‚…Œ…Ž ‘Ÿ’€‹ˆ ”‹€ƒˆ Ž–…‘‘Ž€
+RDBYT02		IN A,(ZXCMD)			;‡€€‹ˆ €‰’ ˆ‡ Ž’€ ŠŽŒ€„
+		LD C,A				;‘Ž•€ˆ‹ˆ „‹Ÿ Ž‚…Šˆ
+		IN A,(ZXDATRD)			;‡€€‹ˆ €‰’ ˆ‡ Ž’€ „€›•
+		CP C				;‘€‚ˆ‹ˆ
+		JR NZ,RDBYT03			;…‘‹ˆ … ‘Ž‚€„€ž’, ƒ“‡ˆŒ ‘’€„€’“ž Ž˜ˆ‚Š“
+		CP 0XAA				;’Ž 0XAA?
+RDBYT03		EX AF,AF'			;‚…Œ…Ž ‘Ÿ’€‹ˆ ”‹€ƒˆ Ž–…‘‘Ž€
 		LD HL,GRUZILA
 		LD DE,RAMCOD
 		LD BC,RAMCEND-VERLOAD
-		LDIR			;………‘‹ˆ Ž‘Ž‚Ž‰ ŠŽ„ ‚ €„…‘ €Ž’›
-		OUT (CLRCBIT),A		;‘Ž‘ˆ‹ˆ ŠŽŒ€„ ˆ’
-		EXA			;‚…“‹ˆ ‘Ÿ’€›… ”‹€ƒˆ
-		JP Z,GRUZIM2		;…‘‹ˆ ‚‘… “‘‹Ž‚ˆŸ ‘Ž‚€‹ˆ, ‡€“‘Š€…Œ ‡€ƒ“‡—ˆŠ
-		JP GRUZIM0		;ˆ€—… ƒ“‡ˆŒ ‘’€„€’“ž Ž˜ˆ‚Š“ ˆ‡ ‡“
+		LDIR				;………‘‹ˆ Ž‘Ž‚Ž‰ ŠŽ„ ‚ €„…‘ €Ž’›
+		OUT (CLRCBIT),A			;‘Ž‘ˆ‹ˆ ŠŽŒ€„ ˆ’
+		EX AF,AF'			;‚…“‹ˆ ‘Ÿ’€›… ”‹€ƒˆ
+		JP Z,GRUZIM2			;…‘‹ˆ ‚‘… “‘‹Ž‚ˆŸ ‘Ž‚€‹ˆ, ‡€“‘Š€…Œ ‡€ƒ“‡—ˆŠ
+		JP GRUZIM0			;ˆ€—… ƒ“‡ˆŒ ‘’€„€’“ž Ž˜ˆ‚Š“ ˆ‡ ‡“
 
 GRUZILA
-
-		DISP RAMCOD
+		PHASE RAMCOD
 
 VERLOAD		DB "Loader"
 		DW DATA
 
 ;“’œ „Ž ”€‰‹€ Ž˜ˆ‚Šˆ GS
-F_PATH		DB 'SYSTEMZX\NEOGS\NEOGS.ROM',0		;’Ž‹œŠŽ ’€Š ˆŽ “†€‘Œ …€ƒˆ“…’ € ‘…–‘ˆŒ‚Ž‹›
+F_PATH		DB "NEOGS.ROM",0
+
+UPDATENAME	DB "NGS_ROM.UPD",0
 
 TXT1		DB "not found",0
 TXT1E
 TXT2		DB "beta",0
 TXT2E
-TXT3		DB "stable",0
+TXT3		DB 0;"stable",0
 TXT3E
 
-GRUZIM0		CALL RROMSD		;‡€ƒ“†€…Œ ˆ ‡€“‘Š€…Œ Ž˜ˆ‚Š“ ‘ SD Š€’›, …‘‹ˆ Ž€ ’€Œ …‘’œ
-		JP GS105		;ˆ€—… ‡€ƒ“†€…Œ Ž˜ˆ‚Š“ ˆ‡ ‡“ ˆ ‡€“‘Š€…Œ
+GRUZIM0		CALL RROMSD			;‡€ƒ“†€…Œ ˆ ‡€“‘Š€…Œ Ž˜ˆ‚Š“ ‘ SD Š€’›, …‘‹ˆ Ž€ ’€Œ …‘’œ
+		JP GS105			;ˆ€—… ‡€ƒ“†€…Œ Ž˜ˆ‚Š“ ˆ‡ ‡“ ˆ ‡€“‘Š€…Œ
 
-GRUZIM2		LD A,#11		;ŠŽ”ˆƒ“ˆŒ ƒ‘
-		OUT (GSCFG0),A		;Ž’“€…Œ ‡“ ˆ ‚“€…Œ —€‘’Ž’“ 12Œƒ–
+GRUZIM2		LD A,0X11			;ŠŽ”ˆƒ“ˆŒ ƒ‘
+		OUT (GSCFG0),A			;Ž’“€…Œ ‡“ ˆ ‚“€…Œ —€‘’Ž’“ 12Œƒ–
 		XOR A
-		OUT (MPAG),A		;‚Š‹ž—€…Œ ‘’€ˆ–“ 0
-GRUZIM		IN A,(ZXSTAT)		;Ž‘’ŽŸŽ †„…Œ ŠŽŒ€„ Ž’ ‘…Š€
+		OUT (MPAG),A			;‚Š‹ž—€…Œ ‘’€ˆ–“ 0
+GRUZIM		IN A,(ZXSTAT)			;Ž‘’ŽŸŽ †„…Œ ŠŽŒ€„ Ž’ ‘…Š€
 		RRA
 		JR NC,$-3
-		IN A,(ZXCMD)		;Ž‰Œ€‹ˆ ŠŽŒ€„“
-		CP #1D			;’Ž ŠŽŒ€„€ Ž‚…Šˆ? 
+		IN A,(ZXCMD)			;Ž‰Œ€‹ˆ ŠŽŒ€„“
+		CP 0X1D				;’Ž ŠŽŒ€„€ Ž‚…Šˆ? 
 		JR NZ,GRUZIM1
-		LD A,#76
-		OUT (ZXDATWR),A		;Ž’„€…Œ €‰’ ˆ„…’ˆ”ˆŠ€–ˆˆ ‡€ƒ“‡—ˆŠ€
+		LD A,0X76
+		OUT (ZXDATWR),A			;Ž’„€…Œ €‰’ ˆ„…’ˆ”ˆŠ€–ˆˆ ‡€ƒ“‡—ˆŠ€
 		OUT (CLRCBIT),A
-		JR GRUZIM		;ˆ Ž„Ž‹†€…Œ †„€’œ ŠŽŒ€„
+		JR GRUZIM			;ˆ Ž„Ž‹†€…Œ †„€’œ ŠŽŒ€„
 
-GRUZIM1		CP #F3
-		JP Z,GS105		;ˆ Ž‘’“‹…ˆˆ ŠŽŒ€„ #F3 ˆ
-		CP #F4
-		JP Z,GS105		;#F4 ‡€ƒ“†€…Œ ˆ ‡€“‘Š€…Œ Ž˜ˆ‚Š“ ˆ‡ ‡“
+GRUZIM1		CP 0XF3
+		JP Z,GS105			;ˆ Ž‘’“‹…ˆˆ ŠŽŒ€„ 0XF3 ˆ
+		CP 0XF4
+		JP Z,GS105			;0XF4 ‡€ƒ“†€…Œ ˆ ‡€“‘Š€…Œ Ž˜ˆ‚Š“ ˆ‡ ‡“
 		CP LOW (FLOADE-FLOADER)/2+1
-		JP NC,GS105		;€€‹Žƒˆ—Ž … ŠŽŒ€„€ ‡€ƒ“‡—ˆŠ€ ……•Ž„ˆŒ € Ž‘Ž‚Ž… ‡“
+		JP NC,GS105			;€€‹Žƒˆ—Ž … ŠŽŒ€„€ ‡€ƒ“‡—ˆŠ€ ……•Ž„ˆŒ € Ž‘Ž‚Ž… ‡“
 		ADD A,A
 		LD L,A
 		LD H,0
 		LD DE,GRUZIM2
-		PUSH DE			;€ ‘’…Š… €„…‘ ‚Ž‡‚€’€ Ž‘‹… ˆ‘Ž‹…ˆŸ ŠŽŒ€„›
+		PUSH DE				;€ ‘’…Š… €„…‘ ‚Ž‡‚€’€ Ž‘‹… ˆ‘Ž‹…ˆŸ ŠŽŒ€„›
 		LD DE,FLOADER
 		ADD HL,DE
 		LD E,(HL)
 		INC HL
-		LD D,(HL)		;‡€€‹ˆ €„…‘ ˆ‘Ž‹…ˆŸ ŠŽŒ€„›
+		LD D,(HL)			;‡€€‹ˆ €„…‘ ˆ‘Ž‹…ˆŸ ŠŽŒ€„›
 		EX DE,HL
-		JP (HL)			;Ž…•€‹ˆ € ˆ‘Ž‹…ˆ…
+		JP (HL)				;Ž…•€‹ˆ € ˆ‘Ž‹…ˆ…
 
-FLOADER		DW LOADROM		;‡€ƒ“‡Š€ ROM ‘Ž ‘…Š€
-		DW JPLDROM		;‡€“‘Š ‡€ƒ“†…ŽƒŽ
-		DW GS105		;‡€“‘’ˆ’œ ‡€˜ˆ’Ž… ‚ ROM
-		DW RROMSD		;‡€“‘Š ROM ‘ SD Š€’›
-		DW LOADCOD		;‡€ƒ“‡Š€ ŠŽ„€ ‘Ž ‘…Š
-		DW LDINSD		;‡€ƒ“‡Š€ ‘ SD Š€’›
-		DW RUNCOD		;‡€“‘Š ŠŽ„€
-		DW STATSD		;‘’€’“‘ ‡€ƒ“†…ŽƒŽ
-		DW VERPAGE		;‚…‘ˆŸ FPAG Ž˜ˆ
-		DW GET_CRC		;Ž‹“—ˆ’œ CRC16
+FLOADER		DW LOADROM			;00 ‡€ƒ“‡Š€ ROM ‘Ž ‘…Š€ ‚Œ…‘’Ž ‘ŠŽˆŽ‚€Ž‰ ˆ‡ ROM
+		DW JPLDROM			;01 ‡€“‘Š ‡€ƒ“†…Ž‰ Ž˜ˆ‚Šˆ 
+		DW GS105			;02 ŠŽˆŽ‚€ˆ… ˆ‡ ROM ˆ ‡€“‘Š
+		DW RROMSD			;03 ‡€ƒ“‡Š€ ˆ ‡€“‘Š ROM ‘ SD Š€’›
+		DW LOADCOD			;04 ‡€ƒ“‡Š€ ŠŽ„€ ‘Ž ‘…Š€
+		DW LDINSD			;05 ‡€ƒ“‡Š€ ”€‰‹€ ‘ SD Š€’›
+		DW RUNCOD			;06 ‡€“‘Š ŠŽ„€ ‘ ‹žŽƒŽ €„…‘€ ˆ ‚ ‹žŽ‰ ‘’€ˆ–…
+		DW STATSD			;07 ‘’€’“‘ ‡€ƒ“†…ŽƒŽ ”€‰‹€
+		DW VERPAGE			;08 ‚…‘ˆŸ ‚ ’…Š‘’Ž‚ŽŒ ‚ˆ„… „‹Ÿ “Š€‡€Ž‰ ‘’€ˆ–…
+		DW GET_CRC			;09 Ž‹“—ˆ’œ CRC16
+		DW LOADUPDATE			;0A ‡€ƒ“‡Š€ ”€‰‹€ ‘ ŽŽ‚‹…ˆ…Œ
 FLOADE
 
 ;……„€—€ € ‘…Š ‚…‘ˆˆ ‚ TXT ‚ˆ„…
-VERPAGE		IN A,(ZXDATRD)		;‡€€‹ˆ €‰’ ŽŒ…€ ‡€Ž˜…Ž‰ ‘’€ˆ–› ‡“
-		AND 7			;‘’€˜ˆ… 5 ˆ’ ‚ ˆƒŽ…
-		EXA			;‚…Œ…Ž ‘Ÿ’€‹ˆ ”‹€ƒˆ Ž–€
-		LD A,#30
-		OUT (GSCFG0),A		;‚Š‹ž—ˆ‹ˆ 10 Œƒ– ˆ ‚…“‹ˆ ‡“
-		EXA			;‚…“‹ˆ ”‹€ƒˆ
-		ADD A,A			;€Œ “†€ ‚’Ž›… 32Š ‘’€ˆ–› ‡“
-		AND A			;‚›€€ ‘’€ˆ–€ 0?
-		JR NZ,VERPAG1		;…‘‹ˆ …’, ’Ž ˆ„…Œ € ˆ‡‚‹…—…ˆ… Ž‹‘…„ˆ• 8 €‰’
-		LD HL,VERLOAD		;„‹Ÿ ‡€ƒ“‡—ˆŠ€ ……Œ ˆ‡ „“ƒŽƒŽ €„…‘€
-		LD DE,RAMCEND
-		LD BC,8
-		PUSH DE
-		LDIR
-		POP DE
-		JR VERPAG2		;Ž˜‹ˆ € ……‚Ž„—ˆŠ ‚ ’…Š‘’Ž‚›‰ ‚ˆ„
+VERPAGE		IN A,(ZXDATRD)			;‡€€‹ˆ €‰’ ŽŒ…€ ‡€Ž˜…Ž‰ ‘’€ˆ–› ‡“
+		AND 7				;‘’€˜ˆ… 5 ˆ’ ‚ ˆƒŽ…
+		EX AF,AF'			;‚…Œ…Ž ‘Ÿ’€‹ˆ ”‹€ƒˆ Ž–€
+		LD A,0X30
+		OUT (GSCFG0),A			;‚Š‹ž—ˆ‹ˆ 10 Œƒ– ˆ ‚…“‹ˆ ‡“
+		EX AF,AF'			;‚…“‹ˆ ”‹€ƒˆ
+		ADD A,A				;€Œ “†€ ‚’Ž›… 32Š ‘’€ˆ–› ‡“
+;		AND A				;‚›€€ ‘’€ˆ–€ 0?
+;		JR NZ,VERPAG1			;…‘‹ˆ …’, ’Ž ˆ„…Œ € ˆ‡‚‹…—…ˆ… Ž‘‹…„ˆ• 8 €‰’
+;		LD HL,VERLOAD			;„‹Ÿ ‡€ƒ“‡—ˆŠ€ ……Œ ˆ‡ „“ƒŽƒŽ €„…‘€
+;		LD DE,RAMCEND
+;		LD BC,8
+;		PUSH DE
+;		LDIR
+;		POP DE
+;		JR VERPAG2			;Ž˜‹ˆ € ……‚Ž„—ˆŠ ‚ ’…Š‘’Ž‚›‰ ‚ˆ„
 
 VERPAG1		INC A
-		OUT (MPAG),A		;‚Š‹ž—ˆ‹ˆ Ž‘‹…„ˆˆ 16Š ‚›€Ž‰ ‘’€ˆ–› ‡“
-		LD HL,#FFF8
+		OUT (MPAG),A			;‚Š‹ž—ˆ‹ˆ Ž‘‹…„ˆˆ 16Š ‚›€Ž‰ ‘’€ˆ–› ‡“
+		LD HL,0XFFF8
 		LD BC,8
 		LD DE,RAMCEND
 		PUSH DE
-		LDIR			;………‘‹ˆ 8 €‰’ ˆ‡ •”Ž‘’€ ‡“
+		LDIR				;………‘‹ˆ 8 €‰’ ˆ‡ •‚Ž‘’€ ‡“
 		POP DE
-VERPAG2		LD A,#11
-		OUT (GSCFG0),A		;Ž’“ˆ‹ˆ ‡“ ˆ ‚…“‹ˆ 12Œƒ–
+VERPAG2		LD A,0X11
+		OUT (GSCFG0),A			;Ž’“ˆ‹ˆ ‡“ ˆ ‚…“‹ˆ 12Œƒ–
 		XOR A
-		OUT (MPAG),A		;‚…“‹ˆ ‘’€ˆ–“ 0 Ž‡“
-		LD B,8			;Ž‚…ŸŒ ………‘…›… 8 €‰’, € … #FF ‹ˆ ’€Œ?
+		OUT (MPAG),A			;‚…“‹ˆ ‘’€ˆ–“ 0 Ž‡“
+		LD B,8				;Ž‚…ŸŒ ………‘…›… 8 €‰’, € … 0XFF ‹ˆ ’€Œ?
 		LD A,(DE)
 		INC DE
 		INC A
-		JR NZ,VFPGA1		;… #FF, Ž„Ž‹†€…Œ
+		JR NZ,VFPGA1			;… 0XFF, Ž„Ž‹†€…Œ
 		DJNZ $-5
-		DEC SP			;’€Šˆ ‚‘… 8 €‰’ #FF, ‚…‘ˆˆ “ ‡“ ‘’€ˆ–› …’“
+		DEC SP				;’€Šˆ ‚‘… 8 €‰’ 0XFF, ‚…‘ˆˆ “ ‡“ ‘’€ˆ–› …’“
 		DEC SP
 		POP DE
 		LD HL,TXT1
 		LD BC,TXT1E-TXT1
-		LDIR			;Ž’„€’œ ’…Š‘’ Ž ’ŽŒ
+		LDIR				;Ž’„€’œ ’…Š‘’ Ž ’ŽŒ
 		JR VFPGA0
 
 VFPGA1		DEC SP
 		DEC SP
 		POP DE
-		CALL UNVERS		;€‘€ŠŽ‚Š€ Ž‹“—…›• 8 €‰’ ‚ ’…Š‘’
-VFPGA0		OUT (CLRCBIT),A		;‘Ž‘ˆ‹ˆ ŠŽŒ€„ ˆ’
+		CALL UNVERS			;€‘€ŠŽ‚Š€ Ž‹“—…›• 8 €‰’ ‚ ’…Š‘’
+VFPGA0		OUT (CLRCBIT),A			;‘Ž‘ˆ‹ˆ ŠŽŒ€„ ˆ’
 		LD HL,RAMCEND
 		LD BC,ZXDATWR
-1		LD A,(HL)
+VFPGA2		LD A,(HL)
 		OUTI
-		EXA
+		EX AF,AF'
 		CALL WDN
-		EXA
+		EX AF,AF'
 		AND A
-		JR NZ,$-1B		;Ž’„€…Œ ’…Š‘’ ‚…‘ˆˆ ŽŠ€ … ‚‘’…’ˆ’‘Ÿ €‰’ 0, ŠŽ’Ž›‰ ’Ž†… Ž’„€…Œ
+		JR NZ,VFPGA2			;Ž’„€…Œ ’…Š‘’ ‚…‘ˆˆ ŽŠ€ … ‚‘’…’ˆ’‘Ÿ €‰’ 0, ŠŽ’Ž›‰ ’Ž†… Ž’„€…Œ
 		RET
 
 ;€‘€ŠŽ‚™ˆŠ „€’›
 UNVERS		LD HL,6
-		ADD HL,DE		;Ž“‘’ˆ‹ˆ 6 €‰’ ’…Š‘’€ ‚…‘ˆˆ
-		LD C,(HL)		;‡€€‹ˆ Œ‹€„˜ˆ‰ €‰’ ‚…‘ˆˆ
-		LD (HL),#20		;€ …ƒŽ Œ…‘’Ž Ž…‹
+		ADD HL,DE			;Ž“‘’ˆ‹ˆ 6 €‰’ ’…Š‘’€ ‚…‘ˆˆ
+		LD C,(HL)			;‡€€‹ˆ Œ‹€„˜ˆ‰ €‰’ ‚…‘ˆˆ
+		LD (HL)," ";0X20		;€ …ƒŽ Œ…‘’Ž Ž…‹
 		INC HL
-		LD B,(HL)		;‡€€‹ˆ ‘’€˜ˆ‰ €‰’
-		LD A,C			;‚‡Ÿ‹ˆ Œ‹€„˜ˆ‰ €‰’ ‚…‘ˆˆ
-		AND #1F			;€‘ ˆ’……‘“ž’ Œ‹€„˜ˆ… 5 ˆ’ („…œ Œ…‘Ÿ–€)
+		LD B,(HL)			;‡€€‹ˆ ‘’€˜ˆ‰ €‰’
+		LD A,C				;‚‡Ÿ‹ˆ Œ‹€„˜ˆ‰ €‰’ ‚…‘ˆˆ
+		AND 0X1F			;€‘ ˆ’……‘“ž’ Œ‹€„˜ˆ… 5 ˆ’ („…œ Œ…‘Ÿ–€)
 		JR NZ,$+4
-		RES 7,B			;…‘‹ˆ Ž‹“—ˆ‹‘Ÿ 0, ‚Ž‡ŒŽ†Ž ’Ž …’€ ‚…‘ˆŸ
+		RES 7,B				;…‘‹ˆ Ž‹“—ˆ‹‘Ÿ 0, ‚Ž‡ŒŽ†Ž ’Ž …’€ ‚…‘ˆŸ
 		CP 32
-		JR C,$+4		;‚ Œ…‘Ÿ–… … ŒŽ†…’ ›’œ Ž‹…… 31 „Ÿ
-		RES 7,B			;ˆ€—… ’Ž …’€ ‚…‘ˆŸ
-		CALL A2TXT		;……‚Ž„ˆŒ Ž‹“—…Ž… —ˆ‘‹Ž ‚ ’…Š‘’
-		SRL B			;‘„ˆ“‹ˆ ‚…‘ˆž € 1 ˆ’ ‚‹…‚Ž —’Ž› ŽŒ… Œ…‘Ÿ–€
-		RR C			;ŽŠ€‡€‹‘Ÿ ‚ Ž„ŽŒ €‰’…
-		LD A,C			;‡€€‹ˆ ’Ž’ €‰’
+		JR C,$+4			;‚ Œ…‘Ÿ–… … ŒŽ†…’ ›’œ Ž‹…… 31 „Ÿ
+		RES 7,B				;ˆ€—… ’Ž …’€ ‚…‘ˆŸ
+		CALL A2TXT			;……‚Ž„ˆŒ Ž‹“—…Ž… —ˆ‘‹Ž ‚ ’…Š‘’
+		SRL B				;‘„ˆ“‹ˆ ‚…‘ˆž € 1 ˆ’ ‚‹…‚Ž —’Ž› ŽŒ… Œ…‘Ÿ–€
+		RR C				;ŽŠ€‡€‹‘Ÿ ‚ Ž„ŽŒ €‰’…
+		LD A,C				;‡€€‹ˆ ’Ž’ €‰’
 		RRCA
 		RRCA
 		RRCA
-		RRCA			;‘„‚ˆ“‹ˆ “†›… ˆ’› ‚ Œ‹€„˜ˆ… €‡€„› €‰’€
-		AND #0F			;Ž‘’€‚ˆ‹ˆ “†›… 4 ˆ’€ (ŽŒ… Œ…‘Ÿ–€)
-		JR NZ,$+4		;ŽŒ… Œ…‘Ÿ–€ …ŒŽ†…’ ›’œ 0
-		RES 6,B			;ˆ€—… ’Ž …’€ ‚…‘ˆŸ
-		CP 13			;ˆ ŽŒ… Œ…‘Ÿ–€ … ŒŽ†…’ ›’œ Ž‹œ˜… 12
+		RRCA				;‘„‚ˆ“‹ˆ “†›… ˆ’› ‚ Œ‹€„˜ˆ… €‡€„› €‰’€
+		AND 0X0F			;Ž‘’€‚ˆ‹ˆ “†›… 4 ˆ’€ (ŽŒ… Œ…‘Ÿ–€)
+		JR NZ,$+4			;ŽŒ… Œ…‘Ÿ–€ …ŒŽ†…’ ›’œ 0
+		RES 6,B				;ˆ€—… ’Ž …’€ ‚…‘ˆŸ
+		CP 13				;ˆ ŽŒ… Œ…‘Ÿ–€ … ŒŽ†…’ ›’œ Ž‹œ˜… 12
 		JR C,$+4
-		RES 6,B			;ˆ€—… …’€ ‚…‘ˆŸ
-		LD (HL),#2E		;Ž’„…‹ˆ‹ˆ ŽŒ… „Ÿ Œ…‘Ÿ–€ ’Ž—ŠŽ‰
+		RES 6,B				;ˆ€—… …’€ ‚…‘ˆŸ
+		LD (HL),".";0X2E		;Ž’„…‹ˆ‹ˆ ŽŒ… „Ÿ Œ…‘Ÿ–€ ’Ž—ŠŽ‰
 		INC HL
-		CALL A2TXT		;ŠŽ‚…’ˆŽ‚€‹ˆ ŽŒ… Œ…‘Ÿ–€
-		LD (HL),#2E		;’€Š †… Ž’„…‹ˆ‹ˆ ’Ž—ŠŽ‰
+		CALL A2TXT			;ŠŽ‚…’ˆŽ‚€‹ˆ ŽŒ… Œ…‘Ÿ–€
+		LD (HL),".";0X2E		;’€Š †… Ž’„…‹ˆ‹ˆ ’Ž—ŠŽ‰
 		INC HL
-		LD A,B			;‚‡Ÿ‹ˆ Ž‘’€‚˜ˆ…‘Ÿ ˆ’›
-		AND #3F			;€Œ “†› 6 ˆ’ ŽŒ…€ ƒŽ„€
-		CALL A2TXT		;ŠŽ‚…’“‹ˆ ‚ ’…Š‘’
-		BIT 6,B			;…’€ ˆ‹ˆ ›’€‹ ‚…‘ˆŸ?
+		LD A,B				;‚‡Ÿ‹ˆ Ž‘’€‚˜ˆ…‘Ÿ ˆ’›
+		AND 0X3F			;€Œ “†› 6 ˆ’ ŽŒ…€ ƒŽ„€
+		CALL A2TXT			;ŠŽ‚…’“‹ˆ ‚ ’…Š‘’
+		BIT 6,B				;…’€ ˆ‹ˆ ›’€‹ ‚…‘ˆŸ?
 		JR NZ,UNVERS1
-		LD DE,TXT2		;‚‘…-’€Šˆ …’€, Ž —…Œ ˆ „Ž€‚‹Ÿ…Œ ’…Š‘’ Š ‚…‘ˆˆ
+		LD DE,TXT2			;‚‘…-’€Šˆ …’€, Ž —…Œ ˆ „Ž€‚‹Ÿ…Œ ’…Š‘’ Š ‚…‘ˆˆ
 		LD BC,TXT2E-TXT2
 		JR UNVERS2
 
-UNVERS1		LD DE,TXT3		;‚…‘ˆŸ ‘’€‹
+UNVERS1		LD DE,TXT3			;‚…‘ˆŸ ‘’€‹
 		LD BC,TXT3E-TXT3
-UNVERS2		LD (HL),#20		;……„ ’…Š‘’ŽŒ (…’€ ˆ‹ˆ ‘’€‹) ‚‘’€‚‹Ÿ…Œ Ž…‹
+UNVERS2		LD (HL)," ";0X20		;……„ ’…Š‘’ŽŒ (…’€ ˆ‹ˆ ‘’€‹) ‚‘’€‚‹Ÿ…Œ Ž…‹
 		INC HL
 		EX DE,HL
-		LDIR			;……’€™ˆ‹ˆ ’…Š‘’
+		LDIR				;……’€™ˆ‹ˆ ’…Š‘’
 		EX DE,HL
-		LD (HL),0		;‡€‚…˜ˆ‹ˆ ‘’ŽŠ“ “‹…Œ
+		LD (HL),0			;‡€‚…˜ˆ‹ˆ ‘’ŽŠ“ “‹…Œ
 		RET
 
 ;……‚Ž„ "A" ‚ „…‘Ÿ’ˆ—›‰ ‚ˆ„ ˆ ‚ ’…Š‘’. „‹Ÿ —ˆ‘…‹ Ž’ 0 „Ž 99
-A2TXT		PUSH HL			;‘Ž•€ˆ‹ˆ €„…‘ Š“„€ ‹Ž†ˆ’œ ‘ŠŽ‚…—…Ž…
+A2TXT		PUSH HL				;‘Ž•€ˆ‹ˆ €„…‘ Š“„€ ‹Ž†ˆ’œ ‘ŠŽ‚…—…Ž…
 		LD L,A
 		LD H,0
 		LD DE,10
@@ -258,38 +262,44 @@ A2TXT		PUSH HL			;‘Ž•€ˆ‹ˆ €„…‘ Š“„€ ‹Ž†ˆ’œ ‘ŠŽ‚…—…Ž…
 		DEC A
 		INC A
 		SBC HL,DE
-		JR NC,$-3		;‘—ˆ’€…Œ ŠŽ‹ˆ—…‘’‚Ž „…‘Ÿ’ŠŽ‚ ‚ —ˆ‘‹…
-		ADD HL,DE		;‚…“‹ˆ ……Ž ‚›—ˆ’€ˆŸ
-		ADD A,"0"		;……‚…‹ˆ ‚ ’…‘Š’Ž‚›‰ ‚ˆ„ Ž‹“—…Ž… —ˆ‘‹Ž
-		LD D,A			;ŽŠ€ ‘Ž•€ˆ‹ˆ
-		LD A,L			;‚‡Ÿ‹ˆ Ž‘’€‚˜ˆ…‘Ÿ …„ˆˆ–› —ˆ‘‹€
-		ADD A,"0"		;ŠŽ‚…’“‹ˆ ‚ ’…Š‘’
-		POP HL			;‚…“‹ˆ €„…‘ Š“„€ ‹Ž†ˆ’œ
-		LD (HL),D		;Ž‹Ž†ˆ‹ˆ „…‘Ÿ’Šˆ ‡€„€ŽƒŽ —ˆ‘‹€
+		JR NC,$-3			;‘—ˆ’€…Œ ŠŽ‹ˆ—…‘’‚Ž „…‘Ÿ’ŠŽ‚ ‚ —ˆ‘‹…
+		ADD HL,DE			;‚…“‹ˆ ……Ž ‚›—ˆ’€ˆŸ
+		ADD A,"0"			;……‚…‹ˆ ‚ ’…‘Š’Ž‚›‰ ‚ˆ„ Ž‹“—…Ž… —ˆ‘‹Ž
+		LD D,A				;ŽŠ€ ‘Ž•€ˆ‹ˆ
+		LD A,L				;‚‡Ÿ‹ˆ Ž‘’€‚˜ˆ…‘Ÿ …„ˆˆ–› —ˆ‘‹€
+		ADD A,"0"			;ŠŽ‚…’“‹ˆ ‚ ’…Š‘’
+		POP HL				;‚…“‹ˆ €„…‘ Š“„€ ‹Ž†ˆ’œ
+		LD (HL),D			;Ž‹Ž†ˆ‹ˆ „…‘Ÿ’Šˆ ‡€„€ŽƒŽ —ˆ‘‹€
 		INC HL
-		LD (HL),A		;Ž‹Ž†ˆ‹ˆ …„ˆˆ–› ’ŽƒŽ †… —ˆ‘‹€
+		LD (HL),A			;Ž‹Ž†ˆ‹ˆ …„ˆˆ–› ’ŽƒŽ †… —ˆ‘‹€
 		INC HL
 		RET
 
 ;‡€ƒ“‡Š€ ‘ SD Š€’› Ž “Š€‡€ŽŒ“ “’ˆ
 ;…‚›‰ €‰’-ŽŒ… ‘’€ˆ–› Ž‡“ Š“„€ €—ˆ€’œ ƒ“‡ˆ’œ 
-;„€‹…… €‰’› ’…Š‘’Ž‚€Ÿ ‘’ŽŠ€ “’ˆ ˆ ˆŒ…ˆ ”€‰‹€
+;„€‹…… €‰’› ’…Š‘’Ž‚Ž‰ ‘’ŽŠ€ “’ˆ ˆ ˆŒ…ˆ ”€‰‹€
 ;ŠŽ…– ‘’ŽŠˆ €‰’ 0, Ž †… ‘’Ž €‰’
-LDINSD		LD BC,ZXDATRD		;€„…‘ Ž’€ „€›•
-		LD HL,RAMCEND		;€„…‘ Š“„€ ‘’ŽŠ“ “’ˆ ‘Š‹€„ˆŽ‚€’œ
+LDINSD		LD BC,ZXDATRD			;€„…‘ Ž’€ „€›•
+		LD HL,RAMCEND			;€„…‘ Š“„€ ‘’ŽŠ“ “’ˆ ‘Š‹€„ˆŽ‚€’œ
 		PUSH HL
-		IN A,(C)		;ˆŸ‹ˆ ŽŒ… ‘’€ˆ–› Ž’Š“„€ €—ˆ€’œ ‡€ƒ“‡Š“
-		OUT (CLRCBIT),A		;‘Ž‘ˆ‹ˆ ŠŽŒ€„ ˆ’
-		EXA
-		CALL WDY
+		IN A,(C)			;ˆŸ‹ˆ ŽŒ… ‘’€ˆ–› Ž’Š“„€ €—ˆ€’œ ‡€ƒ“‡Š“
+		OUT (CLRCBIT),A			;‘Ž‘ˆ‹ˆ ŠŽŒ€„ ˆ’
+		EX AF,AF'
+LDINSD1		CALL WDY
 		IN A,(C)
 		LD (HL),A
 		INC HL
 		AND A
-		JR NZ,$-8		;ˆˆŒ€…Œ ‘’ŽŠ“ ŽŠ€ … ‚‘’…’ˆ‘Ÿ €‰’ 0
-		EXA
+		JR NZ,LDINSD1			;ˆˆŒ€…Œ ‘’ŽŠ“ ŽŠ€ … ‚‘’…’ˆ‘Ÿ €‰’ 0
+		EX AF,AF'
 		POP HL
-		JP LOAD_SD		;„€‹…… ‡€“‘Š€…Œ ‡€ƒ“‡Š“ ‘ SD Š€’›
+		JP LOAD_SD			;„€‹…… ‡€“‘Š€…Œ ‡€ƒ“‡Š“ ‘ SD Š€’›
+
+;‡€ƒ“‡Š€ ”€‰‹€ ‘ ŽŽ‚‹…ˆŸŒˆ
+LOADUPDATE	LD HL,UPDATENAME		;ˆŒŸ ”€‰‹€ ŽŽ‚‹…ˆŸ
+		LD A,2				;ƒ“‡ˆ’œ €—ˆ€Ÿ ‘Ž 2 ‘’€ˆ–›
+		OUT (CLRCBIT),A
+		JP LOAD_SD
 
 ;‘’€’“‘ ‡€ƒ“‡Šˆ ”€‰‹€ ‘ SD Š€’›
 STATSD		LD A,(STATUS)
@@ -299,95 +309,95 @@ STATSD		LD A,(STATUS)
 
 ;‡€ƒ“‡Š€ ˆ ‡€“‘Š Ž˜ˆ‚Šˆ ‘ SD Š€’›
 ;ˆŒŸ, “’œ ˆ €„…‘ ”ˆŠ‘ˆŽ‚€
-RROMSD		LD HL,F_PATH		;€„…‘ ‘’ŽŠˆ ”ˆŠ‘ˆŽ‚€ŽƒŽ “’ˆ „‹Ÿ ‡€ƒ“‡Šˆ 
+RROMSD		LD HL,F_PATH			;€„…‘ ‘’ŽŠˆ ”ˆŠ‘ˆŽ‚€ŽƒŽ “’ˆ „‹Ÿ ‡€ƒ“‡Šˆ 
 		XOR A
-		CALL LOAD_SD		;‡€ƒ“†€…Œ
+		CALL LOAD_SD			;‡€ƒ“†€…Œ
 		AND A
-		RET NZ			;…‘‹ˆ Ž˜ˆŠ€, ’Ž ƒ“‡ˆŒ ˆ‡ ‡“
+		RET NZ				;…‘‹ˆ Ž˜ˆŠ€, ’Ž ƒ“‡ˆŒ ˆ‡ ‡“
 		JP JPLDROM
 
 ;‡€“‘Š ŠŽ„€ ‚ ‹žŽ‰ ‘’€ˆ–…
 ;0-ŽŒ… ‘’€ˆ–› Ž‡“
 ;1-Œ‹€„˜ˆ‰ €‰’ €„…‘€ ‡€“‘Š€
 ;2-‘’€˜ˆ‰ €‰’ €„…‘€ ‡€“‘Š€
-RUNCOD		LD BC,ZXDATRD		;€„…‘ Ž’€ „€›•
-		IN A,(C)		;ˆŸ‹ˆ ŽŒ… ‘ ’€ˆ–› Ž‡“
-		OUT (CLRCBIT),A		;‘Ž‘ˆ‹ˆ ŠŽŒ€„ ˆ’
+RUNCOD		LD BC,ZXDATRD			;€„…‘ Ž’€ „€›•
+		IN A,(C)			;ˆŸ‹ˆ ŽŒ… ‘ ’€ˆ–› Ž‡“
+		OUT (CLRCBIT),A			;‘Ž‘ˆ‹ˆ ŠŽŒ€„ ˆ’
 		OUT (MPAG),A
 		CALL WDY
-		IN L,(C)		;ˆŸ‹ˆ Œ‹€„˜ˆ‰ €‰’ €„…‘€ ‡€“‘Š€
+		IN L,(C)			;ˆŸ‹ˆ Œ‹€„˜ˆ‰ €‰’ €„…‘€ ‡€“‘Š€
 		CALL WDY
-		IN H,(C)		;ˆŸ‹ˆ ‘’€˜ˆ‰ €‰’ €„…‘€ ‡€“‘Š€
-		JP (HL)			;‡€“‘Š€…Œ
+		IN H,(C)			;ˆŸ‹ˆ ‘’€˜ˆ‰ €‰’ €„…‘€ ‡€“‘Š€
+		JP (HL)				;‡€“‘Š€…Œ
 
 ;0-ŽŒ… ‘’€ˆ–› Ž‡“
 ;1-Œ‹€„˜ˆ‰ €‰’ „‹ˆ› ‡€ƒ“‡Šˆ
 ;2-‘’€˜ˆ‰ €‰’ „‹ˆ› ‡€ƒ“‡Šˆ
 ;‡€ƒ“‡Š€ … Ž‹…… 32Š
-LOADCOD		LD BC,ZXDATRD		;€„…‘ Ž’€ „€›•
-		LD HL,#8000		;€„…‘ €—€‹€ ‡ƒ“‡Šˆ
-		IN A,(C)		;ˆŸ‹ˆ ŽŒ… ‘’€ˆ–› Ž‡“
-		OUT (CLRCBIT),A		;‘Ž‘ˆ‹ˆ ŠŽŒ€„ ˆ’
-		OUT (MPAG),A		;‚Š‹ž—ˆ‹ˆ ‡€„€“ž ‘’€ˆ–“ Ž‡“
+LOADCOD		LD BC,ZXDATRD			;€„…‘ Ž’€ „€›•
+		LD HL,0X8000			;€„…‘ €—€‹€ ‡ƒ“‡Šˆ
+		IN A,(C)			;ˆŸ‹ˆ ŽŒ… ‘’€ˆ–› Ž‡“
+		OUT (CLRCBIT),A			;‘Ž‘ˆ‹ˆ ŠŽŒ€„ ˆ’
+		OUT (MPAG),A			;‚Š‹ž—ˆ‹ˆ ‡€„€“ž ‘’€ˆ–“ Ž‡“
 		CALL WDY
-		IN E,(C)		;ˆŸ‹ˆ Œ‹€„˜ˆ‰ €‰’ „‹ˆ› ‡€ƒ“‡Šˆ
+		IN E,(C)			;ˆŸ‹ˆ Œ‹€„˜ˆ‰ €‰’ „‹ˆ› ‡€ƒ“‡Šˆ
 		CALL WDY
-		IN D,(C)		;ˆŸ‹ˆ ‘’€˜ˆ‰ €‰’ „‹ˆ› ‡ƒ€“‡Šˆ
+		IN D,(C)			;ˆŸ‹ˆ ‘’€˜ˆ‰ €‰’ „‹ˆ› ‡ƒ€“‡Šˆ
 LOADCO1		CALL WDY
 		INI
 		LD A,H
 		AND A
-		RET Z			;…‘‹ˆ Ž‡“ ŠŽ—ˆ‹Ž‘œ, ‚›•Ž„ˆŒ
+		RET Z				;…‘‹ˆ Ž‡“ ŠŽ—ˆ‹Ž‘œ, ‚›•Ž„ˆŒ
 		DEC DE
 		LD A,D
 		OR E
-		JR NZ,LOADCO1		;ƒ“‡ˆŒ ‘ŠŽŠ€ “Š€‡€Ž
+		JR NZ,LOADCO1			;ƒ“‡ˆŒ ‘ŠŽŠ€ “Š€‡€Ž
 		RET
 
 ;‡€ƒ“‡Š€ Ž˜ˆ‚Šˆ 32Š ‘Ž ‘…Š€
 LOADROM		XOR A
-		OUT (MPAG),A		;‚Š‹ž—€…Œ ‘’€ˆ–“
-		LD HL,#8000		;€„…‘ ‡€ƒ“‡Šˆ
-		OUT (CLRCBIT),A		;‘Ž‘ ŠŽŒ€„ ˆ’€
-		LD BC,ZXDATRD		;€„…‘ Ž’€ „€›•
+		OUT (MPAG),A			;‚Š‹ž—€…Œ ‘’€ˆ–“
+		LD HL,0X8000			;€„…‘ ‡€ƒ“‡Šˆ
+		OUT (CLRCBIT),A			;‘Ž‘ ŠŽŒ€„ ˆ’€
+		LD BC,ZXDATRD			;€„…‘ Ž’€ „€›•
 		CALL WDY
 		INI
 		LD A,H
 		AND A
-		JR NZ,$-7		;ƒ“‡ˆŒ ŽŠ€ €ŒŸ’œ … ŠŽ—ˆ’‘Ÿ
+		JR NZ,$-7			;ƒ“‡ˆŒ ŽŠ€ €ŒŸ’œ … ŠŽ—ˆ’‘Ÿ
 		RET
 
 ;ƒ“‡ˆ‹Š€ ‘’€„€’Ž‰ Ž˜ˆ‚Šˆ ˆ‡ ROM
-GS105		LD HL,STRPAG		;€„…‘ Š“„€ ……Ž‘ˆ’œ
-		LD A,4			;……Ž‘ˆ’œ 4 Š“‘Š€ Ž 8 Šˆ‹Ž€‰’
-MOV1		EXA			;Ÿ—…Œ ‘—…’—ˆŠ
-		LD A,3
-		OUT (GSCFG0),A		;‚Š‹ž—ˆ‹ˆ ‡“
+GS105		LD HL,STRPAG			;€„…‘ Š“„€ ……Ž‘ˆ’œ
+		LD A,4				;……Ž‘ˆ’œ 4 Š“‘Š€ Ž 8 Šˆ‹Ž€‰’
+MOV1		EX AF,AF'			;Ÿ—…Œ ‘—…’—ˆŠ
+		LD A,0X30
+		OUT (GSCFG0),A			;‚Š‹ž—ˆ‹ˆ ‡“
 		LD A,2
-		OUT (MPAG),A		;‘’€ˆ–“ 2 ‘Ž ‘’€„€’Ž‰ Ž˜ˆ‚ŠŽ‰ 
+		OUT (MPAG),A			;‘’€ˆ–“ 2 ‘Ž ‘’€„€’Ž‰ Ž˜ˆ‚ŠŽ‰ 
 		PUSH HL
 		LD DE,RAM8KB
-		LD BC,#2000
-		LDIR			;………‘‹ˆ ‚ “”… 8 Šˆ‹Ž€‰’
-		LD A,#31
-		OUT (GSCFG0),A		;’Š‹ž—ˆ‹ˆ ‡“
+		LD BC,0X2000
+		LDIR				;………‘‹ˆ ‚ “”… 8 Šˆ‹Ž€‰’
+		LD A,0X31
+		OUT (GSCFG0),A			;……Š‹ž—ˆ‹ˆ ‡“
 		XOR A
-		OUT (MPAG),A		;‚Š‹ž—ˆ‹ˆ ‘’€ˆ–“ 0 Ž‡“
+		OUT (MPAG),A			;‚Š‹ž—ˆ‹ˆ ‘’€ˆ–“ 0 Ž‡“
 		POP DE
 		LD HL,RAM8KB
-		LD BC,#2000
-		LDIR			;………‘‹ˆ ˆ‡ “”…€ 8 Šˆ‹Ž€‰’
+		LD BC,0X2000
+		LDIR				;………‘‹ˆ ˆ‡ “”…€ 8 Šˆ‹Ž€‰’
 		EX DE,HL
-		EXA
+		EX AF,AF'
 		DEC A
-		JR NZ,MOV1		;ˆ ’€Š 4 €‡€
+		JR NZ,MOV1			;ˆ ’€Š 4 €‡€
 
 ;‡€“‘Š ‡€ƒ“†…Ž‰ Ž˜ˆ‚Šˆ
 JPLDROM		XOR A
-		OUT (MPAG),A		;‚Š‹ž—ˆ‹ˆ ‘’€ˆ–“ 0 Ž‡“
-		LD A,#13
-		OUT (GSCFG0),A		;‚Š‹ž—ˆ‹ˆ —€‘’Ž’“ 12Œƒ–, Ž’Š‹ž—ˆ‹ˆ ‡“ ˆ ‡€™ˆ’ˆ‹ˆ Ž‡“ Ž’ ‡€ˆ‘ˆ
-		JP 0			;‘’€’“…Œ ‘’€„€’“ž Ž˜ˆ‚Š“
+		OUT (MPAG),A			;‚Š‹ž—ˆ‹ˆ ‘’€ˆ–“ 0 Ž‡“
+		LD A,0X13
+		OUT (GSCFG0),A			;‚Š‹ž—ˆ‹ˆ —€‘’Ž’“ 12Œƒ–, Ž’Š‹ž—ˆ‹ˆ ‡“ ˆ ‡€™ˆ’ˆ‹ˆ Ž‡“ Ž’ ‡€ˆ‘ˆ
+		JP 0				;‘’€’“…Œ ‘’€„€’“ž Ž˜ˆ‚Š“
 
 ;†„…Œ ŽŠ€ ‘…Š „€‘’ €‰’
 WDY		IN A,(ZXSTAT)
@@ -406,13 +416,7 @@ GET_CRC		LD A,2
 		OUT (MPAG),A
 		DEC A
 		OUT (GSCFG0),A
-		IN A,(ZXDATRD)
-		CP #80
-		JR C,SCHET
-		LD HL,(#8000)
-		LD DE,8
-		AND A
-		SBC HL,DE
+		LD HL,(0X8000)
 		SRL H
 		RR L
 		SRL H
@@ -421,59 +425,53 @@ GET_CRC		LD A,2
 		RR L
 		SRL H
 		RR L
-		JR ERR_OK
-
-SCHET		AND 7
-		LD HY,A
-		LD IX,#8000
-		LD C,(IX)
-		LD B,(IX+1)
-		CALL CRC16
-		LD C,(IX)
-		LD B,(IX+1)
-		LD A,#81
-		AND A
-		SBC HL,BC
-		JR NZ,OUT_ERR		;CRC16 ‡€ƒŽ‹Ž‚Š€ ERROR
-		LD A,HY
-		ADD A,A
-		ADD A,A
-		ADD A,A
-		ADD A,A
-		LD E,A
-		LD D,0
-		LD IX,#8000+8
-		ADD IX,DE		;‚ IX €„…‘ ‚›€ŽƒŽ ‹ŽŠ€
+		LD A,L
+		LD IYH,A
+;		LD IX,0X8000
+;		LD C,(IX+0)
+;		LD B,(IX+1)
+;		CALL CRC16
+;		LD C,(IX+0)
+;		LD B,(IX+1)
+;		LD A,0X81
+;		AND A
+;		SBC HL,BC
+;		JR NZ,OUT_ERR			;CRC16 ‡€ƒŽ‹Ž‚Š€ ERROR
+		LD IX,0X8000+8-0X10
+SCHET		LD DE,0X10
+		ADD IX,DE			;‚ IX €„…‘ ‚›€ŽƒŽ ‹ŽŠ€
 		LD C,(IX+4)
-		LD B,(IX+5)		;‚ BC „‹ˆ€ ‹ŽŠ€
+		LD B,(IX+5)			;‚ BC „‹ˆ€ ‹ŽŠ€
 		LD E,(IX+1)
 		LD L,(IX+2)
 		LD H,(IX+3)
 		LD A,L
-		AND #7F
-		LD D,A			;‚ DE ‘Œ…™…ˆ… ‚ ‘’€ˆ–…
+		AND 0X7F
+		LD D,A				;‚ DE ‘Œ…™…ˆ… ‚ ‘’€ˆ–…
 		ADD HL,HL
 		LD A,2
 		ADD A,H
-		OUT (MPAG),A		;ŽŒ… ‘’€ˆ–›
+		LD IYL,A
+		OUT (MPAG),A			;ŽŒ… ‘’€ˆ–›
 		PUSH IX
-		LD IX,#8000
-		ADD IX,DE		;‚ IX €„…‘ €—€‹€ ‹ŽŠ€
+		LD IX,0X8000
+		ADD IX,DE			;‚ IX €„…‘ €—€‹€ ‹ŽŠ€
 		CALL CRC16
 		POP IX
 		LD C,(IX+6)
 		LD B,(IX+7)
-		LD A,#82
+		LD A,0X82
 		AND A
 		SBC HL,BC
 		JR NZ,OUT_ERR
-		ADD HL,BC
-ERR_OK		LD A,#80
+		DEC IYH
+		JR NZ,SCHET
+ERR_OK		LD A,0X80
 
 ;CRC16 ERROR
-;#80-CRC16 ‹ŽŠ€ OK
-;#81-CRC16 ‡€ƒŽ‹Ž‚Š€ ERROR
-;#82-CRC16 ‹ŽŠ€ ERROR
+;0X80-CRC16 ‹ŽŠ€ OK
+;0X81-CRC16 ‡€ƒŽ‹Ž‚Š€ ERROR
+;0X82-CRC16 ‹ŽŠ€ ERROR
 OUT_ERR		OUT (CLRCBIT),A
 		OUT (ZXDATWR),A
 		CALL WDN
@@ -484,63 +482,65 @@ OUT_ERR		OUT (CLRCBIT),A
 		OUT (ZXDATWR),A
 		RET
 
-CRC16		LD HL,#FFFF
-		LD DE,#1021
+CRC16		LD HL,0XFFFF
+		LD DE,0X1021
 CRC_0		LD A,(IX)
 		INC IX
-		EXA
-		LD A,LX
-		OR HX
+		EX AF,AF'
+		LD A,IXL
+		OR IXH
 		JR NZ,CRC_3
-		INC LY
-		LD A,LY
+		INC IYL
+		LD A,IYL
 		OUT (MPAG),A
-		LD IX,#8000
-CRC_3		EXA
+		LD IX,0X8000
+CRC_3		EX AF,AF'
 		XOR H
 		LD H,A
 		LD A,8
 CRC_1		ADD HL,HL
 		JR NC,CRC_2
-		EXA
+		EX AF,AF'
 		LD A,L
 		XOR E
 		LD L,A
 		LD A,H
 		XOR D
 		LD H,A
-		EXA
+		EX AF,AF'
 CRC_2		DEC A
 		JR NZ,CRC_1
 		DEC BC
 		LD A,B
 		OR C
 		JR NZ,CRC_0
+		LD A,2
+		OUT (MPAG),A
 		RET
 
 ;---------------------------------
 ;ƒ“‡ˆ‹Š€ ”€‰‹€ Ž “Š€‡€ŽŒ“ “’ˆ
 
-BUF_512		EQU #5000		;#200 “”… ‘…Š’Ž€
-TDIRCLS		EQU BUF_512+#0200	;#400 “”… Š‹€‘’…Ž‚ ROOT „ˆ…Š’Žˆˆ
-CAL_FAT		EQU TDIRCLS+#0400	;1 Š€‹ˆ FAT
-BYTSSEC		EQU CAL_FAT+1		;1 ŠŽ‹ˆ—…‘’‚Ž ‘…Š’ŽŽ‚ ‚ Š‹€‘’……
-ROOTCLS		EQU BYTSSEC+1		;4 Š‹€‘’… €—€‹€ ROOT „ˆ…Š’Žˆˆ
-ROOTSEC		EQU ROOTCLS+4		;2 €‡Œ… ‚ ‘…Š’Ž€• ROOT „ˆ…Š’Žˆˆ
-SEC_FAT		EQU ROOTSEC+2		;4 ŠŽ‹ˆ—…‘’‚Ž ‘…Š’ŽŽ‚ Ž„Ž‰ FAT
-RSVDSEC		EQU SEC_FAT+4		;2 €‡Œ… …‡…‚Ž‰ Ž‹€‘’ˆ
-STARTRZ		EQU RSVDSEC+2		;4 €—€‹Ž „ˆ‘Š€/€‡„…‹€
-FRSTDAT		EQU STARTRZ+4		;4 €„…‘ …‚ŽƒŽ ‘…Š’Ž€ „€›• Ž’ BPB
-SEC_DSC		EQU FRSTDAT+4		;4 ŠŽ‹ˆ—…‘’‚Ž ‘…Š’ŽŽ‚ € „ˆ‘Š…/€‡„…‹…
-CLS_DSC		EQU SEC_DSC+4		;4 ŠŽ‹ˆ—…‘’‚Ž Š‹€‘’…Ž‚ € „ˆ‘Š…/€‡„…‹…
-FATSTR		EQU CLS_DSC+4		;4 €—€‹Ž …‚Ž‰ FAT ’€‹ˆ–›
-FB_EXT		EQU FATSTR+4		;B “”… 8.3 „‹Ÿ Žˆ‘Š€ ˆŒ…ˆ
-ADRPATH		EQU FB_EXT+#0B		;2 €„…‘ ’…Š‘’€ “’ˆ ”€‰‹€
-STATUS		EQU ADRPATH+2		;1 ‘’€’“‘ Ž‘‹… ‚›‡Ž‚€ LOAD_SD
-OLD_SP		EQU STATUS+1		;2 ‘’…Š „‹Ÿ ‚›•Ž„€
+BUF_512		EQU 0X5000			;0X200 “”… ‘…Š’Ž€
+TDIRCLS		EQU BUF_512+0X0200		;0X400 “”… Š‹€‘’…Ž‚ ROOT „ˆ…Š’Žˆˆ
+CAL_FAT		EQU TDIRCLS+0X0400		;1 Š€‹ˆ FAT
+BYTSSEC		EQU CAL_FAT+1			;1 ŠŽ‹ˆ—…‘’‚Ž ‘…Š’ŽŽ‚ ‚ Š‹€‘’……
+ROOTCLS		EQU BYTSSEC+1			;4 Š‹€‘’… €—€‹€ ROOT „ˆ…Š’Žˆˆ
+ROOTSEC		EQU ROOTCLS+4			;2 €‡Œ… ‚ ‘…Š’Ž€• ROOT „ˆ…Š’Žˆˆ
+SEC_FAT		EQU ROOTSEC+2			;4 ŠŽ‹ˆ—…‘’‚Ž ‘…Š’ŽŽ‚ Ž„Ž‰ FAT
+RSVDSEC		EQU SEC_FAT+4			;2 €‡Œ… …‡…‚Ž‰ Ž‹€‘’ˆ
+STARTRZ		EQU RSVDSEC+2			;4 €—€‹Ž „ˆ‘Š€/€‡„…‹€
+FRSTDAT		EQU STARTRZ+4			;4 €„…‘ …‚ŽƒŽ ‘…Š’Ž€ „€›• Ž’ BPB
+SEC_DSC		EQU FRSTDAT+4			;4 ŠŽ‹ˆ—…‘’‚Ž ‘…Š’ŽŽ‚ € „ˆ‘Š…/€‡„…‹…
+CLS_DSC		EQU SEC_DSC+4			;4 ŠŽ‹ˆ—…‘’‚Ž Š‹€‘’…Ž‚ € „ˆ‘Š…/€‡„…‹…
+FATSTR		EQU CLS_DSC+4			;4 €—€‹Ž …‚Ž‰ FAT ’€‹ˆ–›
+ADRPATH		EQU FATSTR+4			;2 €„…‘ ’…Š‘’€ “’ˆ ”€‰‹€
+STATUS		EQU ADRPATH+2			;1 ‘’€’“‘ Ž‘‹… ‚›‡Ž‚€ LOAD_SD
+OLD_SP		EQU STATUS+1			;2 ‘’…Š „‹Ÿ ‚›•Ž„€
+FB_EXT		EQU OLD_SP+2			;B “”… 8.3 „‹Ÿ Žˆ‘Š€ ˆŒ…ˆ
 
 ;SD Š€’€ … €‰„…€
-ZAW003		LD A,#EE
+ZAW003		LD A,0XEE
 WR_STAT		LD SP,(OLD_SP)
 		LD (STATUS),A
 		RET
@@ -550,55 +550,55 @@ WR_STAT		LD SP,(OLD_SP)
 ;HL-€„…‘ ’…Š‘’Ž‚Ž‰ ‘’ŽŠˆ
 ;“’ˆ Š ”€‰‹“ ‚Œ…‘’… ‘ ˆŒ……Œ ˆ €‘˜ˆ…ˆ…Œ ”€‰‹€. “’œ Ž‹Ž‘’œž Ž’ ROOT 
 ;‡€ƒ“†€…’‘Ÿ ”€‰‹ Ž €‡Œ…“ „ŽŽ‹…ŽŒ“ „Ž Ž‹›• ‘…Š’ŽŽ‚ (‘…Š’Ž 512 €‰’)
-;ˆŒ…: €‡Œ… ”€‰‹€ =#80-Ž‘‹… „ŽŽ‹…ˆŸ “„…’ ‡€ƒ“†… 1 ‘…Š’Ž
-;=#401-“„…’ ‡€ƒ“†…Ž 3 ‘…Š’Ž€
+;ˆŒ…: €‡Œ… ”€‰‹€ =0X80-Ž‘‹… „ŽŽ‹…ˆŸ “„…’ ‡€ƒ“†… 1 ‘…Š’Ž
+;=0X401-“„…’ ‡€ƒ“†…Ž 3 ‘…Š’Ž€
 ;€ ‚›•Ž„…: A=
-		;#00-”€‰‹ ‡€ƒ“†…
-		;#AA-”€‰‹ … €‰„…
-		;#DD-FAT … Ž€“†…
-		;#EE-SD Š€’€ … Ž€“†…€
-LOAD_SD		LD LY,A			;‘Ž•€ˆ‹ˆ ŽŒ… ‘’€ˆ–› Š“„€ ƒ“‡ˆ’œ
-		LD (ADRPATH),HL		;‘Ž•€ˆ‹ˆ €„…‘ ‘’ŽŠˆ “’ˆ
-		LD (OLD_SP),SP		;‘Ž•€ˆ‹ˆ ‘’…Š
+		;0X00-”€‰‹ ‡€ƒ“†…
+		;0XAA-”€‰‹ … €‰„…
+		;0XDD-FAT … Ž€“†…
+		;0XEE-SD Š€’€ … Ž€“†…€
+LOAD_SD		LD IYL,A;LY,A			;‘Ž•€ˆ‹ˆ ŽŒ… ‘’€ˆ–› Š“„€ ƒ“‡ˆ’œ
+		LD (ADRPATH),HL			;‘Ž•€ˆ‹ˆ €„…‘ ‘’ŽŠˆ “’ˆ
+		LD (OLD_SP),SP			;‘Ž•€ˆ‹ˆ ‘’…Š
 		LD A,1
-		OUT (GSCFG0),A		;Ž’Š‹ž—ˆ‹ˆ ‡“, ‚‘… ‘’€ˆ–€ Ž‡“
+		OUT (GSCFG0),A			;Ž’Š‹ž—ˆ‹ˆ ‡“, ‚‘… ‘’€ˆ–€ Ž‡“
 		LD A,%10011011
-		OUT (SCTRL),A		;‘ŠŽ”ˆƒ“ˆ‹ˆ ƒ‘ ‘ CS=1 „‹Ÿ SD Š€’›		
-		LD B,#10
-		LD A,#FF
-		OUT (SD_SEND),A		;ˆ˜…Œ #80 €‰’ #FF ‚ Ž’ Š€’Ž—Šˆ
+		OUT (SCTRL),A			;‘ŠŽ”ˆƒ“ˆ‹ˆ ƒ‘ ‘ CS=1 „‹Ÿ SD Š€’›		
+		LD B,0X10
+		LD A,0XFF
+		OUT (SD_SEND),A			;ˆ˜…Œ 0X80 €‰’ 0XFF ‚ Ž’ Š€’Ž—Šˆ
 		DJNZ $-4
-		XOR A			;256 Ž›’ŽŠ €‰’ˆ SD Š€’“
-		EXA
+		XOR A				;256 Ž›’ŽŠ €‰’ˆ SD Š€’“
+		EX AF,AF'
 		LD A,1
-		OUT (SCTRL),A		;‚›€‹ˆ SD Š€’“ CS=0
+		OUT (SCTRL),A			;‚›€‹ˆ SD Š€’“ CS=0
 
 ZAW001		LD HL,CMD00
-		CALL OUTCOM		;……‚Ž„ˆŒ Š€’Ž—Š“ ‚ …†ˆŒ SPI ŠŽŒ€„Ž‰ 0
-		CALL IN_OOUT		;†„…Œ Ž’‚…’€
-		EXA
+		CALL OUTCOM			;……‚Ž„ˆŒ Š€’Ž—Š“ ‚ …†ˆŒ SPI ŠŽŒ€„Ž‰ 0
+		CALL IN_OOUT			;†„…Œ Ž’‚…’€
+		EX AF,AF'
 		DEC A
-		JR Z,ZAW003		;†„…Œ Ž ‘—…’—ˆŠ“ 256 €‡
-		EXA
+		JR Z,ZAW003			;†„…Œ Ž ‘—…’—ˆŠ“ 256 €‡
+		EX AF,AF'
 		DEC A
-		JR NZ,ZAW001		;†„…Œ ŽŠ€ Š€’€ Ž’‚…’ˆ’ €‰’ŽŒ 1
+		JR NZ,ZAW001			;†„…Œ ŽŠ€ Š€’€ Ž’‚…’ˆ’ €‰’ŽŒ 1
 		LD BC,SD_RSTR
 		LD HL,CMD08
-		CALL OUTCOM		;Ž…„…‹Ÿ…Œ ‘…–ˆ”ˆŠ€–ˆž Š€’›
-		CALL IN_OOUT		;‚ "A" Ž’‚…’ Š€’› R1
+		CALL OUTCOM			;Ž…„…‹Ÿ…Œ ‘…–ˆ”ˆŠ€–ˆž Š€’›
+		CALL IN_OOUT			;‚ "A" Ž’‚…’ Š€’› R1
 		IN H,(C)
 		NOP
 		IN H,(C)	
 		NOP
 		IN H,(C)
 		NOP
-		IN H,(C)		;Ž—ˆ’€‹ˆ Ž‘’€‹œ›… €‰’› ‚ ˆŠ“„€
-		BIT 2,A			;…‘‹ˆ Ž˜ˆŠ€, ’Ž
-		LD HL,0			;Š€’€ ‘…–ˆ”ˆŠ€–ˆˆ 1.0
-		JR NZ,ZAW006		;ˆ€—… 
-		LD H,#40		;Š€’€ ‘…–ˆ”ˆŠ€–ˆˆ 2.0
+		IN H,(C)			;Ž—ˆ’€‹ˆ Ž‘’€‹œ›… €‰’› ‚ ˆŠ“„€
+		BIT 2,A				;…‘‹ˆ Ž˜ˆŠ€, ’Ž
+		LD HL,0				;Š€’€ ‘…–ˆ”ˆŠ€–ˆˆ 1.0
+		JR NZ,ZAW006			;ˆ€—… 
+		LD H,0X40			;Š€’€ ‘…–ˆ”ˆŠ€–ˆˆ 2.0
 ZAW006		LD A,CMD_55
-		CALL OUT_COM		;‡€“‘Š€…Œ ‚“’…žž ˆˆ–ˆ€‹ˆ‡€–ˆž Š€’›
+		CALL OUT_COM			;‡€“‘Š€…Œ ‚“’…žž ˆˆ–ˆ€‹ˆ‡€–ˆž Š€’›
 		CALL IN_OOUT
 		LD BC,SD_SEND
 		LD A,ACMD_41
@@ -615,14 +615,14 @@ ZAW006		LD A,CMD_55
 		OUT (C),A
 		CALL IN_OOUT
 		AND A
-		JR NZ,ZAW006		;†„…Œ ŽŠ€ Š€’› ……‰„…’ ‚ …†ˆŒ ƒŽ’Ž‚Ž‘’ˆ
+		JR NZ,ZAW006			;†„…Œ ŽŠ€ Š€’› ……‰„…’ ‚ …†ˆŒ ƒŽ’Ž‚Ž‘’ˆ
 ZAW004		LD A,CMD_59
-		CALL OUT_COM		;ˆ“„ˆ’…‹œŽ Ž’Š‹ž—€…Œ CRC16
+		CALL OUT_COM			;ˆ“„ˆ’…‹œŽ Ž’Š‹ž—€…Œ CRC16
 		CALL IN_OOUT
 		AND A
 		JR NZ,ZAW004
 ZAW005		LD HL,CMD16
-		CALL OUTCOM		;ˆ“„ˆ’…‹œ›‰ €‡Œ… ‘…Š’Ž€ 512 €‰’
+		CALL OUTCOM			;ˆ“„ˆ’…‹œ›‰ €‡Œ… ‘…Š’Ž€ 512 €‰’
 		CALL IN_OOUT
 		AND A
 		JR NZ,ZAW005
@@ -631,110 +631,112 @@ ZAW005		LD HL,CMD16
 WC_FAT		LD DE,0
 		LD B,D
 		LD C,E
-		CALL LOADLST		;—ˆ’€…Œ ‘…Š’Ž 0 Š€’Ž—Šˆ
+		CALL LOADLST			;—ˆ’€…Œ ‘…Š’Ž 0 Š€’Ž—Šˆ
 		PUSH HL
 		POP IX
-		LD DE,#01BE
-		ADD HL,DE		;……•Ž„ˆŒ € ‘Œ…™…ˆ… „‹Ÿ— Ž‚…ŽŠ
-		LD A,(HL)		;Ž‚…ŸŒ —’Ž› ›‹ 0, Š€’Ž—Šˆ … ŒŽƒ“’ ›’œ ‡€ƒ“‡Ž—›Œˆ
+		LD DE,0X01BE
+		ADD HL,DE			;……•Ž„ˆŒ € ‘Œ…™…ˆ… „‹Ÿ— Ž‚…ŽŠ
+		LD A,(HL)			;Ž‚…ŸŒ —’Ž› ›‹ 0, Š€’Ž—Šˆ … ŒŽƒ“’ ›’œ ‡€ƒ“‡Ž—›Œˆ
 		AND A
-		JR NZ,RDFAT05		;…‘‹ˆ … 0, Ž‚…ˆ’œ „“ƒŽ…
+		JR NZ,RDFAT05			;…‘‹ˆ … 0, Ž‚…ˆ’œ „“ƒŽ…
 		LD DE,4
-		ADD HL,DE		;……•Ž„ˆŒ Š Ž‚…Š… ’ˆ€ €‡„…‹€
+		ADD HL,DE			;……•Ž„ˆŒ Š Ž‚…Š… ’ˆ€ €‡„…‹€
 		LD A,(HL)
 		LD B,0
-		CP 1			;FAT12?
+		CP 1				;FAT12?
 		JR Z,RDFAT06
 		LD B,2
-		CP #0B			;FAT32?
+		CP 0X0B				;FAT32?
 		JR Z,RDFAT06
-		CP #0C			;FAT32?
+		CP 0X0C				;FAT32?
 		JR Z,RDFAT06
 		LD B,1
-		CP 6			;FAT16?
+		CP 6				;FAT16?
 		JR Z,RDFAT06
-		CP #0E			;FAT16?
+		CP 4				;FAT16?
+		JR Z,RDFAT06
+		CP 0X0E				;FAT16?
 		JR NZ,RDFAT05		
-RDFAT06		LD A,B			;……Œ ˆ‡ "B" ’ˆ €‡„…‹€
-		LD (CAL_FAT),A		;‘Ž•€ˆ‹ˆ
+RDFAT06		LD A,B				;……Œ ˆ‡ "B" ’ˆ €‡„…‹€
+		LD (CAL_FAT),A			;‘Ž•€ˆ‹ˆ
 		ADD HL,DE
-		CALL LOADZP		;……Œ ŽŒ… ‘…Š’Ž€ €—€‹€ Ž‘Ž‚ŽƒŽ €‡„…‹€
-		JR RDFAT00		;……•Ž„ˆŒ Š ˆˆ–ˆ€‹ˆ‡€–ˆˆ ……Œ…›• „‹Ÿ €Ž’› ‘ ”€’ŽŒ
+		CALL LOADZP			;……Œ ŽŒ… ‘…Š’Ž€ €—€‹€ Ž‘Ž‚ŽƒŽ €‡„…‹€
+		JR RDFAT00			;……•Ž„ˆŒ Š ˆˆ–ˆ€‹ˆ‡€–ˆˆ ……Œ…›• „‹Ÿ €Ž’› ‘ ”€’ŽŒ
 
 ;MBR … Ž€“†…, Ž‚…Ÿ…Œ ‘…Š’Ž 0 Š€’› Š€Š Žˆ‘€’…‹œ
-RDFAT05		LD C,(IX+#0D)		;C=ŠŽ‹ˆ—…‘’‚Ž ‘…Š’ŽŽ‚ ‚ Š‹€‘’……
+RDFAT05		LD C,(IX+0X0D)			;C=ŠŽ‹ˆ—…‘’‚Ž ‘…Š’ŽŽ‚ ‚ Š‹€‘’……
 		XOR A
 		LD E,A
 		LD B,8
 		RR C
 		ADC A,0
-		DJNZ $-4		;ŠŽ‹ˆ—…‘’‚Ž ‘…Š’ŽŽ‚ ‚ Š‹€‘’…… „Ž‹†Ž ›’œ ‘’……œž 2
+		DJNZ $-4			;ŠŽ‹ˆ—…‘’‚Ž ‘…Š’ŽŽ‚ ‚ Š‹€‘’…… „Ž‹†Ž ›’œ ‘’……œž 2
 		DEC A
-		JR NZ,$+3		;Ž‚…ˆ‹ˆ ŠŽ‹ˆ—…‘’‚Ž ˆ’
-		INC E			;+1, …‘’œ ’€ŠŽ…
-		LD A,(IX+#0E)
-		OR (IX+#0F)
-		JR Z,$+3		;ŠŽ‹ˆ—…‘’‚Ž ‡€…‡…‚ˆŽ‚€›• ‘…Š’ŽŽ‚ „Ž‹†Ž ›’œ >0
-		INC E			;+1, …‘’œ ’€ŠŽ…
-		LD A,(IX+#13)
-		OR (IX+#14)
-		JR NZ,$+3		;ŠŽ‹ˆ—…‘’‚Ž ‘…Š’ŽŽ‚ € €‡„…‹… „‹Ÿ ”€’16?
+		JR NZ,$+3			;Ž‚…ˆ‹ˆ ŠŽ‹ˆ—…‘’‚Ž ˆ’
+		INC E				;+1, …‘’œ ’€ŠŽ…
+		LD A,(IX+0X0E)
+		OR (IX+0X0F)
+		JR Z,$+3			;ŠŽ‹ˆ—…‘’‚Ž ‡€…‡…‚ˆŽ‚€›• ‘…Š’ŽŽ‚ „Ž‹†Ž ›’œ >0
+		INC E				;+1, …‘’œ ’€ŠŽ…
+		LD A,(IX+0X13)
+		OR (IX+0X14)
+		JR NZ,$+3			;ŠŽ‹ˆ—…‘’‚Ž ‘…Š’ŽŽ‚ € €‡„…‹… „‹Ÿ ”€’16?
 		INC E
-		LD A,(IX+#20)
-		OR (IX+#21)
-		OR (IX+#22)
-		OR (IX+#23)
-		JR NZ,$+3		;ŠŽ‹ˆ—…‘’‚Ž ‘…Š’ŽŽ‚ € €‡„…‹… „‹Ÿ ”€’32?
-		INC E			;Ž„Ž ˆ‡ ˆ• „Ž‹†Ž ›’œ =0, „“ƒŽ… >0
-		LD A,(IX+#15)
-		AND #F0
-		CP #F0
-		JR NZ,$+3		;‘’€˜ˆ… ˆ’› „Ž‹†› ›’œ ‚ 1
+		LD A,(IX+0X20)
+		OR (IX+0X21)
+		OR (IX+0X22)
+		OR (IX+0X23)
+		JR NZ,$+3			;ŠŽ‹ˆ—…‘’‚Ž ‘…Š’ŽŽ‚ € €‡„…‹… „‹Ÿ ”€’32?
+		INC E				;Ž„Ž ˆ‡ ˆ• „Ž‹†Ž ›’œ =0, „“ƒŽ… >0
+		LD A,(IX+0X15)
+		AND 0XF0
+		CP 0XF0
+		JR NZ,$+3			;‘’€˜ˆ… ˆ’› „Ž‹†› ›’œ ‚ 1
 		INC E
 		LD A,E
-		CP 4			;“‘‹Ž‚ˆŸ ‘Ž‚€‹ˆ?
-		LD A,#DD		;FAT … €‰„…
+		CP 4				;“‘‹Ž‚ˆŸ ‘Ž‚€‹ˆ?
+		LD A,0XDD			;FAT … €‰„…
 		JP NZ,WR_STAT
-		LD A,#FF
-		LD (CAL_FAT),A		;’ˆ ”€’ ŽŠ€ … Ž…„…‹…
+		LD A,0XFF
+		LD (CAL_FAT),A			;’ˆ ”€’ ŽŠ€ … Ž…„…‹…
 		LD DE,0
 		LD B,D
 		LD C,E
 
 RDFAT00		LD (STARTRZ),DE
-		LD (STARTRZ+2),BC	;Ž‹Ž†ˆ‹ˆ ŽŒ… ‘’€’Ž‚ŽƒŽ ‘…Š’Ž€ €‡„…‹€
-		CALL LOADLST		;‡€ƒ“‡ˆ‹ˆ …ƒŽ
+		LD (STARTRZ+2),BC		;Ž‹Ž†ˆ‹ˆ ŽŒ… ‘’€’Ž‚ŽƒŽ ‘…Š’Ž€ €‡„…‹€
+		CALL LOADLST			;‡€ƒ“‡ˆ‹ˆ …ƒŽ
 		LD HL,0
-		LD DE,(BUF_512+#16)	;BPB_FATSZ16
+		LD DE,(BUF_512+0X16)		;BPB_FATSZ16
 		LD A,D
 		OR E
-		JR NZ,RDFAT01		;…‘‹ˆ … FAT12/16 (BPB_FATSZ16=0)
-		LD DE,(BUF_512+#24)
-		LD HL,(BUF_512+#26)	;BPB_FATSZ32
-					;’Ž ……Œ ˆ‡ ‘Œ…™…ˆŸ +36
+		JR NZ,RDFAT01			;…‘‹ˆ … FAT12/16 (BPB_FATSZ16=0)
+		LD DE,(BUF_512+0X24)
+		LD HL,(BUF_512+0X26)		;BPB_FATSZ32
+						;’Ž ……Œ ˆ‡ ‘Œ…™…ˆŸ +36
 RDFAT01		LD (SEC_FAT+2),HL
-		LD (SEC_FAT),DE		;—ˆ‘‹Ž ‘…Š’ŽŽ‚ € FAT-’€‹ˆ–“
+		LD (SEC_FAT),DE			;—ˆ‘‹Ž ‘…Š’ŽŽ‚ € FAT-’€‹ˆ–“
 		LD HL,0
-		LD DE,(BUF_512+#13)	;BPB_TOTSEC16
+		LD DE,(BUF_512+0X13)		;BPB_TOTSEC16
 		LD A,D
 		OR E
-		JR NZ,RDFAT02		;…‘‹ˆ … FAT12/16 (BPB_TOTSEC16=0)
-		LD DE,(BUF_512+#20)
-		LD HL,(BUF_512+#22)	;BPB_TOTSEC32
-					;’Ž ……Œ ˆ‡ ‘Œ…™…ˆŸ +32
+		JR NZ,RDFAT02			;…‘‹ˆ … FAT12/16 (BPB_TOTSEC16=0)
+		LD DE,(BUF_512+0X20)
+		LD HL,(BUF_512+0X22)		;BPB_TOTSEC32
+						;’Ž ……Œ ˆ‡ ‘Œ…™…ˆŸ +32
 RDFAT02		LD (SEC_DSC+2),HL
-		LD (SEC_DSC),DE		;Š-‚Ž ‘…Š’ŽŽ‚ € „ˆ‘Š…/€‡„…‹…
+		LD (SEC_DSC),DE			;Š-‚Ž ‘…Š’ŽŽ‚ € „ˆ‘Š…/€‡„…‹…
 
 ;‚›—ˆ‘‹Ÿ…Œ ROOTDIRSECTORS
-		LD BC,(BUF_512+#0B)	;BPB_BYTSPERSEC
-		LD DE,(BUF_512+#11)	;BPB_ROOTENTCNT
+		LD BC,(BUF_512+0X0B)		;BPB_BYTSPERSEC
+		LD DE,(BUF_512+0X11)		;BPB_ROOTENTCNT
 		LD HL,0
 		LD A,D
 		OR E
 		JR Z,RDFAT03
 		LD B,H
 		LD C,L
-		LD A,#10
+		LD A,0X10
 		CALL BCDE_A
 		EX DE,HL
 
@@ -742,9 +744,9 @@ RDFAT02		LD (SEC_DSC+2),HL
 ;ROOTDIRSECTORS=((BPB_ROOTENTCNT*32)+(BPB_BYTSPERSEC-1))/BPB_BYTSPERSEC
 ;‚ HL=ROOTDIRSECTORS. …‘‹ˆ FAT32, ’Ž HL=0 ‚‘…ƒ„€
 
-RDFAT03		PUSH HL			;ROOTDIRSECTORS
+RDFAT03		PUSH HL				;ROOTDIRSECTORS
 		LD (ROOTSEC),HL
-		LD A,(BUF_512+#10)
+		LD A,(BUF_512+0X10)
 		LD DE,(SEC_FAT)
 		LD HL,(SEC_FAT+2)
 		DEC A
@@ -754,28 +756,29 @@ RDFAT03		PUSH HL			;ROOTDIRSECTORS
 		ADC HL,HL
 		DEC A
 		JR NZ,$-6
-		POP BC			;Ž‹›‰ €‡Œ… FAT-Ž‹€‘’ˆ ‚ ‘…Š’Ž€•
-		CALL HLDEPBC		;ˆ€‚ˆ‹ˆ ROOTDIRSECTORS
-		LD BC,(BUF_512+#0E)	;BPB_RSVDSECCNT
+		POP BC				;Ž‹›‰ €‡Œ… FAT-Ž‹€‘’ˆ ‚ ‘…Š’Ž€•
+		CALL HLDEPBC			;ˆ€‚ˆ‹ˆ ROOTDIRSECTORS
+		LD BC,(BUF_512+0X0E)		;BPB_RSVDSECCNT
 		LD (RSVDSEC),BC
-		CALL HLDEPBC		;ˆ€‚ˆ‹ˆ BPB_RESVDSECCNT
+		CALL HLDEPBC			;ˆ€‚ˆ‹ˆ BPB_RESVDSECCNT
 		LD (FRSTDAT),DE
-		LD (FRSTDAT+2),HL	;Ž‹Ž†ˆ‹ˆ ŽŒ… …‚ŽƒŽ ‘…Š’Ž€ „€›•
+		LD (FRSTDAT+2),HL		;Ž‹Ž†ˆ‹ˆ ŽŒ… …‚ŽƒŽ ‘…Š’Ž€ „€›•
 		LD B,H
 		LD C,L
-		LD HL,SEC_DSC		;BCDE+32-®¥ —ˆ‘‹Ž Ž €„…‘“ HL
-		CALL BCDEHLM		;‚›—‹ˆ ˆ‡ Ž‹ŽƒŽ Š-‚€ ‘…Š’ŽŽ‚ €‡„…‹€
-		LD A,(BUF_512+#0D)
+		LD HL,SEC_DSC			;BCDE+32-®¥ —ˆ‘‹Ž Ž €„…‘“ HL
+		CALL BCDEHLM			;‚›—‹ˆ ˆ‡ Ž‹ŽƒŽ Š-‚€ ‘…Š’ŽŽ‚ €‡„…‹€
+		LD A,(BUF_512+0X0D)
 		LD (BYTSSEC),A
-		CALL BCDE_A		;€‡„…‹ˆ‹ˆ € Š-‚Ž ‘…Š’ŽŽ‚ ‚ Š‹€‘’……
+		CALL BCDE_A			;€‡„…‹ˆ‹ˆ € Š-‚Ž ‘…Š’ŽŽ‚ ‚ Š‹€‘’……
 		LD (CLS_DSC),DE
-		LD (CLS_DSC+2),BC	;Ž‹Ž†ˆ‹ˆ ŠŽ‹-‚Ž Š‹€‘’…Ž‚ € €‡„…‹…
+		LD (CLS_DSC+2),BC		;Ž‹Ž†ˆ‹ˆ ŠŽ‹-‚Ž Š‹€‘’…Ž‚ € €‡„…‹…
 
-		LD A,(CAL_FAT)
-		CP #FF
-		JR NZ,RDFAT04
-		LD HL,(CLS_DSC)		;…‘‹ˆ €‡”„Ž‘’œ ”€’€ … Ž…„…‹…€, Ž…„…‹Ÿ…Œ
-		LD DE,(CLS_DSC+2)	;‚‡Ÿ‹ˆ ŠŽ‹ˆ—…‘’‚Ž Š‹€‘’…Ž‚ € €‡„…‹…
+;		LD A,(CAL_FAT)
+;		CP 0XFF
+;		JR NZ,RDFAT04
+;Ž…„…‹…ˆ…  €‡Ÿ„Ž‘’ˆ FAT
+		LD HL,(CLS_DSC)
+		LD DE,(CLS_DSC+2)		;‚‡Ÿ‹ˆ ŠŽ‹ˆ—…‘’‚Ž Š‹€‘’…Ž‚ € €‡„…‹…
 		PUSH HL
 		PUSH DE
 		ADD HL,HL
@@ -783,7 +786,7 @@ RDFAT03		PUSH HL			;ROOTDIRSECTORS
 		ADC HL,HL
 		LD B,H
 		LD C,L
-		CALL RASCHET		;‘—ˆ’€…Œ, …‘‹ˆ Ž‹“—ˆ‹ˆ 0, ’Ž ”€’16
+		CALL RASCHET			;‘—ˆ’€…Œ, …‘‹ˆ Ž‹“—ˆ‹ˆ 0, ’Ž ”€’16
 		LD A,1
 		POP DE
 		POP HL
@@ -797,10 +800,10 @@ RDFAT03		PUSH HL			;ROOTDIRSECTORS
 		ADC HL,HL
 		LD B,H
 		LD C,L
-		CALL RASCHET		;‘—ˆ’€…Œ, …‘‹ˆ Ž‹“—ˆ‹ˆ 0, ’Ž ”€’32
+		CALL RASCHET			;‘—ˆ’€…Œ, …‘‹ˆ Ž‹“—ˆ‹ˆ 0, ’Ž ”€’32
 		LD A,2
 		JR Z,RDFAT04
-		XOR A			;ˆ€—… ”€’12
+		XOR A				;ˆ€—… ”€’12
 
 ;„‹Ÿ FAT12/16 ‚›—ˆ‘‹Ÿ…Œ €„…‘ …‚ŽƒŽ ‘…Š’Ž€ „ˆ…Š’Žˆˆ
 ;„‹Ÿ FAT32 ……Œ Ž ‘Œ…™…Œˆž +44, € ‚›•Ž„… BCDE-‘…Š’Ž ROOTDIR
@@ -810,51 +813,51 @@ RDFAT04		PUSH AF
 		LD HL,STARTRZ
 		CALL BCDEHLP
 		LD (FATSTR),DE
-		LD (FATSTR+2),BC	;‚›—ˆ‘‹ˆ‹ˆ ˆ Ž‹Ž†ˆ‹ˆ ŽŒ… ‘…Š’Ž€ €—€‹€ FAT-…€‹ˆ–
+		LD (FATSTR+2),BC		;‚›—ˆ‘‹ˆ‹ˆ ˆ Ž‹Ž†ˆ‹ˆ ŽŒ… ‘…Š’Ž€ €—€‹€ FAT-…€‹ˆ–
 		POP AF
-		LD (CAL_FAT),A		;“’Ž—ˆ‹ˆ ’ˆ ”€’€
+		LD (CAL_FAT),A			;“’Ž—ˆ‹ˆ ’ˆ ”€’€
 		AND A
 		LD DE,0
 		LD B,D
 		LD C,E
-		JR Z,FSRROO2		;FAT12-NONE
+		JR Z,FSRROO2			;FAT12-NONE
 		DEC A
-		JR Z,FSRROO2		;FAT16
-		LD DE,(BUF_512+#2C)
-		LD BC,(BUF_512+#2E)	;FAT32
+		JR Z,FSRROO2			;FAT16
+		LD DE,(BUF_512+0X2C)
+		LD BC,(BUF_512+0X2E)		;FAT32
 FSRROO2		LD (ROOTCLS),DE
-		LD (ROOTCLS+2),BC	;Ž‹Ž†ˆ‹ˆ ŽŒ… Š‹€‘’… ROOT „ˆ…Š’Žˆˆ
+		LD (ROOTCLS+2),BC		;Ž‹Ž†ˆ‹ˆ ŽŒ… Š‹€‘’… ROOT „ˆ…Š’Žˆˆ
 
-		LD HL,(ADRPATH)		;‚…“‹ˆ €„…‘ ‘’ŽŠˆ “’ˆ „Ž ”€‰‹€
+		LD HL,(ADRPATH)			;‚…“‹ˆ €„…‘ ‘’ŽŠˆ “’ˆ „Ž ”€‰‹€
 FINDFL1		PUSH BC
-		PUSH DE			;‘Ž•€ˆ‹ˆ ŽŒ… Š‹€‘’…€
-		CALL FNDBUF		;€‘€ŠŽ‚Š€ —€‘’ˆ ’…Š‘’Ž‚Ž‰ ‘’ŽŠˆ „‹Ÿ ‘Ž‡„€ˆŸ Œ€‘Šˆ Žˆ‘Š€
+		PUSH DE				;‘Ž•€ˆ‹ˆ ŽŒ… Š‹€‘’…€
+		CALL FNDBUF			;€‘€ŠŽ‚Š€ —€‘’ˆ ’…Š‘’Ž‚Ž‰ ‘’ŽŠˆ „‹Ÿ ‘Ž‡„€ˆŸ Œ€‘Šˆ Žˆ‘Š€
 		POP DE
-		POP BC			;‚Ž‘‘’€Ž‚ˆ‹ˆ ŽŒ… Š‹€‘’…€
-		PUSH HL			;‘Ž•€ˆ‹ˆ ’…Š“™ˆ‰ €„…‘ ’…Š‘’Ž‚Ž‰ ‘’ŽŠˆ
+		POP BC				;‚Ž‘‘’€Ž‚ˆ‹ˆ ŽŒ… Š‹€‘’…€
+		PUSH HL				;‘Ž•€ˆ‹ˆ ’…Š“™ˆ‰ €„…‘ ’…Š‘’Ž‚Ž‰ ‘’ŽŠˆ
 
-		LD HL,TDIRCLS		;€„…‘ ’€‹ˆ–› Š‹€‘’…Ž‚ ’…Š“™…‰ „ˆ…Š’Žˆˆ
+		LD HL,TDIRCLS			;€„…‘ ’€‹ˆ–› Š‹€‘’…Ž‚ ’…Š“™…‰ „ˆ…Š’Žˆˆ
 		LD A,D
 		OR E
 		OR B
 		OR C
-		CALL SAVEZP		;‘Ž•€ˆ‹ˆ ‚ ’€‹ˆ–“ ŽŒ… ’…Š“™…ƒŽ Š‹€‘’…€
-		JR Z,LASTCLS		;…‘‹ˆ ŽŒ… Š‹€‘’…€ 0, ’Ž ’Ž ROOT „ˆ€ („‹Ÿ ”€’12/16)
+		CALL SAVEZP			;‘Ž•€ˆ‹ˆ ‚ ’€‹ˆ–“ ŽŒ… ’…Š“™…ƒŽ Š‹€‘’…€
+		JR Z,LASTCLS			;…‘‹ˆ ŽŒ… Š‹€‘’…€ 0, ’Ž ’Ž ROOT „ˆ€ („‹Ÿ ”€’12/16)
 NEXTCLS		PUSH HL
-		CALL RDFATZP		;—ˆ’€…Œ ‘‹…„“™ˆ‰ ŽŒ… Š‹€‘’…€ ˆ‡ –…Ž—Šˆ „ˆ…Š’Žˆˆ
-		CALL LST_CLS		;Ž‚…Ÿ…Œ € ŠŽ…– –…Ž—Šˆ
+		CALL RDFATZP			;—ˆ’€…Œ ‘‹…„“™ˆ‰ ŽŒ… Š‹€‘’…€ ˆ‡ –…Ž—Šˆ „ˆ…Š’Žˆˆ
+		CALL LST_CLS			;Ž‚…Ÿ…Œ € ŠŽ…– –…Ž—Šˆ
 		POP HL
 		JR C,LASTCLS
-		CALL SAVEZP		;…‘‹ˆ …Ž‘‹…„ˆ‰ ‘Ž•€Ÿ…Œ ‚ ’€‹ˆ–“
-		JR NEXTCLS		;‘‹…„“ž™ˆ‰ ŽŒ… Š‹€‘’…€
+		CALL SAVEZP			;…‘‹ˆ …Ž‘‹…„ˆ‰ ‘Ž•€Ÿ…Œ ‚ ’€‹ˆ–“
+		JR NEXTCLS			;‘‹…„“ž™ˆ‰ ŽŒ… Š‹€‘’…€
 
-LASTCLS		LD BC,#FFFF
-		CALL SAVEZP		;Š‹€„…Œ Œ€Š… ŠŽ–€ –…Ž—Šˆ
+LASTCLS		LD BC,0XFFFF
+		CALL SAVEZP			;Š‹€„…Œ Œ€Š… ŠŽ–€ –…Ž—Šˆ
 
-FINDFL		INC BC			;ˆ™…Œ Ž ‡€„€Ž‰ Œ€‘Š… €—ˆ€Ÿ ‘ 0
-		CALL RDDIRSC		;ƒ“‡ˆŒ Ž ŽŒ…“ Žˆ‘€’…‹Ÿ ‘…Š’Ž „ˆ…Š’Žˆˆ
+FINDFL		INC BC				;ˆ™…Œ Ž ‡€„€Ž‰ Œ€‘Š… €—ˆ€Ÿ ‘ 0
+		CALL RDDIRSC			;ƒ“‡ˆŒ Ž ŽŒ…“ Žˆ‘€’…‹Ÿ ‘…Š’Ž „ˆ…Š’Žˆˆ
 		LD A,C
-		AND #0F			;‚ ‘…Š’Ž… Œ€Š‘ˆŒ“Œ 16 Žˆ‘€’…‹…‰
+		AND 0X0F			;‚ ‘…Š’Ž… Œ€Š‘ˆŒ“Œ 16 Žˆ‘€’…‹…‰
 		LD E,A
 		LD D,0
 		EX DE,HL
@@ -863,115 +866,115 @@ FINDFL		INC BC			;ˆ™…Œ Ž ‡€„€Ž‰ Œ€‘Š… €—ˆ€Ÿ ‘ 0
 		ADD HL,HL
 		ADD HL,HL
 		ADD HL,HL
-		ADD HL,DE		;Ž‹“—ˆ‹ˆ €„…‘ “†ŽƒŽ Žˆ‘€’…‹Ÿ
-		LD A,(HL)		;Ž‚…Ÿ…Œ …‚›‰ €‰’ ˆŒ…ˆ Žˆ‘€’…‹Ÿ
+		ADD HL,DE			;Ž‹“—ˆ‹ˆ €„…‘ “†ŽƒŽ Žˆ‘€’…‹Ÿ
+		LD A,(HL)			;Ž‚…Ÿ…Œ …‚›‰ €‰’ ˆŒ…ˆ Žˆ‘€’…‹Ÿ
 		AND A
-		LD A,#AA		;…‘‹ˆ €‰’ =0, ’Ž
-		JP Z,WR_STAT		;……•Ž„ Ž Ž˜ˆŠ… = ”€‰‹ … €‰„…
+		LD A,0XAA			;…‘‹ˆ €‰’ =0, ’Ž
+		JP Z,WR_STAT			;……•Ž„ Ž Ž˜ˆŠ… = ”€‰‹ … €‰„…
 		PUSH HL
 		PUSH BC
-		CALL COMPARE		;‘€‚ˆ‚€…Œ ‘ ‡€„€Ž‰ Œ€‘ŠŽ‰
+		CALL COMPARE			;‘€‚ˆ‚€…Œ ‘ ‡€„€Ž‰ Œ€‘ŠŽ‰
 		POP BC
 		POP DE
 		PUSH DE
-		POP IX			;‘Ž„…†ˆŒŽ… IX=€„…‘ Žˆ‘€’…‹Ÿ
-		JR NZ,FINDFL		;… ‘Ž‚€„€…’, ……•Ž„ˆŒ Š ‘‹…„“ž™…Œ“ Žˆ‘€’…‹ž
-		CALL RD_CLAS		;‡€ˆ€…Œ ŽŒ… Š‹€‘’…€ ˆ‡ €‰„…ŽƒŽ Žˆ‘€’…‹Ÿ
-		EX (SP),HL		;‚Ž‘‘’€Ž‚ˆ‹ˆ ’…Š“™ˆ‰ €„…‘ ‚ ‘’ŽŠ… “’ˆ „Ž ”€‰‹€
+		POP IX				;‘Ž„…†ˆŒŽ… IX=€„…‘ Žˆ‘€’…‹Ÿ
+		JR NZ,FINDFL			;… ‘Ž‚€„€…’, ……•Ž„ˆŒ Š ‘‹…„“ž™…Œ“ Žˆ‘€’…‹ž
+		CALL RD_CLAS			;‡€ˆ€…Œ ŽŒ… Š‹€‘’…€ ˆ‡ €‰„…ŽƒŽ Žˆ‘€’…‹Ÿ
+		EX (SP),HL			;‚Ž‘‘’€Ž‚ˆ‹ˆ ’…Š“™ˆ‰ €„…‘ ‚ ‘’ŽŠ… “’ˆ „Ž ”€‰‹€
 		INC SP
-		INC SP			;Œ€‘ŠˆŽ‚Š€ € ‘’…Š… €„…‘€ €‡Œ…€ ‚ €‰’€• ’…Š“™…ƒŽ ”€‰‹€
+		INC SP				;Œ€‘ŠˆŽ‚Š€ € ‘’…Š… €„…‘€ €‡Œ…€ ‚ €‰’€• ’…Š“™…ƒŽ ”€‰‹€
 		LD A,(HL)
-		AND A			;’…Š‘’Ž‚€Ÿ ‘’ŽŠ€ ŠŽ—ˆ‹€‘œ?
-		JR NZ,FINDFL1		;…‘‹ˆ …’, ’Ž ˆ™…Œ „€‹œ˜…
-		LD A,(IX+#0B)		;Ž‚…Ÿ…Œ ’Ž „ˆ€ ˆ‹ˆ ”€‰‹?
-		AND #10
-		LD A,#AA		;…‘‹ˆ „ˆ€, ’Ž Ž˜ˆŠ€
-		JP NZ,WR_STAT		;’…Š‘’Ž‚€Ÿ ‘’ŽŠ€ „Ž‹†€ “Š€‡›‚€’œ € ”€‰‹
+		AND A				;’…Š‘’Ž‚€Ÿ ‘’ŽŠ€ ŠŽ—ˆ‹€‘œ?
+		JR NZ,FINDFL1			;…‘‹ˆ …’, ’Ž ˆ™…Œ „€‹œ˜…
+		LD A,(IX+0X0B)			;Ž‚…Ÿ…Œ ’Ž „ˆ€ ˆ‹ˆ ”€‰‹?
+		AND 0X10
+		LD A,0XAA			;…‘‹ˆ „ˆ€, ’Ž Ž˜ˆŠ€
+		JP NZ,WR_STAT			;’…Š‘’Ž‚€Ÿ ‘’ŽŠ€ „Ž‹†€ “Š€‡›‚€’œ € ”€‰‹
 		DEC SP
 		DEC SP
-		POP HL			;‚Ž‘‘’€Ž‚ˆ‹ˆ ‚ HL €„…‘ Ž’Š“„€ ‚‡Ÿ’œ €‡Œ… ”€‰‹€ ‚ €‰’€•
+		POP HL				;‚Ž‘‘’€Ž‚ˆ‹ˆ ‚ HL €„…‘ Ž’Š“„€ ‚‡Ÿ’œ €‡Œ… ”€‰‹€ ‚ €‰’€•
 		PUSH BC
 		PUSH DE
-		CALL LOADZP		;‡€ˆ€…Œ €‡Œ… ”€‰‹€ (‚ €‰’€•)
+		CALL LOADZP			;‡€ˆ€…Œ €‡Œ… ”€‰‹€ (‚ €‰’€•)
 		LD A,E
 		AND A
-		JR Z,$+3		;Œ‹€„˜ˆ‰ €‰’ €‡Œ…€ ”€‰‹€ =0?
-		INC D			;“‚…‹ˆ—ˆ‚€…Œ €‡Œ… € 256 €‰’ …‡ “—…’€ Œ‹€„˜…ƒŽ €‰’€
-		BIT 0,D			;Ž‚…Ÿ…Œ —…’/…—…’
-		JR Z,$+3		;…‘‹ˆ …—…’, ’Ž
-		INC D			;“‚…‹ˆ—ˆ‚€…Œ €‡Œ… …™… € 256 €‰’
-		CALL BCDE200		;„…‹ˆŒ € 512 (€ €‡Œ… ‘…Š’Ž)
+		JR Z,$+3			;Œ‹€„˜ˆ‰ €‰’ €‡Œ…€ ”€‰‹€ =0?
+		INC D				;“‚…‹ˆ—ˆ‚€…Œ €‡Œ… € 256 €‰’ …‡ “—…’€ Œ‹€„˜…ƒŽ €‰’€
+		BIT 0,D				;Ž‚…Ÿ…Œ —…’/…—…’
+		JR Z,$+3			;…‘‹ˆ …—…’, ’Ž
+		INC D				;“‚…‹ˆ—ˆ‚€…Œ €‡Œ… …™… € 256 €‰’
+		CALL BCDE200			;„…‹ˆŒ € 512 (€ €‡Œ… ‘…Š’Ž)
 		PUSH DE
 		EXX
 		POP HL
 		EXX
-		LD A,(BYTSSEC)		;‚‡Ÿ‹ˆ €‡Œ… Š‹€‘’…€ ‚ ‘…Š’Ž€•
-		LD HX,A			;‘Ž•€ˆ‹ˆ
+		LD A,(BYTSSEC)			;‚‡Ÿ‹ˆ €‡Œ… Š‹€‘’…€ ‚ ‘…Š’Ž€•
+		LD IXH,A;HX,A			;‘Ž•€ˆ‹ˆ
 		POP DE
 		POP BC
-		LD HL,#8000		;€„…‘ ‡€ƒ“‡Šˆ
+		LD HL,0X8000			;€„…‘ ‡€ƒ“‡Šˆ
 
 ;HX-€‡Œ… Š‹€‘’…€
 ;HL'-ŠŽ‹-‚Ž ‘…Š’ŽŽ‚ ”€‰‹€
 ;BCDE-ŽŒ… ‘’€’Ž‚ŽƒŽ Š‹€‘’…€
 ;LY-‘’€’Ž‚€Ÿ ‘’€ˆ–€ ‡€ƒ“‡Šˆ
 
-		LD A,LY			;‚Ž‘‘’€Ž‚ˆ‹ˆ ‘’€ˆ–“ ‡€ƒ“‡Šˆ
+		LD A,IYL;LY			;‚Ž‘‘’€Ž‚ˆ‹ˆ ‘’€ˆ–“ ‡€ƒ“‡Šˆ
 		AND A
-		JR NZ,CP_PAGE		;Ž‚…Š€ „‹Ÿ ‡€ƒ“‡Šˆ ‚ ‘’€ˆ–“ 0
-		OUT (MPAG),A		;‚Š‹ž—€…Œ ‘’€ˆ–“ 0
+		JR NZ,CP_PAGE			;Ž‚…Š€ „‹Ÿ ‡€ƒ“‡Šˆ ‚ ‘’€ˆ–“ 0
+		OUT (MPAG),A			;‚Š‹ž—€…Œ ‘’€ˆ–“ 0
 		EXX
 		LD A,L
-		LD DE,#41
+		LD DE,0X41
 		SBC HL,DE
-		JR C,$+4		;…‘‹ˆ ”€‰‹ #41 ˆ Ž‹…… ‘…Š’ŽŽ‚
-		LD A,#40		;’Ž ƒ“‡ˆŒ ’Ž‹œŠŽ #40 …‚›• ‘…Š’ŽŽ‚
+		JR C,$+4			;…‘‹ˆ ”€‰‹ 0X41 ˆ Ž‹…… ‘…Š’ŽŽ‚
+		LD A,0X40			;’Ž ƒ“‡ˆŒ ’Ž‹œŠŽ 0X40 …‚›• ‘…Š’ŽŽ‚
 		EXX
-		JP LDMINI		;……•Ž„ˆŒ € ‡€ƒ“‡Š“
+		JP LDMINI			;……•Ž„ˆŒ € ‡€ƒ“‡Š“
 
 ;‡€ƒ“‡Š€ ‚ ‘’€ˆ–“ 1 ‡€…™…€
 CP_PAGE		DEC A
-		LD A,#AA
+		LD A,0XAA
 		JP Z,WR_STAT
-		LD A,LY
+		LD A,IYL;LY
 
 ;‚Š‹ž—€…Œ ‘’€ˆ–“ ‡€ƒ“‡Šˆ
-LDFILE0		OUT (MPAG),A		;‚Š‹ž—€…Œ ‡€„€“ž ‘’€ˆ–“ „‹Ÿ ‡€ƒ“‡Šˆ
+LDFILE0		OUT (MPAG),A			;‚Š‹ž—€…Œ ‡€„€“ž ‘’€ˆ–“ „‹Ÿ ‡€ƒ“‡Šˆ
 
 ;‡€ƒ“‡Š€ ‚ ‘’€ˆ–› 02...7F
 LD_FILE		EXX
-		LD E,HX
-		LD D,0			;DE=€‡Œ… Š‹€‘’…€ ‚ ‘…Š’Ž€•
+		LD E,IXH;HX
+		LD D,0				;DE=€‡Œ… Š‹€‘’…€ ‚ ‘…Š’Ž€•
 		AND A
-		SBC HL,DE		;‘‚…Ÿ…Œ ‘ ŠŽ‹ˆ—…‘’‚ŽŒ ‘…Š’ŽŽ‚ „‹Ÿ ‡€ƒ“‡Šˆ
-		LD LX,HX		;LX=ŠŽ‹ˆ—…‘’‚Ž ‘…Š’ŽŽ‚ „‹Ÿ ‡€ƒ“‡Šˆ
+		SBC HL,DE			;‘‚…Ÿ…Œ ‘ ŠŽ‹ˆ—…‘’‚ŽŒ ‘…Š’ŽŽ‚ „‹Ÿ ‡€ƒ“‡Šˆ
+		LD IXL,IXH;LX,HX		;LX=ŠŽ‹ˆ—…‘’‚Ž ‘…Š’ŽŽ‚ „‹Ÿ ‡€ƒ“‡Šˆ
 		EXX
 		JR NC,LDFILE1
-		EXX			;‘…Š’ŽŽ‚ „‹Ÿ ‡€ƒ“‡Šˆ Œ…œ˜… €‡Œ…€ Š‹€‘’…€
+		EXX				;‘…Š’ŽŽ‚ „‹Ÿ ‡€ƒ“‡Šˆ Œ…œ˜… €‡Œ…€ Š‹€‘’…€
 		ADD HL,DE	
 		LD A,L
-		LD LX,A			;LX=ŠŽ‹ˆ—…‘’‚Ž ‘…Š’ŽŽ‚ „‹Ÿ ‡€ƒ“‡Šˆ
+		LD IXL,A;LX,A			;LX=ŠŽ‹ˆ—…‘’‚Ž ‘…Š’ŽŽ‚ „‹Ÿ ‡€ƒ“‡Šˆ
 		EXX
 
 LDFILE1		PUSH BC
 		PUSH DE
 		PUSH HL
-		CALL REALSEC		;……‚…‹ˆ ŽŒ… Š‹€‘’…€ ‚ ŽŒ… …€‹œŽƒŽ ‘…Š’Ž€
-		LD A,LX
-		CP #41			;ŠŽ‹ˆ—…‘’‚Ž ‘…Š’ŽŽ‚ „‹Ÿ ‡€ƒ“‡Šˆ Ž‹œ˜… #40?
+		CALL REALSEC			;……‚…‹ˆ ŽŒ… Š‹€‘’…€ ‚ ŽŒ… …€‹œŽƒŽ ‘…Š’Ž€
+		LD A,IXL;LX
+		CP 0X41				;ŠŽ‹ˆ—…‘’‚Ž ‘…Š’ŽŽ‚ „‹Ÿ ‡€ƒ“‡Šˆ Ž‹œ˜… 0X40?
 		JR C,$+4
-		LD A,#40		;“„…Œ ƒ“‡ˆ’œ #40 ‘…Š’ŽŽ‚
+		LD A,0X40			;“„…Œ ƒ“‡ˆ’œ 0X40 ‘…Š’ŽŽ‚
 		POP HL
-		LD HY,A
-		CALL RDMULTI		;‡€ƒ“†€…Œ ‘…Š’Ž€
-		LD A,HX
-		AND #80
+		LD IYH,A;HY,A
+		CALL RDMULTI			;‡€ƒ“†€…Œ ‘…Š’Ž€
+		LD A,IXH;HX
+		AND 0X80
 		JR Z,LDFILE2
-		LD A,LX
-		SUB HY
+		LD A,IXL;LX
+		SUB IYH;HY
 		JR Z,LDFILE4
 		JR C,LDFILE4
-		LD HL,#40
+		LD HL,0X40
 		ADD HL,DE
 		EX DE,HL
 		LD HL,0
@@ -979,9 +982,9 @@ LDFILE1		PUSH BC
 		LD B,H
 		LD C,L
 		LD L,A
-		INC LY
-		LD A,LY
-		CP #40
+		INC IYL;LY
+		LD A,IYL;LY
+		CP 0X40
 		JR C,LDFILE3
 LDFILE4		INC SP
 		INC SP
@@ -989,9 +992,9 @@ LDFILE4		INC SP
 		INC SP
 		JR LDEFILE
 
-LDFILE3		OUT (MPAG),A		;‘‹…„“ž™€Ÿ ‘’€ˆ–€
+LDFILE3		OUT (MPAG),A			;‘‹…„“ž™€Ÿ ‘’€ˆ–€
 		LD A,L
-		LD HL,#8000
+		LD HL,0X8000
 		CALL RDMULTI
 LDFILE2		POP DE
 		POP BC
@@ -1000,23 +1003,23 @@ LDFILE2		POP DE
 		CALL LST_CLS
 		POP HL
 		JR C,LDEFILE
-		LD A,LX
-		CP HX
+		LD A,IXL;LX
+		CP IXH;HX
 		JR C,LDEFILE
 		LD A,H
 		AND A
 		JR NZ,LD_FILE
-		LD HL,#8000
-		INC LY
-		LD A,LY
-		CP #40
+		LD HL,0X8000
+		INC IYL;LY
+		LD A,IYL;LY
+		CP 0X40
 		JR C,LDFILE0
 LDEFILE		XOR A
 		JP WR_STAT
 
 LDMINI		EXX
 		LD L,A
-		LD A,HX
+		LD A,IXH;HX
 		LD H,A
 		CP L
 		JR C,$+3
@@ -1072,7 +1075,7 @@ RDDIRSC		PUSH BC
 		LD D,B
 		LD E,C
 		LD BC,0
-		LD A,#10
+		LD A,0X10
 		CALL BCDE_A
 		LD A,E
 		PUSH AF
@@ -1104,109 +1107,109 @@ RDDIRSC		PUSH BC
 		RET
 
 ;Ž‚…Š€ € Ž‘‹…„ˆ‰ Š‹€‘’… ‚ –…Ž—Š…
-LST_CLS		LD A,(CAL_FAT)		;‡€‚ˆ‘ˆ’ Ž’ €‡Ÿ„Ž‘’ˆ ”€’€
+LST_CLS		LD A,(CAL_FAT)			;‡€‚ˆ‘ˆ’ Ž’ €‡Ÿ„Ž‘’ˆ ”€’€
 		AND A
 		JR NZ,LST_CL1
-		LD HL,#0FF7		;Ž‚…Š€ „‹Ÿ ”€’12
+		LD HL,0X0FF7			;Ž‚…Š€ „‹Ÿ ”€’12
 		SBC HL,DE
 		RET
 
 LST_CL1		DEC A
 		JR NZ,LST_CL2
-LST_CL3		LD HL,#FFF7		;Ž‚…Š€Œ „‹Ÿ ”€’16 ˆ Œ‹€„˜ˆ• ˆ’ ”€’32
+LST_CL3		LD HL,0XFFF7			;Ž‚…Š€Œ „‹Ÿ ”€’16 ˆ Œ‹€„˜ˆ• ˆ’ ”€’32
 		SBC HL,DE
 		RET
 
-LST_CL2		LD HL,#0FFF		;Ž‚…Š€ „‹Ÿ ‘’€˜ˆ• ˆ’ ”€’32
+LST_CL2		LD HL,0X0FFF			;Ž‚…Š€ „‹Ÿ ‘’€˜ˆ• ˆ’ ”€’32
 		SBC HL,BC
 		RET NZ
 		JR LST_CL3
 
 ;—’…ˆ… ‘‹…„“ž™…ƒŽ ŽŒ…€ Š‹€‘’…€ ‚ –…Ž—Š…
-RDFATZP		LD A,(CAL_FAT)		;—’…ˆ… ‡€‚ˆ‘ˆ’ Ž’ €‡€„Ž‘’ˆ ”€’€
+RDFATZP		LD A,(CAL_FAT)			;—’…ˆ… ‡€‚ˆ‘ˆ’ Ž’ €‡€„Ž‘’ˆ ”€’€
 		AND A
-		JR Z,RDFATS0		;……•Ž„ ‚……„ „‹Ÿ ”€’12
+		JR Z,RDFATS0			;……•Ž„ ‚……„ „‹Ÿ ”€’12
 		DEC A
-		JR Z,RDFATS1		;……•Ž„ ‚……„ „‹Ÿ ”€’16
-		EX DE,HL		;‡„…‘œ —’…ˆ… „‹Ÿ ”€’32
+		JR Z,RDFATS1			;……•Ž„ ‚……„ „‹Ÿ ”€’16
+		EX DE,HL			;‡„…‘œ —’…ˆ… „‹Ÿ ”€’32
 		ADD HL,HL
 		EX DE,HL
 		LD HL,0
 		ADC HL,BC
-		ADC HL,BC		;“ŒŽ†ˆ‹ˆ ŽŒ… Š‹€‘’…€ € 2
+		ADC HL,BC			;“ŒŽ†ˆ‹ˆ ŽŒ… Š‹€‘’…€ € 2
 		LD A,E
 		LD E,D
 		LD D,L
 		LD C,H
-		LD B,0			;€‡„…‹ˆ‹ˆ ŽŒ… Š‹€‘’…€ € 256
-		CALL RDFATS2		;—ˆ’€…Œ Œ‹€„˜ˆ… 16 ˆ’ ˆ‘Ž‹œ‡“Ÿ —’…ˆ… „‹Ÿ ”€’16
+		LD B,0				;€‡„…‹ˆ‹ˆ ŽŒ… Š‹€‘’…€ € 256
+		CALL RDFATS2			;—ˆ’€…Œ Œ‹€„˜ˆ… 16 ˆ’ ˆ‘Ž‹œ‡“Ÿ —’…ˆ… „‹Ÿ ”€’16
 		INC HL
 		LD C,(HL)
 		INC HL
-		LD B,(HL)		;Ž—ˆ’€‹ˆ Ž‘‹…„“ž™ˆ… ‘’€˜ˆ… 16 ˆ’
+		LD B,(HL)			;Ž—ˆ’€‹ˆ Ž‘‹…„“ž™ˆ… ‘’€˜ˆ… 16 ˆ’
 		RET
 
 ;—’…ˆ… 16 ˆ’ŽƒŽ ŽŒ…€ Š‹€‘’…€ ˆ‡ –…Ž—Šˆ „‹Ÿ ”€’16
 RDFATS1		LD BC,0
 		LD A,E
 		LD E,D
-		LD D,C			;€‡„…‹ˆ‹ˆ ŽŒ… Š‹€‘’…€ € 256, ‘’€˜ˆ… 16 ˆ’ =0
-RDFATS2		PUSH AF			;Ž™…… —’…ˆ… 16 ˆ’ŽƒŽ ŽŒ…€ Š‹€‘’…€ „‹Ÿ ”€’16/32
+		LD D,C				;€‡„…‹ˆ‹ˆ ŽŒ… Š‹€‘’…€ € 256, ‘’€˜ˆ… 16 ˆ’ =0
+RDFATS2		PUSH AF				;Ž™…… —’…ˆ… 16 ˆ’ŽƒŽ ŽŒ…€ Š‹€‘’…€ „‹Ÿ ”€’16/32
 		PUSH BC
 		LD HL,FATSTR
-		CALL BCDEHLP		;ˆ€‚ˆ‹ˆ ‘Œ…™…ˆ… Ž’ €—€‹€ ”€’ ’€‹ˆ–›
-		CALL LOADLST		;‡€ƒ“‡ˆ‹ˆ ‚›—ˆ‘‹…›‰ ŽŒ… ‘…Š’Ž€
+		CALL BCDEHLP			;ˆ€‚ˆ‹ˆ ‘Œ…™…ˆ… Ž’ €—€‹€ ”€’ ’€‹ˆ–›
+		CALL LOADLST			;‡€ƒ“‡ˆ‹ˆ ‚›—ˆ‘‹…›‰ ŽŒ… ‘…Š’Ž€
 		POP BC
 		POP AF
 		LD E,A
 		LD D,0
 		ADD HL,DE
-		ADD HL,DE		;‚›—ˆ‘‹ˆ‹ˆ ‘Œ…™…ˆ… „Ž “†ŽƒŽ ŽŒ…€ ‚ ‡€ƒ“†…ŽŒ ‘…Š’Ž…
+		ADD HL,DE			;‚›—ˆ‘‹ˆ‹ˆ ‘Œ…™…ˆ… „Ž “†ŽƒŽ ŽŒ…€ ‚ ‡€ƒ“†…ŽŒ ‘…Š’Ž…
 		LD E,(HL)
 		INC HL
-		LD D,(HL)		;Ž‹“—ˆ‹ˆ 16 ˆ’ ŽŒ…€ Š‹€‘’…€
+		LD D,(HL)			;Ž‹“—ˆ‹ˆ 16 ˆ’ ŽŒ…€ Š‹€‘’…€
 		RET
 
 ;—’…ˆ… 12 ˆ’ŽƒŽ ŽŒ…€ Š‹€‘’…€ ˆ‡ –…Ž—Šˆ „‹Ÿ ”€’12
 RDFATS0		LD H,D
 		LD L,E
 		ADD HL,HL
-		ADD HL,DE		;HL=HL*3
+		ADD HL,DE			;HL=HL*3
 		SRL H
-		RR L			;HL=HL/2 - ‚ ˆ’Žƒ… “ŒŽ†ˆ‹ˆ ŽŒ… Š‹€‘’…€ € 1,5
-		LD A,E			;A-€Œ ˆ’……‘… ’Ž‹œŠŽ ˆ’ ŽŒ… ‘’€ŽƒŽ ŽŒ…€ Š‹€‘’…€
+		RR L				;HL=HL/2 - ‚ ˆ’Žƒ… “ŒŽ†ˆ‹ˆ ŽŒ… Š‹€‘’…€ € 1,5
+		LD A,E				;A-€Œ ˆ’……‘… ’Ž‹œŠŽ ˆ’ ŽŒ… ‘’€ŽƒŽ ŽŒ…€ Š‹€‘’…€
 		LD E,H
 		LD D,0
 		LD B,D
-		LD C,D			;€‡„…‹ˆ‹ˆ ŽŒ… Š‹€‘’…€ € 256
+		LD C,D				;€‡„…‹ˆ‹ˆ ŽŒ… Š‹€‘’…€ € 256
 		SRL E
 		PUSH AF
 		PUSH HL
 		LD HL,FATSTR
-		CALL BCDEHLP		;ˆ€‚ˆ‹ˆ ‘Œ…™…ˆ… Ž’ €—€‹€ ”€’ ’€‹ˆ–›
-		CALL LOADLST		;‡€ƒ“‡ˆ‹ˆ ‚›‚—ˆ‘‹…›‰ ‘…Š’Ž
+		CALL BCDEHLP			;ˆ€‚ˆ‹ˆ ‘Œ…™…ˆ… Ž’ €—€‹€ ”€’ ’€‹ˆ–›
+		CALL LOADLST			;‡€ƒ“‡ˆ‹ˆ ‚›‚—ˆ‘‹…›‰ ‘…Š’Ž
 		POP BC
 		LD A,B
 		AND 1
-		LD B,A			;BC=‘Œ…™…ˆ… ‚ ‡€ƒ“†…ŽŒ ‘…Š’Ž…
-		ADD HL,BC		;HL=€„…‘ Ž’Š“„€ —ˆ’€’œ €‰’› ŽŒ…€ Š‹€‘’…€
-		LD B,(HL)		;Ž—ˆ’€‹ˆ Œ‹€„˜“ž —€‘’œ ŽŒ…€ Š‹€‘’…€
-		INC HL			;€„…‘ ‘‹…„“ž™…ƒŽ €‰’€
+		LD B,A				;BC=‘Œ…™…ˆ… ‚ ‡€ƒ“†…ŽŒ ‘…Š’Ž…
+		ADD HL,BC			;HL=€„…‘ Ž’Š“„€ —ˆ’€’œ €‰’› ŽŒ…€ Š‹€‘’…€
+		LD B,(HL)			;Ž—ˆ’€‹ˆ Œ‹€„˜“ž —€‘’œ ŽŒ…€ Š‹€‘’…€
+		INC HL				;€„…‘ ‘‹…„“ž™…ƒŽ €‰’€
 		LD A,H
-		CP HIGH BUF_512+2	;Ž‚…Š€ € ……•Ž„ ƒ€ˆ–› ‡€ƒ“†…ŽƒŽ ‘…Š’Ž€
+		CP HIGH (BUF_512)+2		;Ž‚…Š€ € ……•Ž„ ƒ€ˆ–› ‡€ƒ“†…ŽƒŽ ‘…Š’Ž€
 		JR NZ,RDFATS4
-		PUSH BC			;‚›•‹„ ‡€ …„…‹› ’…Š“™…ƒŽ ‡€ƒ“†…ŽƒŽ ‘…Š’Ž€
+		PUSH BC				;‚›•Ž„ ‡€ …„…‹› ’…Š“™…ƒŽ ‡€ƒ“†…ŽƒŽ ‘…Š’Ž€
 		LD BC,0
 		INC DE
-		CALL LOADLST		;‡€ƒ“†€…Œ ‘‹…„“ž™ˆ‰ ‘…Š’Ž ”€’ ’€‹ˆ–›
+		CALL LOADLST			;‡€ƒ“†€…Œ ‘‹…„“ž™ˆ‰ ‘…Š’Ž ”€’ ’€‹ˆ–›
 		POP BC
 RDFATS4		POP AF
-		LD D,(HL)		;—ˆ’€…Œ ‘’€˜ˆ… ˆ’› ŽŒ…€ Š‹€‘’…€
-		LD E,B			;’……œ DE=ŽŒ… ‘‹…„“ž™…ƒŽ Š‹€‘’…€ ‚ –…Ž—Š…
+		LD D,(HL)			;—ˆ’€…Œ ‘’€˜ˆ… ˆ’› ŽŒ…€ Š‹€‘’…€
+		LD E,B				;’……œ DE=ŽŒ… ‘‹…„“ž™…ƒŽ Š‹€‘’…€ ‚ –…Ž—Š…
 		LD BC,0
-		RRA			;Ž‚…Ÿ…Œ ˆ’ 0 ‘’€ŽƒŽ ŽŒ…€ Š‹€‘’…€
+		RRA				;Ž‚…Ÿ…Œ ˆ’ 0 ‘’€ŽƒŽ ŽŒ…€ Š‹€‘’…€
 		JR NC,RDFATS3
-		SRL D			;‘„‚ˆƒ€…Œ ŽŒ… Ž—ˆ’€ŽƒŽ ŽŒ…€ Š‹€‘’…€ ‚ Œ‹€„˜ˆ… 12 ˆ’
+		SRL D				;‘„‚ˆƒ€…Œ ŽŒ… Ž—ˆ’€ŽƒŽ ŽŒ…€ Š‹€‘’…€ ‚ Œ‹€„˜ˆ… 12 ˆ’
 		RR E
 		SRL D
 		RR E
@@ -1215,8 +1218,8 @@ RDFATS4		POP AF
 		SRL D
 		RR E
 RDFATS3		LD A,D
-		AND #0F
-		LD D,A			;‘Ž‘ˆ‹ˆ …‡€—€™ˆ… ‘’€˜ˆ… 4 ˆ’€ “ Ž‹“—…ŽƒŽ ŽŒ…€ Š‹€‘’…€
+		AND 0X0F
+		LD D,A				;‘Ž‘ˆ‹ˆ …‡€—€™ˆ… ‘’€˜ˆ… 4 ˆ’€ “ Ž‹“—…ŽƒŽ ŽŒ…€ Š‹€‘’…€
 		RET
 
 ;‚›—ˆ‘‹…ˆ… …€‹œŽƒŽ ‘…Š’Ž€
@@ -1226,22 +1229,22 @@ REALSEC		LD A,B
 		OR C
 		OR D
 		OR E
-		JR NZ,REALSE1		;BCDE=0?
-		LD HL,SEC_FAT		;’Ž ROOT „ˆ…Š’ŽˆŸ “ ”€’12/16
-		LD DE,(FATSTR)		;Œ…‘’ŽŽ‹Ž†…ˆ… ROOT „ˆ› ‘€‡“ Ž‘‹… ”€’ ’€‹ˆ–›
+		JR NZ,REALSE1			;BCDE=0?
+		LD HL,SEC_FAT			;’Ž ROOT „ˆ…Š’ŽˆŸ “ ”€’12/16
+		LD DE,(FATSTR)			;Œ…‘’ŽŽ‹Ž†…ˆ… ROOT „ˆ› ‘€‡“ Ž‘‹… ”€’ ’€‹ˆ–›
 		LD BC,(FATSTR+2)
 		PUSH HL
-		CALL BCDEHLP		;ˆ€‚ˆ‹ˆ Š €—€‹“ ”€’ ’€‹ˆ–› …… €‡Œ…
+		CALL BCDEHLP			;ˆ€‚ˆ‹ˆ Š €—€‹“ ”€’ ’€‹ˆ–› …… €‡Œ…
 		POP HL
-		JP BCDEHLP		;ˆ€‚ˆ‹ˆ …™… €‡ ˆ Ž‹“—ˆ‹ˆ ŽŒ… ‘…Š’Ž€ €—€‹€ ROOT „ˆ›
+		JP BCDEHLP			;ˆ€‚ˆ‹ˆ …™… €‡ ˆ Ž‹“—ˆ‹ˆ ŽŒ… ‘…Š’Ž€ €—€‹€ ROOT „ˆ›
 
-REALSE1		LD HL,#FFFE
+REALSE1		LD HL,0XFFFE
 		EX DE,HL
 		ADD HL,DE
 		EX DE,HL
 		INC HL
-		ADC HL,BC		;HLDE=ŽŒ… Š‹€‘’…€-2
-		LD A,(BYTSSEC)		;“†Ž “ŒŽ†ˆ’œ € €‡Œ… Š‹€‘’…€
+		ADC HL,BC			;HLDE=ŽŒ… Š‹€‘’…€-2
+		LD A,(BYTSSEC)			;“†Ž “ŒŽ†ˆ’œ € €‡Œ… Š‹€‘’…€
 		JR REALSE2
 
 REALSE3		SLA E
@@ -1249,13 +1252,13 @@ REALSE3		SLA E
 		RL L
 		RL H
 REALSE2		RRCA
-		JR NC,REALSE3		;“ŒŽ†ˆ‹ˆ € €‡Œ… Š‹€‘’…€
+		JR NC,REALSE3			;“ŒŽ†ˆ‹ˆ € €‡Œ… Š‹€‘’…€
 		LD B,H
 		LD C,L
 		LD HL,STARTRZ
-		CALL BCDEHLP		;ˆ€‚ˆ‹ˆ ‘Œ…™…ˆ… Ž’ €—€‹€ „ˆ‘Š€
+		CALL BCDEHLP			;ˆ€‚ˆ‹ˆ ‘Œ…™…ˆ… Ž’ €—€‹€ „ˆ‘Š€
 		LD HL,FRSTDAT
-		JP BCDEHLP		;ˆ€‚ˆ‹ˆ ‘Œ…™…ˆ… Ž’ €—€‹€ €‡„…‹€
+		JP BCDEHLP			;ˆ€‚ˆ‹ˆ ‘Œ…™…ˆ… Ž’ €—€‹€ €‡„…‹€
 
 ;BCDE=BCDE/512
 BCDE200		LD E,D
@@ -1319,27 +1322,27 @@ HLDEPBC		EX DE,HL
 		RET
 
 ;Ž…„…‹Ÿ’Ž €‡Ÿ„Ž‘’ˆ FAT
-RASCHET		CALL BCDE200		;€‡„…‹ˆ‹ˆ € €‡Œ… ‘…Š’Ž€
+RASCHET		CALL BCDE200			;€‡„…‹ˆ‹ˆ € €‡Œ… ‘…Š’Ž€
 		LD HL,SEC_FAT
-		CALL BCDEHLM		;‚›—‹ˆ €—€‹Ž ”€’ ’€‹ˆ–›
+		CALL BCDEHLM			;‚›—‹ˆ €—€‹Ž ”€’ ’€‹ˆ–›
 		LD A,E
-		AND #F0			;ˆƒŽˆ“…Œ Œ‹€„˜ˆ… 4 ˆ’€
+		AND 0XF0			;ˆƒŽˆ“…Œ Œ‹€„˜ˆ… 4 ˆ’€
 		OR D
 		OR C
-		OR B			;Ž‚…Š€ € 0
+		OR B				;Ž‚…Š€ € 0
 		RET
 
 ;ƒ“‡ˆ‹Š€ Ž„ŽƒŽ ‘…Š’Ž€
-LOADLST		LD HL,BUF_512		;€„…‘ “”…€ ‘…Š’Ž€
-		LD A,1			;ƒ“‡ˆ’œ 1 ‘…Š’Ž
+LOADLST		LD HL,BUF_512			;€„…‘ “”…€ ‘…Š’Ž€
+		LD A,1				;ƒ“‡ˆ’œ 1 ‘…Š’Ž
 		PUSH HL
-		CALL RDMULTI		;‡€ƒ“‡ˆ‹ˆ ‘…Š’Ž
-		POP HL			;€ ‚›•Ž„… HL=€„…‘ €—€‹€ “”…€ ‡€ƒ“†…ŽƒŽ ‘…Š’Ž€
+		CALL RDMULTI			;‡€ƒ“‡ˆ‹ˆ ‘…Š’Ž
+		POP HL				;€ ‚›•Ž„… HL=€„…‘ €—€‹€ “”…€ ‡€ƒ“†…ŽƒŽ ‘…Š’Ž€
 		RET
 
 ;Ž„€—€ ŠŽŒ€„› ‚ SD Š€’“ …‡ €€Œ…’Ž‚
 OUTCOM		PUSH BC
-		LD BC,#0600+SD_SEND	;‚›„€’œ ‚ Ž’ 6 €‰’
+		LD BC,0X0600+SD_SEND		;‚›„€’œ ‚ Ž’ 6 €‰’
 		OTIR
 		POP BC
 		RET
@@ -1347,17 +1350,17 @@ OUTCOM		PUSH BC
 ;‚›„€—€ ‚ Ž’ SD Š€’› ŠŽŒ€„› ‘ €€Œ…’ŽŒ 0
 OUT_COM		PUSH BC
 		LD BC,SD_SEND
-		OUT (C),A		;Ž’€‚ˆ‹ˆ ŠŽ„ ŠŽŒ€„›
+		OUT (C),A			;Ž’€‚ˆ‹ˆ ŠŽ„ ŠŽŒ€„›
 		XOR A
-		OUT (C),A		;ˆ’› 31-24 €€Œ…’€
+		OUT (C),A			;ˆ’› 31-24 €€Œ…’€
 		NOP
-		OUT (C),A		;ˆ’› 23-16 €€Œ…’€
+		OUT (C),A			;ˆ’› 23-16 €€Œ…’€
 		NOP
-		OUT (C),A		;ˆ’› 15-8 €€Œ…’€
+		OUT (C),A			;ˆ’› 15-8 €€Œ…’€
 		NOP
-		OUT (C),A		;ˆ’› 7-0 €€Œ…’€
+		OUT (C),A			;ˆ’› 7-0 €€Œ…’€
 		DEC A
-		OUT (C),A		;…‡ CRC16
+		OUT (C),A			;…‡ CRC16
 		POP BC
 		RET
 
@@ -1396,13 +1399,13 @@ SECN200		LD A,CMD_18
 		OUT (C),D
 		NOP
 		OUT (C),E
-		LD A,#FF
+		LD A,0XFF
 		OUT (C),A
 		POP HL
 		RET
 
 IN_OOUT		EXX
-		LD DE,#20FF
+		LD DE,0X20FF
 IN_WAIT		IN A,(SD_RSTR)
 		CP E
 		JR NZ,IN_EXIT
@@ -1411,18 +1414,18 @@ IN_NEXT		DEC D
 IN_EXIT		EXX
 		RET
 
-CMD00		DB #40,#00,#00,#00,#00,#95	;GO_IDLE_STATE
-CMD08		DB #48,#00,#00,#01,#AA,#87	;SEND_IF_COND
-CMD16		DB #50,#00,#00,#02,#00,#FF	;SET_BLOCKEN
+CMD00		DB 0X40,0X00,0X00,0X00,0X00,0X95;GO_IDLE_STATE
+CMD08		DB 0X48,0X00,0X00,0X01,0XAA,0X87;SEND_IF_COND
+CMD16		DB 0X50,0X00,0X00,0X02,0X00,0XFF;SET_BLOCKEN
 
 ;ŒŽƒŽ ‘…Š’ŽŽ… —’…ˆ… ‘ SD Š€’›
-RDMULTI		EXA
+RDMULTI		EX AF,AF'
 		CALL SECM200
-		EXA
+		EX AF,AF'
 		LD BC,SD_RSTR
-RDMULT1		EXA
+RDMULT1		EX AF,AF'
 		CALL IN_OOUT
-		CP #FE
+		CP 0XFE
 		JR NZ,$-5
 		INIR
 		NOP
@@ -1431,7 +1434,7 @@ RDMULT1		EXA
 		IN A,(C)
 		NOP
 		IN A,(C)
-		EXA
+		EX AF,AF'
 		DEC A
 		JR NZ,RDMULT1
 		LD A,CMD_12
@@ -1443,12 +1446,12 @@ RDMULT1		EXA
 
 ;‚›ŽŠ€ ŽŒ…€ Š‹€‘’…€ ˆ‡ ”€‰‹Ž‚ŽƒŽ Žˆ‘€’…‹Ÿ
 RD_CLAS		EX DE,HL
-		LD DE,#14		;‘’€˜ˆ… 16 ˆ’ —ˆ’€…Œ ˆ‡ ‘Œ…™…ˆŸ +20
+		LD DE,0X14			;‘’€˜ˆ… 16 ˆ’ —ˆ’€…Œ ˆ‡ ‘Œ…™…ˆŸ +20
 		ADD HL,DE
 		LD C,(HL)
 		INC HL
 		LD B,(HL)
-		LD E,5			;Œ‹€„˜ˆ… 16 ˆ’ —ˆ’€…Œ ˆ‡ ‘Œ…™…ˆŸ +26
+		LD E,5				;Œ‹€„˜ˆ… 16 ˆ’ —ˆ’€…Œ ˆ‡ ‘Œ…™…ˆŸ +26
 		ADD HL,DE
 		LD E,(HL)
 		INC HL
@@ -1458,7 +1461,7 @@ RD_CLAS		EX DE,HL
 
 ;Ž‚…Š€ Ž Œ€‘Š…
 COMPARE		LD DE,FB_EXT
-		LD B,#0B
+		LD B,0X0B
 		LD A,(DE)
 		CP (HL)
 		RET NZ
@@ -1468,13 +1471,13 @@ COMPARE		LD DE,FB_EXT
 		RET
 
 ;€‘€ŠŽ‚™ˆŠ “’ˆ Š ”€‰‹“
-FNDBUF		LD BC,#0802
+FNDBUF		LD BC,0X0802
 		LD DE,FB_EXT
 FNDBUF4		LD A,(HL)
 		INC HL
-		CP #2E
+		CP ".";0X2E
 		JR Z,FNDBUF2
-		CP #5C
+		CP "/";0X5C
 		JR Z,FNDBUF5
 		LD (DE),A
 		INC DE
@@ -1491,7 +1494,7 @@ FNDBUF5		LD A,C
 FNDBUF2		LD A,B
 		AND A
 		JR Z,FNDBUF3
-		LD A,#20
+		LD A," ";0X20
 		LD (DE),A
 		INC DE
 		DJNZ $-2
@@ -1499,10 +1502,9 @@ FNDBUF3		LD B,3
 		DEC C
 		DEC HL
 		LD A,(HL)
-		CP #5C
+		CP "/";0X5C
 		JR Z,FNDBUF4
 		INC HL
 		JR FNDBUF4
-
 RAMCEND
-		ENT
+		DEPHASE

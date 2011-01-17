@@ -1,0 +1,382 @@
+ AS V1.42 Beta [Bld 78] - source file make_flasher2scl.a80 - page 1 - 1/17/2011 21:30:39
+
+
+       1/       0 :                     
+       2/       0 :                     		include macros.a80
+(1)    1/       0 :                     
+(1)    2/       0 :                     		RELAXED ON
+(1)    3/       0 :                     		CPU Z80UNDOC
+(1)    4/       0 :                     
+(1)    5/       0 :                     DZ		MACRO DEFZ
+(1)    6/       0 :                     		DB DEFZ,0
+(1)    7/       0 :                     		ENDM 
+(1)    8/       0 :                     
+(1)    9/       0 :                     DC		MACRO DEFC
+(1)   10/       0 :                     		IF STRLEN(DEFC)>1
+(1)   11/       0 :                     		DB SUBSTR(DEFC,0,STRLEN(DEFC)-1)
+(1)   12/       0 :                     		ENDIF
+(1)   13/       0 :                     		IF STRLEN(DEFC)>0
+(1)   14/       0 :                     		DB CHARFROMSTR(DEFC,STRLEN(DEFC)-1)|80H
+(1)   15/       0 :                     		ENDIF
+(1)   16/       0 :                     		ENDM
+(1)   17/       0 :                     
+(1)   18/       0 :                     SUM_HOB		MACRO STR,AA,BB,CC
+(1)   19/       0 :                     		DB STR
+(1)   20/       0 :                     		DW AA
+(1)   21/       0 :                     		DW BB
+(1)   22/       0 :                     		DW CC
+(1)   23/       0 :                     $$I := 0
+(1)   24/       0 :                     $$S := 0
+(1)   25/       0 :                     		REPT 9
+(1)   26/       0 :                     $$N := CHARFROMSTR (STR,STRLEN(STR)+$$S-9)
+(1)   27/       0 :                     $$I := ($$I+$$S+$$N+($$N*256))&0XFFFF
+(1)   28/       0 :                     $$S := $$S+1
+(1)   29/       0 :                     		ENDM
+(1)   30/       0 :                     $$I := ($$I+$$S+LOW (AA)+(LOW (AA)*0X100))&0XFFFF
+(1)   31/       0 :                     $$S := $$S+1
+(1)   32/       0 :                     $$I := ($$I+$$S+HIGH (AA)+(HIGH (AA)*0X100))&0XFFFF
+(1)   33/       0 :                     $$S := $$S+1
+(1)   34/       0 :                     $$I := ($$I+$$S+LOW (BB)+(LOW (BB)*0X100))&0XFFFF
+(1)   35/       0 :                     $$S := $$S+1
+(1)   36/       0 :                     $$I := ($$I+$$S+HIGH (BB)+(HIGH (BB)*0X100))&0XFFFF
+(1)   37/       0 :                     $$S := $$S+1
+(1)   38/       0 :                     $$I := ($$I+$$S+LOW (CC)+(LOW (CC)*0X100))&0XFFFF
+(1)   39/       0 :                     $$S := $$S+1
+(1)   40/       0 :                     $$I := ($$I+$$S+HIGH (CC)+(HIGH (CC)*0X100))&0XFFFF
+(1)   41/       0 :                     $$S := $$S+1
+(1)   42/       0 :                     		DW $$I
+(1)   43/       0 :                     		ENDM
+(1)   44/       0 :                     
+(1)   45/       0 :                     DUPL		MACRO LEN,FILL
+(1)   46/       0 :                     DUPL:
+(1)   47/       0 :                     $$N		EQU (LEN) / 1024
+(1)   48/       0 :                     $$M		EQU (LEN) # 1024
+(1)   49/       0 :                     		REPT $$N
+(1)   50/       0 :                     		DB 1024 DUP(FILL)
+(1)   51/       0 :                     		ENDM
+(1)   52/       0 :                     		IF $$M <> 0
+(1)   53/       0 :                     		DB $$M DUP(FILL)
+(1)   54/       0 :                     		ENDIF
+(1)   55/       0 :                     		ENDM
+(1)   56/       0 :                     
+(1)   57/       0 :                     HIGH		FUNCTION X,((X >> 8) & 0XFF)
+(1)   58/       0 :                     LOW		FUNCTION X,(X & 0XFF)
+ AS V1.42 Beta [Bld 78] - source file make_flasher2scl.a80(macros.a80) - page 2 - 1/17/2011 21:30:39
+
+
+(1)   59/       0 :                     
+       3/       0 :                     
+       4/       0 : =6000H              ADR_LOADING	EQU 0X6000			; ¤à¥á § £àã§ª¨ ¨ ª®¬¯¨«ïæ¨¨
+       5/       0 : =6000H              START_CODE	EQU ADR_LOADING
+       6/       0 :                     
+       7/    5EE9 :                     		ORG ADR_LOADING-0X117		;(END_HEADER-START_SCL)
+       8/    5EE9 :                     ;‡€ƒŽ‹Ž‚ŽŠ SCL ”€‰‹€
+       9/    5EE9 : 53 49 4E 43 4C 41   START_SCL	DB "SINCLAIR",1,"FLASHNGSB"
+                    49 52 01 46 4C 41 
+                    53 48 4E 47 53 42 
+      10/    5EFB : 35 00 35 00         		DW BASIC_FULL,BASIC_FULL
+      11/    5EFF : 19                  FULL_SIZE	DB SIZE_SECTORS+1
+      12/    5F00 :                     
+      13/    5F00 :                     		include basic4monoloader.a80
+(1)    1/    5F00 :                     
+(1)    2/    5F00 :                     ;BASIC BLOCK FOR MONOLOADER
+(1)    3/    5F00 :                     
+(1)    4/    5F00 : 00 01 30 00         BASIC_START	DW 0X100,BASIC_END-STROKA1
+(1)    5/    5F04 : E7 C3 A7 3A         STROKA1		DB 0XE7,0XC3,0XA7,0X3A			;BORDER NOT PI:
+(1)    6/    5F08 : D9 C3 A7 3A         		DB 0XD9,0XC3,0XA7,0X3A			;INK NOT PI:
+(1)    7/    5F0C : DA C3 A7 3A         		DB 0XDA,0XC3,0XA7,0X3A			;PAPER NOT INK:
+(1)    8/    5F10 : FD B0 22 32 34 35   		DB 0XFD,0XB0,0X22,"24575",0X22,0X3A	;CLEAR VAL "ADDRESS":
+                    37 35 22 3A 
+(1)    9/    5F1A : F9 C0 B0 22 32 33   		DB 0XF9,0XC0,0XB0,0X22,"23905",0X22	;RANDOMIZE USR VAL "ADDRESS"
+                    39 30 35 22 
+(1)   10/    5F24 : 3A EA               		DB 0X3A,0XEA
+(1)   11/    5F26 :                     
+(1)   12/    5F26 : ED 5B F4 5C         		LD DE,(0X5CF4)
+(1)   13/    5F2A : 01 05 18            		LD BC,SIZE_SECTORS*256+5
+(1)   14/    5F2D : 21 00 60            		LD HL,ADR_LOADING
+(1)   15/    5F30 : E5                  		PUSH HL
+(1)   16/    5F31 : C3 13 3D            		JP 0X3D13
+(1)   17/    5F34 :                     
+(1)   18/    5F34 : 0D 80 AA            BASIC_END	DB 0X0D,0X80,0XAA
+(1)   19/    5F37 : 01 00               		DW 1					;ŽŒ… ‘’ŽŠˆ ‡€“‘Š€
+(1)   20/    5F39 :                     
+(1)   21/    5F39 : =35H                BASIC_FULL	EQU BASIC_END-BASIC_START+1
+(1)   22/    5F39 :                     
+(1)   23/    5F39 : (MACRO)             		DUPL 0X100-BASIC_FULL-4,0		;„ŽŽ‹…ˆ… „Ž ‘…Š’Ž€ 256 €‰’
+(1)   23/    5F39 :                     DUPL:
+(1)   23/    5F39 : =0H                 $$N             EQU (0X100-BASIC_FULL-4) / 1024
+(1)   23/    5F39 : =C7H                $$M             EQU (0X100-BASIC_FULL-4) # 1024
+(1)   23/    5F39 :                                     REPT $$N
+(1)   23/    5F39 :                                     DB 1024 DUP(0)
+(1)   23/    5F39 :                                     ENDM
+(1)   23/    5F39 : =>TRUE                              IF $$M <> 0
+(1)   23/    5F39 : 00 00 00 00 00 00                   DB $$M DUP(0)
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+ AS V1.42 Beta [Bld 78] - source file make_flasher2scl.a80(basic4monoloader.a80) - page 3 - 1/17/2011 21:30:39
+
+
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+                    00 00 00 00 00 00 
+                    00 
+(1)   23/    6000 : [23]                                ENDIF
+(1)   24/    6000 :                     	
+(1)   25/    6000 :                     	
+      14/    6000 :                     
+      15/    6000 :                     ;END_HEADER
+      16/    6000 :                     	
+      17/    6000 :                     		ORG ADR_LOADING
+      18/    6000 :                     
+      19/    6000 : 21 00 60            		LD HL,$
+      20/    6003 : E5                  		PUSH HL
+      21/    6004 : 21 21 60            		LD HL,START_UNPACK
+      22/    6007 : 11 00 5B            		LD DE,0X5B00
+      23/    600A : 01 6E 00            		LD BC,END_UNPACK-START_UNPACK
+      24/    600D : D5                  		PUSH DE
+      25/    600E : ED B0               		LDIR
+      26/    6010 : 21 2B 77            		LD HL,END_COD-1
+      27/    6013 : 11 FF FF            		LD DE,0XFFFF
+      28/    6016 : 01 9D 16            		LD BC,END_COD-END_UNPACK
+      29/    6019 : ED B8               		LDDR
+      30/    601B : 21 00 60            		LD HL,ADR_LOADING
+      31/    601E : EB                  		EX DE,HL
+      32/    601F : 23                  		INC HL
+      33/    6020 : C9                  		RET
+      34/    6021 :                     		
+      35/    6021 :                     START_UNPACK	include dec40.a80
+(1)    1/    6021 :                     ;Z80 depacker for megalz V4 packed files   (C) fyrex^mhm
+(1)    2/    6021 :                     
+(1)    3/    6021 :                     ; DESCRIPTION:
+(1)    4/    6021 :                     ;
+(1)    5/    6021 :                     ; Depacker is fully relocatable, not self-modifying,
+(1)    6/    6021 :                     ;it's length is 110 bytes starting from DEC40.
+(1)    7/    6021 :                     ;Register usage: AF,AF',BC,DE,HL. Must be CALL'ed, return is done by RET.
+(1)    8/    6021 :                     ;Provide extra stack location for store 2 bytes (1 word). Depacker does not
+(1)    9/    6021 :                     ;disable or enable interrupts, as well as could be interrupted at any time
+(1)   10/    6021 :                     ;(no f*cking wicked stack usage :).
+(1)   11/    6021 :                     
+(1)   12/    6021 :                     ; USAGE:
+(1)   13/    6021 :                     ;
+(1)   14/    6021 :                     ; - put depacker anywhere you want,
+(1)   15/    6021 :                     ; - put starting address of packed block in HL,
+ AS V1.42 Beta [Bld 78] - source file make_flasher2scl.a80(dec40.a80) - page 4 - 1/17/2011 21:30:39
+
+
+(1)   16/    6021 :                     ; - put location where you want data to be depacked in DE,
+(1)   17/    6021 :                     ;   (much like LDIR command, but without BC)
+(1)   18/    6021 :                     ; - make CALL to depacker (DEC40).
+(1)   19/    6021 :                     ; - enjoy! ;)
+(1)   20/    6021 :                     
+(1)   21/    6021 :                     ; PRECAUTIONS:
+(1)   22/    6021 :                     ;
+(1)   23/    6021 :                     ; Be very careful if packed and depacked blocks coincide somewhere in memory.
+(1)   24/    6021 :                     ;Here are some advices:
+(1)   25/    6021 :                     ;
+(1)   26/    6021 :                     ; 1. put packed block to the highest addresses possible.
+(1)   27/    6021 :                     ;     Best if last byte of packed block has address #FFFF.
+(1)   28/    6021 :                     ;
+(1)   29/    6021 :                     ; 2. Leave some gap between ends of packed and depacked block.
+(1)   30/    6021 :                     ;     For example, last byte of depacked block at #FF00,
+(1)   31/    6021 :                     ;     last byte of packed block at #FFFF.
+(1)   32/    6021 :                     ;
+(1)   33/    6021 :                     ; 3. Place nonpackable data to the end of block.
+(1)   34/    6021 :                     ;
+(1)   35/    6021 :                     ; 4. Always check whether depacking occurs OK and neither corrupts depacked data
+(1)   36/    6021 :                     ;     nor hangs computer.
+(1)   37/    6021 :                     ;
+(1)   38/    6021 :                     
+(1)   39/    6021 :                     DEC40
+(1)   40/    6021 : 3E 80                       LD      A,0X80
+(1)   41/    6023 : 08                          EX      AF,AF'
+(1)   42/    6024 : ED A0               MS      LDI
+(1)   43/    6026 : 01 FF 02            M0      LD      BC,0X2FF
+(1)   44/    6029 : 08                  M1      EX      AF,AF'
+(1)   45/    602A : 87                  M1X     ADD     A,A
+(1)   46/    602B : 20 03                       JR      NZ,M2
+(1)   47/    602D : 7E                          LD      A,(HL)
+(1)   48/    602E : 23                          INC     HL
+(1)   49/    602F : 17                          RLA
+(1)   50/    6030 : CB 11               M2      RL      C
+(1)   51/    6032 : 30 F6                       JR      NC,M1X
+(1)   52/    6034 : 08                          EX      AF,AF'
+(1)   53/    6035 : 10 0F                       DJNZ    X2
+(1)   54/    6037 : 3E 02                       LD      A,2
+(1)   55/    6039 : CB 29                       SRA     C
+(1)   56/    603B : 38 18                       JR      C,N1
+(1)   57/    603D : 3C                          INC     A
+(1)   58/    603E : 0C                          INC     C
+(1)   59/    603F : 28 0F                       JR      Z,N2
+(1)   60/    6041 : 01 3F 03                    LD      BC,0X33F
+(1)   61/    6044 : 18 E3                       JR      M1
+(1)   62/    6046 :                     
+(1)   63/    6046 : 10 25               X2      DJNZ    X3
+(1)   64/    6048 : CB 39                       SRL     C
+(1)   65/    604A : 38 D8                       JR      C,MS
+(1)   66/    604C : 04                          INC     B
+(1)   67/    604D : 18 DA                       JR      M1
+(1)   68/    604F :                     X6
+(1)   69/    604F : 81                          ADD     A,C
+(1)   70/    6050 :                     N2
+(1)   71/    6050 : 01 FF 04                    LD      BC,0X4FF
+(1)   72/    6053 : 18 D4                       JR      M1
+(1)   73/    6055 :                     N1
+(1)   74/    6055 : 0C                          INC     C
+(1)   75/    6056 : 20 28                       JR      NZ,M4
+ AS V1.42 Beta [Bld 78] - source file make_flasher2scl.a80(dec40.a80) - page 5 - 1/17/2011 21:30:39
+
+
+(1)   76/    6058 : 08                          EX      AF,AF'
+(1)   77/    6059 : 04                          INC     B
+(1)   78/    605A : CB 19               N5      RR      C
+(1)   79/    605C : D8                          RET     C
+(1)   80/    605D : CB 10                       RL      B
+(1)   81/    605F : 87                          ADD     A,A
+(1)   82/    6060 : 20 03                       JR      NZ,N6
+(1)   83/    6062 : 7E                          LD      A,(HL)
+(1)   84/    6063 : 23                          INC     HL
+(1)   85/    6064 : 17                          RLA
+(1)   86/    6065 : 30 F3               N6      JR      NC,N5
+(1)   87/    6067 : 08                          EX      AF,AF'
+(1)   88/    6068 : 80                          ADD     A,B
+(1)   89/    6069 : 06 06                       LD      B,6
+(1)   90/    606B : 18 BC                       JR      M1
+(1)   91/    606D :                     X3
+(1)   92/    606D : 10 04                       DJNZ    X4
+(1)   93/    606F : 3E 01                       LD      A,1
+(1)   94/    6071 : 18 0F                       JR      M3
+(1)   95/    6073 : 10 08               X4      DJNZ    X5
+(1)   96/    6075 : 0C                          INC     C
+(1)   97/    6076 : 20 08                       JR      NZ,M4
+(1)   98/    6078 : 01 1F 05                    LD      BC,0X51F
+(1)   99/    607B : 18 AC                       JR      M1
+(1)  100/    607D :                     X5
+(1)  101/    607D : 10 D0                       DJNZ    X6
+(1)  102/    607F : 41                          LD      B,C
+(1)  103/    6080 : 4E                  M4      LD      C,(HL)
+(1)  104/    6081 : 23                          INC     HL
+(1)  105/    6082 : 05                  M3      DEC     B
+(1)  106/    6083 : E5                          PUSH    HL
+(1)  107/    6084 : 69                          LD      L,C
+(1)  108/    6085 : 60                          LD      H,B
+(1)  109/    6086 : 19                          ADD     HL,DE
+(1)  110/    6087 : 4F                          LD      C,A
+(1)  111/    6088 : 06 00                       LD      B,0
+(1)  112/    608A : ED B0                       LDIR
+(1)  113/    608C : E1                          POP     HL
+(1)  114/    608D : 18 97                       JR      M0
+(1)  115/    608F :                     END_DEC40
+(1)  116/    608F :                     
+      36/    608F :                     END_UNPACK
+      37/    608F :                     		binclude flasher_pack.rom	;¨¬ï ¯ ª®¢ ­­®© ¯à®£¨
+      38/    772C :                     END_COD
+      39/    772C :                     
+      40/    772C : =>TRUE              		IF (END_COD-ADR_LOADING)&0XFF
+      41/    772C : =18H                SIZE_SECTORS	EQU ((END_COD-ADR_LOADING)>>8)+1
+      42/    772C : =>FALSE             		ELSE
+      43/    772C :                     SIZE_SECTORS	EQU ((END_COD-ADR_LOADING)>>8)
+      44/    772C : [40]                		ENDIF
+      45/    772C :                     
+      46/    772C :                     
+ AS V1.42 Beta [Bld 78] - source file make_flasher2scl.a80 - page 6 - 1/17/2011 21:30:39
+
+
+  symbol table (* = unused):
+  ------------------------
+
+ ADR_LOADING :                 6000 - | *ARCHITECTURE :  i386-unknown-win32 - |
+ BASIC_END :                   5F34 C |  BASIC_FULL :                    35 - |
+ BASIC_START :                 5F00 C | *BIGENDIAN :                      0 - |
+*BRANCHEXT :                      0 - | *CASESENSITIVE :                  1 - |
+*CONSTPI :        3.141592653589793 - | *DATE :                   1/17/2011 - |
+*DEC40 :                       6021 C |  END_COD :                     772C C |
+*END_DEC40 :                   608F C |  END_UNPACK :                  608F C |
+*FALSE :                          0 - | *FULLPMMU :                       1 - |
+*FULL_SIZE :                   5EFF C | *HAS64 :                          1 - |
+*HASDSP :                         0 - | *HASFPU :                         0 - |
+*HASPMMU :                        0 - | *INEXTMODE :                      0 - |
+*INLWORDMODE :                    0 - | *INMAXMODE :                      0 - |
+*INSRCMODE :                      0 - | *INSUPMODE :                      0 - |
+*LISTON :                         1 - |  M0 :                          6026 C |
+ M1 :                          6029 C |  M14 :                           C7 - |
+ M1X :                         602A C |  M2 :                          6030 C |
+ M3 :                          6082 C |  M4 :                          6080 C |
+*MACEXP :                         1 - | *MOMCPU :                      80DC - |
+*MOMCPUNAME :              Z80UNDOC - |  MS :                          6024 C |
+ N1 :                          6055 C |  N14 :                            0 - |
+ N2 :                          6050 C |  N5 :                          605A C |
+ N6 :                          6065 C | *NESTMAX :                      100 - |
+*PACKING :                        0 - | *PADDING :                        1 - |
+*RELAXED :                        1 - |  SIZE_SECTORS :                  18 - |
+*START_CODE :                  6000 - | *START_SCL :                   5EE9 C |
+ START_UNPACK :                6021 C |  STROKA1 :                     5F04 C |
+*TIME :                    21:30:39 - | *TRUE :                           1 - |
+*VERSION :                     142F - |  X2 :                          6046 C |
+ X3 :                          606D C |  X4 :                          6073 C |
+ X5 :                          607D C |  X6 :                          604F C |
+
+     60 symbols
+     33 unused symbols
+
+ AS V1.42 Beta [Bld 78] - source file make_flasher2scl.a80 - page 7 - 1/17/2011 21:30:39
+
+
+  defined macros:
+  ---------------
+
+DC                                    | DUPL                                 
+DZ                                    | SUM_HOB                              
+
+      4 macros
+
+ AS V1.42 Beta [Bld 78] - source file make_flasher2scl.a80 - page 8 - 1/17/2011 21:30:39
+
+
+  defined functions:
+  ------------------
+
+LOW                                   | HIGH                                 
+
+ AS V1.42 Beta [Bld 78] - source file make_flasher2scl.a80 - page 9 - 1/17/2011 21:30:39
+
+
+  codepages:
+  ----------
+
+STANDARD (0 changed characters)
+
+
+0.06 seconds assembly time
+
+    246 lines source file
+    255 lines incl. macro expansions
+      2 passes
+      0 errors
+      0 warnings
