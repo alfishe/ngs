@@ -136,7 +136,7 @@ SMPADR		EQU 0X4800
 			;PATDC3  EQU 0X5600
 BUFFER		EQU 0X5800
 
-INTAREA		EQU 0X4040			;адрес таблицы прерываний
+INTAREA		EQU 0X4242;0X4040			;адрес таблицы прерываний
 
 BAS4000		EQU 0X4000
 
