@@ -141,7 +141,7 @@ INTAREA		EQU 0X4242;0X4040			;адрес таблицы прерываний
 BAS4000		EQU 0X4000
 
 RAMPG		EQU BAS4000			;DS 0X3F таблица страниц ОЗУ
-ROMPG		EQU RAMPG+0X3F			;DS 1 страница ПЗУ
+ROMPG		EQU RAMPG+0X7F			;DS 1 страница ПЗУ
 
 NUMPG		EQU BAS4000+0X80		;4080	DS 1 адрес последней страницы
 CPAGE		EQU NUMPG+1			;4081	DS 1 значение записанное в порт MPAG
