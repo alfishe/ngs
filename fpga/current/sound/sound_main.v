@@ -26,6 +26,8 @@
 //          $00   |     -$80 (or $80)
 // alternatively, it could be treated as unsigned positive samples with middle point of $7F-$80.
 //
+// inv7b causes 7th bit inversion: samples become signed
+//
 // clock      ``\__/``\__/``\__/``\__/``\__/``\__/``\__/``\__
 // mem_read   ______/`````\__________________________________
 // mem_wraddr       |  no |     |addr |
