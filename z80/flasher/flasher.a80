@@ -1,12 +1,12 @@
 
-;LAST UPDATE: 24.01.2011 savelij
+;LAST UPDATE: 30.01.2011 savelij
 
 		include macros.a80
 		include ports_ngs.a80
 
-DDMMYY		EQU "24.01.2011"
+DDMMYY		EQU "30.01.2011"
 
-DD		EQU 24				;—ˆ‘‹Ž
+DD		EQU 30				;—ˆ‘‹Ž
 MM		EQU 1				;Œ…‘Ÿ–
 YY		EQU 11				;ƒŽ„
 DATA		EQU DD|MM<<5|YY<<9|0X8000	;‡€ŠŽ„ˆŽ‚€€Ÿ „€’€
@@ -124,6 +124,9 @@ PROD000		LD IX,ALLSCR
 		CALL WINW
 		LD IX,HELPS
 		CALL WINW
+		LD IX,VERS_PAGESNGS
+		CALL WINW
+		CALL RD_VERS_NGS
 		LD IX,WEKS2
 		CALL WINW
 PROD01		CALL UPDOWN
@@ -132,6 +135,44 @@ PROD01		CALL UPDOWN
 		DW KENTER
 		DB 0
 		JR PROD01
+
+RD_VERS_NGS	LD IXL,"0"
+		LD DE,TEXT_VERSUS
+RVN2		LD HL,TXT_PAGES
+		LD BC,ETXT_PAGES-TXT_PAGES
+		LDIR
+		LD A,IXL
+		INC IXL
+		LD (DE),A
+		LD A," "
+		EX DE,HL
+		INC HL
+		LD (HL),":"
+		INC HL
+		LD (HL),A
+		INC HL
+		LD (HL),A
+		INC HL
+		LD A,IXL
+		SUB "1"
+		OUT (GSDAT),A
+		LD A,8
+		OUT (GSCOM),A
+		CALL WC
+		LD BC,GSDAT
+RVN1		CALL WN
+		IN A,(C)
+		LD (HL),A
+		INC HL
+		AND A
+		JR NZ,RVN1
+		DEC HL
+		EX DE,HL
+		LD A,IXL
+		CP "8"
+		JR C,RVN2
+		LD HL,TEXT_VERSUS
+		JP NEXT
 
 NGSNOTFOUND	LD IX,ERROR_UPDATE
 		CALL WINW
@@ -581,8 +622,10 @@ PROGR2		POP DE
 MINILDE
 		DEPHASE
 
-CHARS		binclude altstd.bin
-		include window.a80
-		include flasher_data.a80
 NGS_LOADER	binclude ../loader_ngs/loader_ngs.rom
 NGS_LOADERE
+		include window.a80
+		include flasher_data.a80
+CHARS		binclude altstd.bin
+
+TEXT_VERSUS

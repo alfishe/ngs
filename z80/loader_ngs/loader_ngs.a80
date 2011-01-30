@@ -100,7 +100,7 @@ GRUZIM2		LD A,0X11			;ŠŽ”ˆƒ“ˆŒ ƒ‘
 		OUT (MPAG),A			;‚Š‹ž—€…Œ ‘’€ˆ–“ 0
 GRUZIM		IN A,(ZXSTAT)			;Ž‘’ŽŸŽ †„…Œ ŠŽŒ€„ Ž’ ‘…Š€
 		RRA
-		JR NC,$-3
+		JR NC,GRUZIM
 		IN A,(ZXCMD)			;Ž‰Œ€‹ˆ ŠŽŒ€„“
 		CP 0X1D				;’Ž ŠŽŒ€„€ Ž‚…Šˆ? 
 		JR NZ,GRUZIM1

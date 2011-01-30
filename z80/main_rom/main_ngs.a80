@@ -19,7 +19,7 @@
 		JP INIT
 
 ;---patched
-		DEFB 0X05			;LOW	(in BCD!)
+		DEFB 0X06			;LOW	(in BCD!)
 		DEFB 0X01			;HIGH	(in BCD!)
 ;---
 
