@@ -39,7 +39,6 @@ module timer(
 	end
 	//
 	always @(posedge clk_24mhz)
-	if( rate_stb )
 	begin
 		if( ctr5[2] )
 			ctr128k <= ctr128k + 17'd1;

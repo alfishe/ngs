@@ -161,6 +161,8 @@ set_global_assignment -name ROUTER_EFFORT_MULTIPLIER 4.0
 set_global_assignment -name VERILOG_INPUT_VERSION VERILOG_2001
 set_global_assignment -name VERILOG_SHOW_LMF_MAPPING_MESSAGES OFF
 set_global_assignment -name GENERATE_HEX_FILE OFF
+
+set_global_assignment -name VERILOG_FILE ../interrupts/timer.v
 set_global_assignment -name VERILOG_FILE ../dma/dma_zx.v
 set_global_assignment -name VERILOG_FILE ../dma/dma_access.v
 set_global_assignment -name VERILOG_FILE ../common/spi.v

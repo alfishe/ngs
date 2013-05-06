@@ -22,7 +22,7 @@ module interrupts
 	input  wire ena_wr,
 	input  wire req_wr,
 
-	input  wire [2:0] int_stbs;
+	input  wire [2:0] int_stbs
 );
 	
 	reg m1_r, m1_rr;

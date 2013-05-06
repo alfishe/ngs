@@ -64,13 +64,13 @@ module ports(
 	input  wire [ 7:0] mc_dout,
 	output wire [ 7:0] mc_din,
 	output wire        mc_start,
-	output reg         mc_speed,
+	output reg  [ 1:0] mc_speed,
 	input  wire        mc_rdy,
 
 	output reg         sd_ncs, // SD card interface
 	input  wire [ 7:0] sd_dout,
 	output wire [ 7:0] sd_din,
-	output reg         sd_start,
+	output wire        sd_start,
 	input  wire        sd_det,
 	input  wire        sd_wp,
 
@@ -93,8 +93,7 @@ module ports(
 	// intena/intreq related
 	output wire       intena_wr,
 	output wire       intreq_wr,
-	input  wire [7:0] intreq_rd,
-
+	input  wire [7:0] intreq_rd
 
 );
 
