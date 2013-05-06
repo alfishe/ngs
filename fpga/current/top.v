@@ -269,12 +269,19 @@ module top(
 	wire sd_start;
 
 
-// LED related
-
+	// LED related
 	wire led_toggle;
 
+	// timer
+	wire [2:0] timer_rate;
+	wire       timer_stb;
 
+	// intena/intreq
+	wire       intena_wr;
+	wire       intreq_wr;
+	wire [7:0] intreq_rd;
 
+	wire [2:0] int_vector;
 
 
 
@@ -315,7 +322,7 @@ module top(
 		end
 		else if( (!m1_n) && (!iorq_n) )
 		begin
-			d <= 8'hFF;
+			d <= { 2'b11, int_vector, 3'b111 };
 		end
 		else
 		begin
@@ -494,78 +501,83 @@ module top(
 
 // PORTS module
 
-	ports my_ports( .dout(ports_dout),
-	                .din(d),
-	                .busin(ports_busin),
-	                .a(a),
-	                .iorq_n(iorq_n),
-	                .mreq_n(mreq_n),
-	                .rd_n(rd_n),
-	                .wr_n(wr_n),
+	ports my_ports
+	(
+		.dout(ports_dout),
+		.din(d),
+		.busin(ports_busin),
+		.a(a),
+		.iorq_n(iorq_n),
+		.mreq_n(mreq_n),
+		.rd_n(rd_n),
+		.wr_n(wr_n),
 
-	                .rst_n(internal_reset_n),
-
-	                .cpu_clock(clk_fpga),
-
-	                .clksel0(clksel0),
-	                .clksel1(clksel1),
-
-	                .snd_wrtoggle(snd_wrtoggle),
-	                .snd_datnvol(snd_datnvol),
-	                .snd_addr(snd_addr),
-	                .snd_data(snd_data),
-	                .mode_8chans(mode_8chans),
-	                .mode_pan4ch(mode_pan4ch),
-	                .mode_inv7b(mode_inv7b),
-
-	                .command_port_input(command_zx2gs),
-	                .command_bit_input(command_bit_2gs),
-	                .command_bit_output(command_bit_2zx),
-	                .command_bit_wr(command_bit_wr),
-	                .data_port_input(data_zx2gs),
-	                .data_port_output(data_gs2zx),
-	                .data_bit_input(data_bit_2gs),
-	                .data_bit_output(data_bit_2zx),
-	                .data_bit_wr(data_bit_wr),
-
-	                .mode_ramro(mode_ramro),
-	                .mode_norom(mode_norom),
-	                .mode_pg0(mode_pg0),
-	                .mode_pg1(mode_pg1),
-
-	                .md_din(md_din),
-	                .md_start(md_start),
-	                .md_dreq(mp3_req),
-	                .md_halfspeed(md_halfspeed),
-
-	                .mc_ncs(ma_cs),
-	                .mc_xrst(mp3_xreset),
-	                .mc_dout(mc_dout),
-	                .mc_din(mc_din),
-	                .mc_start(mc_start),
-	                .mc_speed(mc_speed),
-	                .mc_rdy(mc_rdy),
-
-	                .sd_ncs(sd_cs),
-	                .sd_wp(sd_wp),
-	                .sd_det(sd_det),
-	                .sd_din(sd_din),
-	                .sd_dout(sd_dout),
-	                .sd_start(sd_start),
-
-
-	                .dma_din_modules(dma_din_modules),
-	                .dma_regsel(dma_regsel),
-	                .dma_wrstb(dma_wrstb),
-	                //
-	                .dma_dout_zx(dma_dout_zx),
-	                .dma_select_zx(dma_select_zx),
+		.rst_n(internal_reset_n),
+		.cpu_clock(clk_fpga),
+        	
+		.clksel0(clksel0),
+		.clksel1(clksel1),
+        	
+		.snd_wrtoggle(snd_wrtoggle),
+		.snd_datnvol(snd_datnvol),
+		.snd_addr(snd_addr),
+		.snd_data(snd_data),
+		.mode_8chans(mode_8chans),
+		.mode_pan4ch(mode_pan4ch),
+		.mode_inv7b(mode_inv7b),
+        	
+		.command_port_input(command_zx2gs),
+		.command_bit_input(command_bit_2gs),
+		.command_bit_output(command_bit_2zx),
+		.command_bit_wr(command_bit_wr),
+		.data_port_input(data_zx2gs),
+		.data_port_output(data_gs2zx),
+		.data_bit_input(data_bit_2gs),
+		.data_bit_output(data_bit_2zx),
+		.data_bit_wr(data_bit_wr),
+        	
+		.mode_ramro(mode_ramro),
+		.mode_norom(mode_norom),
+		.mode_pg0(mode_pg0),
+		.mode_pg1(mode_pg1),
+        	
+		.md_din(md_din),
+		.md_start(md_start),
+		.md_dreq(mp3_req),
+		.md_halfspeed(md_halfspeed),
+        	
+		.mc_ncs(ma_cs),
+		.mc_xrst(mp3_xreset),
+		.mc_dout(mc_dout),
+		.mc_din(mc_din),
+		.mc_start(mc_start),
+		.mc_speed(mc_speed),
+		.mc_rdy(mc_rdy),
+        	
+		.sd_ncs(sd_cs),
+		.sd_wp(sd_wp),
+		.sd_det(sd_det),
+		.sd_din(sd_din),
+		.sd_dout(sd_dout),
+		.sd_start(sd_start),
 
 
-	                .led(led_diag),
-	                .led_toggle(led_toggle)
+		.dma_din_modules(dma_din_modules),
+		.dma_regsel(dma_regsel),
+		.dma_wrstb(dma_wrstb),
+		//
+		.dma_dout_zx(dma_dout_zx),
+		.dma_select_zx(dma_select_zx),
+        	
+		.led(led_diag),
+		.led_toggle(led_toggle),
 
-	                );
+		.timer_rate(timer_rate),
+
+		.intena_wr(intena_wr),
+		.intreq_wr(intreq_wr),
+		.intreq_rd(intreq_rd)
+	);
 
 
 
@@ -588,17 +600,38 @@ module top(
 
 
 
-// INTERRUPTS module
+	// interrupts module
+	interrupts my_interrupts
+	(
+		.clk  (clk_fpga        ),
+		.rst_n(internal_reset_n),
 
-	interrupts my_interrupts( .clk_24mhz(clk_24mhz),
-	                          .clk_z80(clk_fpga),
+		.m1_n  (m1_n  ),
+		.iorq_n(iorq_n),
 
-	                          .m1_n(m1_n),
-	                          .iorq_n(iorq_n),
+		.int_n(int_n),
 
-	                          .int_n(int_n) );
+		.din(d),
+		.req_rd(intreq_rd),
 
+		.int_vector(int_vector),
 
+		.ena_wr(intena_wr),
+		.req_wr(intreq_wr),
+
+		.int_stbs( {1'b0, 1'b0, timer_stb} )
+	);
+
+	// timer
+	timer my_timer
+	(
+		.clk_z80  (clk_fpga ),
+		.clk_24mhz(clk_24mhz),
+
+		.rate(timer_rate),
+
+		.int_stb(timer_stb)
+	);
 
 
 
