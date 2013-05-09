@@ -6,7 +6,7 @@ module ram
 	input  wire [19:0] a,
 	inout  wire [ 7:0] d,
 
-	input  wire cs_n,
+	input  wire ce_n,
 	input  wire oe_n,
 	input  wire we_n
 );
@@ -25,11 +25,11 @@ module ram
 
 
 	// output data to bus
-	assign d = (!cs_n && !oe_n && we_n) ? mem[a] : 8'bZZZZ_ZZZZ;
+	assign d = (!ce_n && !oe_n && we_n) ? mem[a] : 8'bZZZZ_ZZZZ;
 
 	// input data from bus
 	always @*
-	if( !cs_n && !we_n )
+	if( !ce_n && !we_n )
 		mem[a] <= d;
 
 

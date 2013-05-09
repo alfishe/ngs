@@ -99,9 +99,8 @@ module top(
 
 	input warmres_n;
 
-	inout reg [7:0] d;
-
-	inout reg [15:0]  a;
+	inout wire [ 7:0] d;
+	inout wire [15:0] a;
 
 	input iorq_n;
 	input mreq_n;
@@ -311,65 +310,73 @@ module top(
 
 	assign dma_takeover_enabled = (~busak_n) & mem_dma_bus;
 
+
+	reg [7:0] dd;
+	//
 	always @*
 	begin
 		if( dma_takeover_enabled )
 		begin
 			if( mem_dma_rnw )
-				d <= 8'bZZZZZZZZ;
+				dd = 8'bZZZZZZZZ;
 			else
-				d <= mem_dma_wd;
+				dd = mem_dma_wd;
 		end
 		else if( (!m1_n) && (!iorq_n) )
 		begin
-			d <= { 2'b11, int_vector, 3'b111 };
+			dd = { 2'b11, int_vector, 3'b111 };
 		end
 		else
 		begin
 			if( ports_busin==1'b1 ) // FPGA inputs on data bus
-				d <= 8'bZZZZZZZZ;
+				dd = 8'bZZZZZZZZ;
 			else // FPGA outputs
-				d <= ports_dout;
+				dd = ports_dout;
 		end
 	end
+	//
+	assign d = dd;
 
 //  address bus (both Z80 and memmap module)
 
+	reg [15:0] aa;
+	//
 	always @*
 	begin
-		a[15:14] <= 2'bZZ;
+		aa[15:14] = 2'bZZ;
 
 		if( dma_takeover_enabled )
 		begin
-			a[13:0] <= mem_dma_addr[13:0];
+			aa[13:0] = mem_dma_addr[13:0];
 
-			{mema21, mema18, mema17, mema16, mema15, mema14} <= { mem_dma_addr[21], mem_dma_addr[18:14] };
+			{mema21, mema18, mema17, mema16, mema15, mema14} = { mem_dma_addr[21], mem_dma_addr[18:14] };
 
-			{ram3cs_n,ram2cs_n,ram1cs_n,ram0cs_n} <= ~( 4'b0001<<mem_dma_addr[20:19] );
+			{ram3cs_n,ram2cs_n,ram1cs_n,ram0cs_n} = ~( 4'b0001<<mem_dma_addr[20:19] );
 
-			romcs_n <= 1'b1;
+			romcs_n = 1'b1;
 
-			memoe_n <= mem_dma_oe;
-			memwe_n <= mem_dma_we;
+			memoe_n = mem_dma_oe;
+			memwe_n = mem_dma_we;
 		end
 		else
 		begin
-			a[13:0] <= 14'bZZ_ZZZZ_ZZZZ_ZZZZ;
+			aa[13:0] = 14'bZZ_ZZZZ_ZZZZ_ZZZZ;
 
-			{mema21, mema18, mema17, mema16, mema15, mema14} <= { memmap_a[21], memmap_a[18:14] };
+			{mema21, mema18, mema17, mema16, mema15, mema14} = { memmap_a[21], memmap_a[18:14] };
 
-			ram0cs_n <= memmap_ramcs_n[0];
-			ram1cs_n <= memmap_ramcs_n[1];
-			ram2cs_n <= memmap_ramcs_n[2];
-			ram3cs_n <= memmap_ramcs_n[3];
+			ram0cs_n = memmap_ramcs_n[0];
+			ram1cs_n = memmap_ramcs_n[1];
+			ram2cs_n = memmap_ramcs_n[2];
+			ram3cs_n = memmap_ramcs_n[3];
 
-			romcs_n <= memmap_romcs_n;
+			romcs_n = memmap_romcs_n;
 
-			memoe_n <= memmap_memoe_n;
-			memwe_n <= memmap_memwe_n;
+			memoe_n = memmap_memoe_n;
+			memwe_n = memmap_memwe_n;
 		end
 	end
-
+	//
+	assign a = aa;
 
 
 
@@ -420,27 +427,33 @@ module top(
 
 // DMA modules
 
-	dma_access my_dma( .clk(clk_fpga),
-	                   .rst_n(internal_reset_n),
+	dma_access my_dma
+	( 
+		.clk(clk_fpga),
+		.rst_n(internal_reset_n),
+        
+		.busrq_n(busrq_n),
+		.busak_n(busak_n),
+        
+		.mem_dma_addr(mem_dma_addr),
+		.mem_dma_wd(mem_dma_wd),
+		.mem_dma_rd(d),
+		.mem_dma_bus(mem_dma_bus),
+		.mem_dma_rnw(mem_dma_rnw),
+		.mem_dma_oe(mem_dma_oe),
+		.mem_dma_we(mem_dma_we),
+        
+		.dma_busynready(),
+		.dma_req(dma_req),
+		.dma_ack(dma_ack),
+		.dma_end(dma_end),
+		.dma_rnw(dma_rnw),
+		.dma_rd(dma_rd),
+		.dma_wd(dma_wd),
+		.dma_addr(dma_addr)
+	);
 
-	                   .busrq_n(busrq_n),
-	                   .busak_n(busak_n),
 
-	                   .mem_dma_addr(mem_dma_addr),
-	                   .mem_dma_wd(mem_dma_wd),
-	                   .mem_dma_rd(d),
-	                   .mem_dma_bus(mem_dma_bus),
-	                   .mem_dma_rnw(mem_dma_rnw),
-	                   .mem_dma_oe(mem_dma_oe),
-	                   .mem_dma_we(mem_dma_we),
-
-	                   .dma_req(dma_req),
-	                   .dma_ack(dma_ack),
-	                   .dma_end(dma_end),
-	                   .dma_rnw(dma_rnw),
-	                   .dma_rd(dma_rd),
-	                   .dma_wd(dma_wd),
-	                   .dma_addr(dma_addr) );
 
 	dma_zx zxdma( .clk(clk_fpga),
 	              .rst_n(internal_reset_n),
@@ -640,33 +653,47 @@ module top(
 // MP3, SDcard spi modules
 
 
-	spi2 spi_mp3_data( .clock(clk_fpga),
-	                   .sck(mp3_clk),
-	                   .sdo(mp3_dat),
-	                   .bsync(mp3_sync),
-	                   .din(md_din),
-	                   .start(md_start),
-	                   .speed( {1'b0,md_halfspeed} ),
-	                   .sdi(1'b0) );
+	spi2 spi_mp3_data
+	(
+		.clock(clk_fpga),
+		.sck(mp3_clk),
+		.sdo(mp3_dat),
+		.bsync(mp3_sync),
+		.din(md_din),
+		.start(md_start),
+		.speed( {1'b0,md_halfspeed} ),
+		.sdi(1'b0),
+		.rdy(),
+		.dout()
+	);
 
-	spi2 spi_mp3_control( .clock(clk_fpga),
-	                      .sck(ma_clk),
-	                      .sdo(ma_do),
-	                      .sdi(ma_di),
-	                      .din(mc_din),
-	                      .dout(mc_dout),
-	                      .start(mc_start),
-	                      .rdy(mc_rdy),
-	                      .speed(mc_speed) );
+	spi2 spi_mp3_control
+	(
+		.clock(clk_fpga),
+		.sck(ma_clk),
+		.sdo(ma_do),
+		.sdi(ma_di),
+		.din(mc_din),
+		.dout(mc_dout),
+		.start(mc_start),
+		.rdy(mc_rdy),
+		.speed(mc_speed),
+		.bsync()
+	);
 
-	spi2 spi_sd( .clock(clk_fpga),
-	             .sck(sd_clk),
-	             .sdo(sd_do),
-	             .sdi(sd_di),
-	             .din(sd_din),
-	             .dout(sd_dout),
-	             .start(sd_start),
-	             .speed(2'b00) );
+	spi2 spi_sd
+	(
+		.clock(clk_fpga),
+		.sck(sd_clk),
+		.sdo(sd_do),
+		.sdi(sd_di),
+		.din(sd_din),
+		.dout(sd_dout),
+		.start(sd_start),
+		.speed(2'b00),
+		.bsync(),
+		.rdy()
+	);
 
 
 

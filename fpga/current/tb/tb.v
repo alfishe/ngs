@@ -36,7 +36,7 @@ module tb;
 	wire nmi_n;
 	wire busrq_n;
 	wire busak_n;
-	wire z80res_n;
+	tri1 z80res_n;
 
 
 	wire mema14;
@@ -233,14 +233,31 @@ module tb;
 			.a(ram_a),
 			.d(d    ),
 
-			.cs_n(ramcs_n[ram_i]),
+			.ce_n(ramcs_n[ram_i]),
 			.oe_n(memoe_n       ),
 			.we_n(memwe_n       )
 		);
 	end
 	endgenerate
 
+	
+	// ROM block
+	wire [18:0] rom_a;
+	assign rom_a = { mema18, mema17, mema16, mema15, mema14, a[13:0] };
+	rom
+	#(
+`ifdef TIMER_TEST
+		.FILENAME("rom_loader.bin")
+`endif
+	)
+	rom
+	(
+		.a(rom_a),
+		.d(d    ),
 
+		.ce_n(romcs_n),
+		.oe_n(memoe_n)
+	);
 
 
 

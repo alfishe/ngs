@@ -1,3 +1,36 @@
 #!/bin/bash
 
+FILES=""
+FILES="${FILES} ../dma/dma_zx.v"
+FILES="${FILES} ../dma/dma_access.v"
+FILES="${FILES} ../common/spi.v"
+FILES="${FILES} ../sound/sound_main.v"
+FILES="${FILES} ../sound/sound_dac.v"
+FILES="${FILES} ../common/resetter.v"
+FILES="${FILES} ../zxbus/zxbus.v"
+FILES="${FILES} ../sound/sound_mulacc.v"
+FILES="${FILES} ../ports/ports.v"
+FILES="${FILES} ../memmap/memmap.v"
+FILES="${FILES} ../interrupts/interrupts.v"
+FILES="${FILES} ../interrupts/timer.v"
+FILES="${FILES} ../common/mem512b.v"
+FILES="${FILES} ../top.v"
+
+BENCH="tb.v ram.v rom.v z80/z80.v"
+
+VHDL=""
+VHDL="${VHDL} z80/T80_Pack.vhd "
+VHDL="${VHDL} z80/T80_ALU.vhd  "
+VHDL="${VHDL} z80/T80a.vhd     "
+VHDL="${VHDL} z80/T80_Reg.vhd  "
+VHDL="${VHDL} z80/T80.vhd      "
+VHDL="${VHDL} z80/T80_MCode.vhd"
+
+vcom -novopt $VHDL
+
+if (( $#>0 )); then
+	vlog +define+$1 -sv -novopt -incr $FILES $BENCH
+else
+	vlog -sv -novopt -incr $FILES $BENCH
+fi
 

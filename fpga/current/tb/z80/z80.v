@@ -36,8 +36,8 @@ module z80
 
 
 	wire [15:0] #(`DLY_UP,`DLY_DN) za;
-	wire [ 7:0] di;
-	wire [ 7:0] #(`DLY_UP,`DLY_DN) do;
+	wire [ 7:0] d_i;
+	wire [ 7:0] #(`DLY_UP,`DLY_DN) d_o;
 
 	wire #(`DLY_UP,`DLY_DN) zmreq_n;
 	wire #(`DLY_UP,`DLY_DN) ziorq_n;
@@ -70,8 +70,8 @@ module z80
 		.WAIT_n (wait_n ),
 		
 		.A  (za),
-		.D_I(di),
-		.D_O(do)
+		.D_I(d_i),
+		.D_O(d_o),
 		
 		.MREQ_n(zmreq_n),
 		.IORQ_n(iiorq_n),
@@ -94,7 +94,6 @@ module z80
 	assign mreq_n = zmreq_n;
 	assign iorq_n = ziorq_n;
 	assign rd_n   = zrd_n  ;
-	assign wr_n   = zwr_n  ;
 
 	assign m1_n    = zm1_n   ;
 	assign rfsh_n  = zrfsh_n ;
@@ -117,8 +116,8 @@ module z80
 
 
 	// data bus
-	assign di =  d;
-	assign d  = do;
+	assign d_i =  d;
+	assign d  = d_o;
 
 
 

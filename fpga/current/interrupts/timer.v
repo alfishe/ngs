@@ -38,6 +38,8 @@ module timer(
 			ctr5 <= 3'd0;
 	end
 	//
+	initial
+		ctr128k = 'd0;
 	always @(posedge clk_24mhz)
 	begin
 		if( ctr5[2] )
