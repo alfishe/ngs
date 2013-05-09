@@ -6,7 +6,7 @@
 	org	0
 
 	ld	sp,0x8000
-	im	2
+	im	0
 	ei
 	ld	a,0
 loop

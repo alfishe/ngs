@@ -18,6 +18,13 @@ FILES="${FILES} ../top.v"
 
 BENCH="tb.v ram.v rom.v z80/z80.v"
 
+TV80=""
+TV80="${TV80} z80/tv80_alu.v" 
+TV80="${TV80} z80/tv80_core.v" 
+TV80="${TV80} z80/tv80_mcode.v" 
+TV80="${TV80} z80/tv80_reg.v" 
+TV80="${TV80} z80/tv80s.v" 
+
 VHDL=""
 VHDL="${VHDL} z80/T80_Pack.vhd "
 VHDL="${VHDL} z80/T80_ALU.vhd  "
@@ -29,8 +36,8 @@ VHDL="${VHDL} z80/T80_MCode.vhd"
 vcom -novopt $VHDL
 
 if (( $#>0 )); then
-	vlog +define+$1 -sv -novopt -incr $FILES $BENCH
+	vlog +define+$1 -sv -novopt -incr $FILES $BENCH $TV80
 else
-	vlog -sv -novopt -incr $FILES $BENCH
+	vlog -sv -novopt -incr $FILES $BENCH $TV80
 fi
 

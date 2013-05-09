@@ -78,7 +78,7 @@ module interrupts
 		begin
 			if( int_stbs[i] )
 				req[i] <= 1'b1;
-			else if( !m1_rr && iorq_beg && pri_req[i] )
+			else if( !m1_r && iorq_beg && pri_req[i] )
 				req[i] <= 1'b0;
 			else if( req_wr && din[i] )
 				req[i] <= din[7];

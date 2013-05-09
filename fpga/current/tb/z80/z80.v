@@ -58,7 +58,7 @@ module z80
 	wire full_wr_n;
 
 
-	// attach T80 module
+/*	// attach T80 module
 	T80a T80a
 	(
 		.RESET_n(rst_n),
@@ -69,7 +69,7 @@ module z80
 		.BUSRQ_n(busrq_n),
 		.WAIT_n (wait_n ),
 		
-		.A  (za),
+		.A  (za ),
 		.D_I(d_i),
 		.D_O(d_o),
 		
@@ -83,6 +83,35 @@ module z80
 		.BUSAK_n(zbusak_n),
 		.HALT_n (zhalt_n )
 	);
+*/
+
+	// tv80 module
+	tv80s tv80s
+	(
+		.reset_n(rst_n),
+		.clk    (clk  ),
+		
+		.int_n  (int_n  ),
+		.nmi_n  (nmi_n  ),
+		.busrq_n(busrq_n),
+		.wait_n (wait_n ),
+		
+		.A      (za ),
+		.di     (d_i), 
+		.dout   (d_o), 
+		
+		.mreq_n (zmreq_n),
+		.iorq_n (iiorq_n),
+		.rd_n   (ird_n  ),
+		.wr_n   (iwr_n  ),
+		
+		.m1_n   (im1_n   ),
+		.rfsh_n (zrfsh_n ),
+		.busak_n(zbusak_n),
+		.halt_n (zhalt_n )
+	);
+
+
 
 	assign ziorq_n = iiorq_n;
 	assign zrd_n   = ird_n;
@@ -117,7 +146,7 @@ module z80
 
 	// data bus
 	assign d_i =  d;
-	assign d  = d_o;
+	assign d  = !wr_n ? d_o : 8'bZZZZ_ZZZZ;
 
 
 
