@@ -197,3 +197,10 @@ M_SD_DMA_INT	equ	#02
 B_TIMER_INT	equ	0
 M_TIMER_INT	equ	#01
 
+
+WIN0	equ	#20 ;0000-3fff 16k page (0..255 -- 0..4Mb)
+WIN1	equ	#21 ;4000-7fff
+WIN2	equ	#22 ;8000-bfff
+WIN3	equ	#23 ;c000-ffff
+
+

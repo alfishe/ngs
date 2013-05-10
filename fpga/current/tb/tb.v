@@ -247,7 +247,9 @@ module tb;
 	rom
 	#(
 `ifdef TIMER_TEST
-		.FILENAME("rom_loader.bin")
+		.FILENAME("timer_test.bin")
+`elsif PAGE_TEST
+		.FILENAME("page_test.bin")
 `endif
 	)
 	rom

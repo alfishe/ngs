@@ -236,7 +236,7 @@ module top(
 
 // ports-memmap interconnection
 	wire mode_ramro,mode_norom;
-	wire [7:0] mode_pg0,mode_pg1;
+	wire [7:0] mode_pg0,mode_pg1,mode_pg2,mode_pg3;
 
 // ports databus
 	wire [7:0] ports_dout;
@@ -485,30 +485,35 @@ module top(
 
 // MEMMAP module
 
-	memmap my_memmap( .a14(a[14]),
-	                  .a15(a[15]),
-	                  .mreq_n(mreq_n),
-	                  .rd_n(rd_n),
-	                  .wr_n(wr_n),
-	                  .mema14(memmap_a[14]),
-	                  .mema15(memmap_a[15]),
-	                  .mema16(memmap_a[16]),
-	                  .mema17(memmap_a[17]),
-	                  .mema18(memmap_a[18]),
-	                  .mema21(memmap_a[21]),
-
-	                  .ram0cs_n(memmap_ramcs_n[0]),
-	                  .ram1cs_n(memmap_ramcs_n[1]),
-	                  .ram2cs_n(memmap_ramcs_n[2]),
-	                  .ram3cs_n(memmap_ramcs_n[3]),
-	                  .romcs_n(memmap_romcs_n),
-	                  .memoe_n(memmap_memoe_n),
-	                  .memwe_n(memmap_memwe_n),
-
-	                  .mode_ramro(mode_ramro),
-	                  .mode_norom(mode_norom),
-	                  .mode_pg0(mode_pg0),
-	                  .mode_pg1(mode_pg1) );
+	memmap my_memmap
+	( 
+		.a14(a[14]),
+		.a15(a[15]),
+		.mreq_n(mreq_n),
+		.rd_n(rd_n),
+		.wr_n(wr_n),
+		.mema14(memmap_a[14]),
+		.mema15(memmap_a[15]),
+		.mema16(memmap_a[16]),
+		.mema17(memmap_a[17]),
+		.mema18(memmap_a[18]),
+		.mema21(memmap_a[21]),
+        
+		.ram0cs_n(memmap_ramcs_n[0]),
+		.ram1cs_n(memmap_ramcs_n[1]),
+		.ram2cs_n(memmap_ramcs_n[2]),
+		.ram3cs_n(memmap_ramcs_n[3]),
+		.romcs_n(memmap_romcs_n),
+		.memoe_n(memmap_memoe_n),
+		.memwe_n(memmap_memwe_n),
+        
+		.mode_ramro(mode_ramro),
+		.mode_norom(mode_norom),
+		.mode_pg0(mode_pg0),
+		.mode_pg1(mode_pg1),
+		.mode_pg2(mode_pg2),
+		.mode_pg3(mode_pg3)
+	);
 
 
 
@@ -553,6 +558,8 @@ module top(
 		.mode_norom(mode_norom),
 		.mode_pg0(mode_pg0),
 		.mode_pg1(mode_pg1),
+		.mode_pg2(mode_pg2),
+		.mode_pg3(mode_pg3),
         	
 		.md_din(md_din),
 		.md_start(md_start),

@@ -14,6 +14,8 @@
 	ldir
 	ret
 
-code	binclude	"timer_test.bin"
+code	
+	;binclude	"timer_test.bin"
+	include	"tmp.s"
 ecode
 

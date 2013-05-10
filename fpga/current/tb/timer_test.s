@@ -10,16 +10,60 @@ halfper	equ	3000000
 	org	0x4000
 
 
-	ld	a,M_NOROM
+	ld	a,M_NOROM+C_24MHZ
 	out	(GSCFG0),a
 
-	ld	hl,0x38
+	im	0
+
+	ld	hl,0x28
+	ld	(hl),0xc3
+	inc	l
+	ld	(hl),cnt1&255
+	inc	l
+	ld	(hl),cnt1/256
+
+	ld	l,0x30
+	ld	(hl),0xc3
+	inc	l
+	ld	(hl),cnt2&255
+	inc	l
+	ld	(hl),cnt2/256
+
+	ld	a,0x7F
+	out	(INTENA),a
+	out	(INTREQ),a
+
+	ld	a,M_SETNCLR+M_MP3_DMA_INT
+	out	(INTENA),a
+	out	(INTREQ),a
+	ei
+	jr	$
+cnt1
+	ld	a,M_MP3_DMA_INT
+	out	(INTENA),a
+
+	ld	a,M_SETNCLR+M_SD_DMA_INT
+	out	(INTENA),a
+	out	(INTREQ),a
+	ei
+	jr	$
+cnt2
+	ld	a,M_SD_DMA_INT
+	out	(INTENA),a
+
+	ld	a,M_SETNCLR+M_TIMER_INT
+	out	(INTENA),a
+	ld	a,0x7F
+	out	(INTREQ),a
+
+
+	ld	l,0x38
 	ld	(hl),0xc3
 	inc	l
 	ld	(hl),intt&255
 	inc	l
 	ld	(hl),intt/256
-	im	0
+
 
 	ld	hl,0
 	ld	(counter),hl

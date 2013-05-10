@@ -8,28 +8,26 @@ add wave -noupdate /tb/led_diag
 add wave -noupdate -divider <NULL>
 add wave -noupdate /tb/int_n
 add wave -noupdate -radix hexadecimal /tb/z80/a
-add wave -noupdate -radix hexadecimal /tb/z80/d
+add wave -noupdate -radix hexadecimal -childformat {{{/tb/z80/d[7]} -radix hexadecimal} {{/tb/z80/d[6]} -radix hexadecimal} {{/tb/z80/d[5]} -radix hexadecimal} {{/tb/z80/d[4]} -radix hexadecimal} {{/tb/z80/d[3]} -radix hexadecimal} {{/tb/z80/d[2]} -radix hexadecimal} {{/tb/z80/d[1]} -radix hexadecimal} {{/tb/z80/d[0]} -radix hexadecimal}} -subitemconfig {{/tb/z80/d[7]} {-height 15 -radix hexadecimal} {/tb/z80/d[6]} {-height 15 -radix hexadecimal} {/tb/z80/d[5]} {-height 15 -radix hexadecimal} {/tb/z80/d[4]} {-height 15 -radix hexadecimal} {/tb/z80/d[3]} {-height 15 -radix hexadecimal} {/tb/z80/d[2]} {-height 15 -radix hexadecimal} {/tb/z80/d[1]} {-height 15 -radix hexadecimal} {/tb/z80/d[0]} {-height 15 -radix hexadecimal}} /tb/z80/d
 add wave -noupdate /tb/z80/m1_n
 add wave -noupdate /tb/z80/mreq_n
 add wave -noupdate /tb/z80/iorq_n
 add wave -noupdate /tb/z80/rd_n
 add wave -noupdate /tb/z80/wr_n
 add wave -noupdate -divider <NULL>
-add wave -noupdate -radix hexadecimal /tb/top/my_timer/rate
-add wave -noupdate /tb/top/my_timer/int_stb
+add wave -noupdate -radix hexadecimal {/tb/ram_block[0]/ram/a}
+add wave -noupdate -radix hexadecimal {/tb/ram_block[0]/ram/d}
+add wave -noupdate {/tb/ram_block[0]/ram/ce_n}
+add wave -noupdate {/tb/ram_block[0]/ram/oe_n}
+add wave -noupdate {/tb/ram_block[0]/ram/we_n}
 add wave -noupdate -divider <NULL>
-add wave -noupdate /tb/top/my_interrupts/ena
-add wave -noupdate /tb/top/my_interrupts/req
-add wave -noupdate /tb/top/my_interrupts/pri_req
-add wave -noupdate /tb/top/my_interrupts/m1_beg
-add wave -noupdate /tb/top/my_interrupts/iack_end
 add wave -noupdate -divider <NULL>
 add wave -noupdate -divider <NULL>
 add wave -noupdate -divider <NULL>
 add wave -noupdate -divider <NULL>
 add wave -noupdate -divider <NULL>
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {26832000 ps} 0} {{Cursor 2} {429791856000 ps} 0}
+WaveRestoreCursors {{Cursor 1} {1016974699 ps} 0} {{Cursor 2} {429791856000 ps} 0}
 configure wave -namecolwidth 315
 configure wave -valuecolwidth 100
 configure wave -justifyvalue left
@@ -44,4 +42,4 @@ configure wave -griddelta 8
 configure wave -timeline 0
 configure wave -timelineunits ps
 update
-WaveRestoreZoom {0 ps} {45856113537 ps}
+WaveRestoreZoom {7173391107 ps} {7174372377 ps}

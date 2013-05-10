@@ -42,6 +42,8 @@ module ports(
 
 	output reg  [7:0] mode_pg0, // page registers for memmap module
 	output reg  [7:0] mode_pg1,
+	output reg  [7:0] mode_pg2,
+	output reg  [7:0] mode_pg3,
 
 
 	output reg  clksel0, // clock select (output from FPGA)
@@ -148,123 +150,13 @@ module ports(
 	localparam INTENA    = 6'h0c;
 	localparam INTREQ    = 6'h0d;
 
+	localparam PG0       = 6'h20;
+	localparam PG1       = 6'h21;
+	localparam PG2       = 6'h22;
+	localparam PG3       = 6'h23;
 
-	// FREE PORT ADDRESSES: /*$0C-$0E,*/ $1A, $20-$3F
+	// FREE PORT ADDRESSES: $1A, $24-$3F
 
-
-
-/*
-	// inputs/outputs description
-
-	input      [7:0] din;
-	output reg [7:0] dout;
-
-	output reg busin; // =1 - dbus ins, =0 - dbus outs
-
-	input [15:0] a;
-
-	input iorq_n,mreq_n,rd_n,wr_n;
-
-	input      [7:0] data_port_input;
-	input      [7:0] command_port_input;
-	output reg [7:0] data_port_output;
-
-	input data_bit_input;
-	input command_bit_input;
-
-	output reg data_bit_output;
-
-	output reg command_bit_output;
-
-	output reg data_bit_wr;
-
-	output reg command_bit_wr;
-
-	output reg mode_inv7b,
-	           mode_8chans,
-	           mode_pan4ch;
-
-	output reg mode_ramro;
-
-	output reg mode_norom;
-
-	output reg [7:0] mode_pg0;
-	output reg [7:0] mode_pg1;
-
-	output reg clksel0;
-	output reg clksel1;
-
-
-	output reg snd_wrtoggle;
-	output reg snd_datnvol;
-	output reg [2:0] snd_addr;
-	output reg [7:0] snd_data;
-
-
-	input rst_n;
-
-	input cpu_clock;
-
-
-
-
-	// SPI interfaces related
-
-	// MP3 data interface
-	output [7:0] md_din; // data to MP3 data SPI interface
-
-	output md_start; // start toggle for mp3 data spi
-
-	input md_dreq; // data request from mp3 decoder
-
-	output reg md_halfspeed;
-
-
-	// MP3 control interface
-	output reg mc_ncs; // nCS signal
-
-	output reg mc_xrst; // xRESET signal
-
-	output mc_start; // start toggle
-
-	output reg [1:0] mc_speed;
-
-	input mc_rdy;
-
-	output [7:0] mc_din; // data to send
-
-	input [7:0] mc_dout; // received data
-
-
-      // SDcard interface
-	output reg sd_ncs;
-
-	output sd_start;
-
-	output [7:0] sd_din;
-
-	input [7:0] sd_dout;
-
-	input sd_det;
-
-	input sd_wp;
-
-
-	// DMA modules control
-	//
-	output reg [7:0] dma_din_modules;
-	//
-	input [7:0] dma_dout_zx;
-	output reg dma_select_zx;
-	//
-	output reg dma_wrstb;
-	output reg [1:0] dma_regsel;
-
-
-	// LED control register
-	output reg led;
-	input led_toggle;
-*/
 
 
 // internal regs & wires
@@ -318,6 +210,10 @@ module ports(
 
 	wire p_timfreq_wr;
 
+	wire pg0_wr;
+	wire pg1_wr;
+	wire pg2_wr;
+	wire pg3_wr;
 
 
 
@@ -448,6 +344,10 @@ module ports(
 	assign intena_wr = ( a[5:0]==INTENA && port_wr );
 	assign intreq_wr = ( a[5:0]==INTREQ && port_wr );
 
+	assign pg0_wr = ( a[5:0]==PG0 && port_wr );
+	assign pg1_wr = ( a[5:0]==PG1 && port_wr );
+	assign pg2_wr = ( a[5:0]==PG2 && port_wr );
+	assign pg3_wr = ( a[5:0]==PG3 && port_wr );
 
 
 	// read from fpga to Z80
@@ -499,22 +399,40 @@ module ports(
 
 
 
-	// write to $00 and $10 ports ++
+	// write to $00 and $10 ports -- old mem mapping control,
+	// also new mapping control (pg2 and pg3 ports)
 	always @(posedge cpu_clock)
+	if( port00_wr ) // port 00
 	begin
-		if( port00_wr==1'b1 ) // port 00
-		begin
-			if( mode_expag==1'b0 ) // normal paging
-				mode_pg0[7:0] <= { din[6:0], 1'b0 };
-			else // extended paging
-				mode_pg0[7:0] <= { din[6:0], din[7] };
-		end
-
-		if( mode_expag==1'b0 && port00_wr==1'b1 ) // port 10 (when in normal mode, part of port 00)
-			mode_pg1[7:0] <= { din[6:0], 1'b1 };
-		else if( mode_expag==1'b1 && port10_wr==1'b1 )
-			mode_pg1[7:0] <= { din[6:0], din[7] };
+		if( !mode_expag ) // normal paging
+			mode_pg2[7:0] <= { din[6:0], 1'b0 };
+		else // extended paging
+			mode_pg2[7:0] <= { din[6:0], din[7] };
 	end
+	else if( pg2_wr )
+		mode_pg2 <= din;
+	//
+	always @(posedge cpu_clock)
+	if( !mode_expag && port00_wr ) // port 10 (when in normal mode, part of port 00)
+		mode_pg3[7:0] <= { din[6:0], 1'b1 };
+	else if( mode_expag && port10_wr )
+		mode_pg3[7:0] <= { din[6:0], din[7] };
+	else if( pg3_wr )
+		mode_pg3 <= din;
+
+	// write to pg0 and pg1 ports
+	always @(posedge cpu_clock, negedge rst_n)
+	if( !rst_n )
+		mode_pg0 <= 8'b00000000;
+	else if( pg0_wr )
+		mode_pg0 <= din;
+	//
+	always @(posedge cpu_clock, negedge rst_n)
+	if( !rst_n )
+		mode_pg1 <= 8'b00000011;
+	else if( pg1_wr )
+		mode_pg1 <= din;
+
 
 	// port $03 write ++
 	always @(posedge cpu_clock)
@@ -561,7 +479,7 @@ module ports(
 
 		3'b001:
 		begin
-			data_bit_output <= ~mode_pg0[0];
+			data_bit_output <= ~mode_pg2[0];
 			data_bit_wr <= 1'b1;
 		end
 
