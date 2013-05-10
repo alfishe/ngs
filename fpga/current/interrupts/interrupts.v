@@ -28,8 +28,8 @@ module interrupts
 	reg m1_r, m1_rr;
 	wire m1_beg;
 
-	reg iorq_r, iorq_rr;
-	wire iorq_beg;
+	reg iack_r, iack_rr;
+	wire iack_end;
 
 	reg [2:0] ena;
 	reg [2:0] req;
@@ -45,11 +45,11 @@ module interrupts
 	//
 	assign m1_beg = !m1_r && m1_rr;
 
-	// IORQ
+	// int ack
 	always @(negedge clk)
-		{iorq_rr, iorq_r} <= {iorq_r, iorq_n};
+		{iack_rr, iack_r} <= {iack_r, (iorq_n | m1_n) };
 	//
-	assign iorq_beg = !iorq_r && iorq_rr;
+	assign iack_end = iack_r && !iack_rr;
 
 
 	// enables
@@ -78,7 +78,7 @@ module interrupts
 		begin
 			if( int_stbs[i] )
 				req[i] <= 1'b1;
-			else if( !m1_r && iorq_beg && pri_req[i] )
+			else if( iack_end && pri_req[i] )
 				req[i] <= 1'b0;
 			else if( req_wr && din[i] )
 				req[i] <= din[7];
