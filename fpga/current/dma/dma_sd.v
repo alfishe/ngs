@@ -1,38 +1,19 @@
 // part of NeoGS project
 //
-// (c) NedoPC 2007-2009
+// (c) NedoPC 2007-2013
 //
 // SD-card dma controller
-//
-// includes dma address regs, dma control reg
+
 /*
 
- Read from sd-card modes:
+ supports yet:
+  1. only read of SD card (512 bytes at once)
+  2. only full bursing writeback of read data to memory
 
-  1. Full burst: first all 512 bytes are read into 512b buffer, then dma-bursted into main memory.
-     Not as fast in latency, but steals minimum of CPU cycles, though stops cpu for 1024+ clocks (if no other DMAs are active)
-
-  2. As soon as possible: initiates DMA as soon as new byte is arrived into 512b buffer.
-     Makes bursts of 2-3 bytes, when applicable (more bytes arriven since beginning of dma_req up to acknowledge in dma_ack)
-
- Write to sd-card modes:
-
-  1. Full burst: all 512 bytes are read in one burst, transmission starts as soon as first byte arrives to the buffer.
-     Uses minimum of CPU cycles (1024+) but in one chunk.
-
-  2. DMA initiated as soon as spi is again ready to initiate new transfer (kind a throttling). Probably DMA pulls 2 or 4 bytes at once.
-
-Structure:
-
- - FIFO based on mem512b and two pointers
-
- - SD controller - FSM which either reads or writes SD-card SPI iface
-
- - DMA controller - FSM which either reads or writes DMA iface
-
- - overall control - Controls operation of everything above, controls muxing of data to the
-   SD write port and FIFO write port, tracks operation end, maintains DMA_ADDRESS registers.
-
+ SD read algo:
+ send FFs always. Check replies.
+ After first non-FF reply receive 512 bytes into FPGA mem then into RAM
+  
 */
 
 
@@ -43,15 +24,11 @@ module dma_sd(
 
 	// control to spi module of SD-card
 	//
-	output reg        sd_start,
+	output wire       sd_start,
 	input  wire       sd_rdy,
-	input  wire [7:0] sd_receiveddata,
-	output wire [7:0] sd_datatosend,
-	//
-	output reg        sd_override, // when 1, override sd_start and sd_datatosend to the sd spi module
+	input  wire [7:0] sd_recvdata,
 
-
-
+	
 	// signals for ports.v
 	//
 	input  wire [7:0] din,  // input and output from ports.v
@@ -66,24 +43,30 @@ module dma_sd(
 	//
 	output reg  [21:0] dma_addr,
 	output wire  [7:0] dma_wd,   // data written to DMA
-	input  wire  [7:0] dma_rd,   // data read from DMA
-	output reg         dma_rnw,
+	output wire        dma_rnw,
 	//
 	output wire        dma_req,
 	input  wire        dma_ack,
 	input  wire        dma_end
 );
+
+	reg dma_on;
+	reg [21:0] dma_addr;
+
+	wire dma_finish;
+
+	reg [3:0] state, next_state;
+
+	
+
 	localparam _HAD = 2'b00; // high address
 	localparam _MAD = 2'b01; // mid address
 	localparam _LAD = 2'b10; // low address
 	localparam _CST = 2'b11; // control and status
 
 
-	reg dma_snr;   // Send-NotReceive. Send to SDcard (==1) or Receive (==0) from it.
-	reg dma_burst; // whether burst transfers are on
-
-
-
+	// only dma writes
+	assign dma_rnw = 1'b0;
 
 
 	// control dout bus
@@ -92,202 +75,89 @@ module dma_sd(
 		_HAD: dout = { 2'b00,  dma_addr[21:16] };
 		_MAD: dout =           dma_addr[15:8];
 		_LAD: dout =           dma_addr[7:0];
-		_CST: dout = { dma_on, 5'bXXXXX, dma_burst, dma_snr};
+		_CST: dout = { dma_on, 7'bXXX_XXXX };
 	endcase
 
-	// ports.v write access & dma_addr control
+
+	// dma_on control
 	always @(posedge clk, negedge rst_n)
-	if( !rst_n ) // async reset
+	if( !rst_n )
+		dma_on <= 1'b0;
+	else if( dma_finish )
+		dma_on <= 1'b0;
+	else if( module_select && write_strobe && (regsel==_CST) )
+		dma_on <= din[7];
+
+
+	// dma_addr control
+	always @(posedge clk)
+	if( dma_ack && dma_on )
+		dma_addr <= dma_addr + 22'd1; // increment on successfull DMA transfer
+	else if( module_select && write_strobe )
 	begin
-		dma_on    <= 1'b0;
-		dma_snr   <= 1'b0; // receive is less dangerous since it won't destroy SDcard info
-		dma_burst <= 1'b0;
+		if( regsel==_HAD )
+			dma_addr[21:16] <= din[5:0];
+		else if( regsel==_MAD )
+			dma_addr[15:8]  <= din[7:0];
+		else if( regsel==_LAD )
+			dma_addr[7:0]   <= din[7:0];
 	end
+
+
+
+
+
+
+	// controlling FSM
+
+	localparam _IDLE   = 4'd0;
+	localparam _WRDY1  = 4'd1; // send start to SPI
+	localparam _WRDY2  = 4'd2; // 
+
+	always @(posedge clk, negedge dma_on)
+	if( !dma_on )
+		sd_state = _IDLE;
 	else // posedge clk
-	begin
-		// dma_on control
-		if( module_select && write_strobe && (regsel==_CST) )
-		begin
-			dma_on    <= din[7];
-			dma_burst <= din[1];
-			dma_snr   <= din[0];
-		end
-		else if( dma_finish )
-		begin
-			dma_on <= 1'b0;
-		end
-
-		// dma_addr control
-		if( dma_ack && dma_on )
-			dma_addr <= dma_addr + 22'd1; // increment on beginning of DMA transfer
-		else if( module_select && write_strobe )
-		begin
-			if( regsel==_HAD )
-				dma_addr[21:16] <= din[5:0];
-			else if( regsel==_MAD )
-				dma_addr[15:8]  <= din[7:0];
-			else if( regsel==_LAD )
-				dma_addr[7:0]   <= din[7:0];
-		end
-	end
-
-
-
-// fifo,dma,sd control FSMs/etc.
-
-	reg init;
-	wire wr_stb,rd_stb;
-	wire wdone,rdone,empty;
-
-	wire [7:0] fifo_wd; // data for FIFO to be written
-	wire [7:0] fido_rd; // data read from FIFO
-
-	// MUX data to FIFO
-	assign fifo_wd       = dma_snr ? dma_rd  : sd_receiveddata;
-	// MUX data to SDcard
-	assign sd_datatosend = dma_snr ? fifo_rd : 8'hFF;
-
-	// connect dma in to fifo out without muxing
-	assign dma_wd = fifo_rd;
-
-	dma_fifo_oneshot sd_fifo(
-		.clk(clk),
-		.rst_n(rst_n),
-
-		.init(init),
-
-		.wr_stb(wr_stb),
-		.rd_stb(rd_stb),
-
-		.wdone(wdone),
-		.rdone(rdone),
-		.empty(empty),
-
-		.wd(fifo_wd),
-		.rd(fifo_rd)
-	);
-
-	// fifo control
-	reg sd_wr_stb,sd_rd_stb;   // set in SD FSM
-	reg dma_wr_stb,dma_rd_stb; // set in DMA FSM
-	//
-	assign wr_stb = sd_wr_stb | dma_wr_stb;
-	assign rd_stb = sd_rd_stb | dma_rd_stb;
-
-	// dma control
-	wire dma_put_req;
-	wire dma_get_req;
-
-	assign dma_req = dma_put_req | dma_get_req;
-
-
-
-	reg sd_go; // start strobe for SD FSM
-	reg sd_idle; // whether SD FSM is idle
-
-	reg dma_go;
-	reg dma_idle;
-
-
-
-
-
-
-	// SD-card controlling FSM
-
-	reg [2:0] sd_state, sd_next_state;
-
-	localparam SD_IDLE   = 3'b000;
-	localparam SD_READ1  = 3'b100;
-	localparam SD_READ2  = 3'b101;
-	localparam SD_WRITE1 = 3'b110;
-	localparam SD_WRITE2 = 3'b111;
-
-	always @(posedge clk, negedge rst_n)
-	begin
-		if( !rst_n )
-		begin
-			sd_state = SD_IDLE;
-		end
-		else // posedge clk
-		begin
-			sd_state <= sd_next_state;
-		end
-	end
+		state <= next_state;
 
 	always @*
-	begin
-		case( sd_state )
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		SD_IDLE:begin
-			if( sd_go )
-			begin
-				if( sd_snr ) // send to SD
-				begin
-					sd_next_state = SD_WRITE1;
-				end
-				else // !sd_snr: read from SD
-				begin
-					sd_next_state = SD_READ1;
-				end
-			end
-			else
-			begin
-				sd_next_state = SD_IDLE;
-			end
-		end
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		SD_READ1:begin
-			if( wdone )
-			begin
-				sd_next_state = SD_IDLE;
-			end
-			else // !wdone - can still send bytes to the fifo
-			begin
-				if( !sd_rdy ) // not ready with previous byte - wait here
-				begin
-					sd_next_state = SD_READ1;
-				end
-				else // sd_rdy - can proceed further
-				begin
-					sd_next_state = SD_READ2;
-				end
-			end
-		end
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		SD_READ2:begin
-			sd_next_state = SD_READ1;
-		end
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		SD_WRITE1:begin
-			if( rdone )
-			begin
-				sd_next_state = SD_IDLE;
-			end
-			else
-			begin
-				if( sd_rdy && !empty ) // whether sd ready and we can take next byte from fifo
-				begin
-					sd_next_state = SD_WRITE2;
-				end
-				else // can't start next byte: wait
-				begin
-					sd_next_state = SD_WRITE1;
-				end
-			end
-		end
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		SD_WRITE2:begin
-			sd_next_state = SD_WRITE1;
-		end
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		default:begin
-			sd_next_state = SD_IDLE;
-		end
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		endcase
+	case( sd_state )
+
+	_IDLE: next_state = _WRDY1;
+	
+	_WRDY1:begin
+		next_state = _WRDY2;
+	end
+	
+	_WRDY2:begin
+		if( !sd_rdy )
+			next_state = _WRDY2;
+		else if( sd_recvdata==8'hFF )
+			next_state = _WRDY1;
+		else if( sd_recvdata==8'hFE )
+			next_state = _RECV;
+		else
+			next_state = _STOP;
 	end
 
+	
+	_STOP:begin
+		next_state = _STOP; // rely on dma_on going to 0 and resetting everything
+	end
+	
+	endcase
+
+
+	// sd_start
+	assign sd_start = ( state==_WRDY1 || );
+
+	
+	// dma_finish
+	assign dma_finish = ( state==_STOP );
+
+	
+	
+	
 	always @(posedge clk, negedge rst_n)
 	begin
 		if( !rst_n )
