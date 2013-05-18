@@ -2,6 +2,8 @@
 
 FILES=""
 FILES="${FILES} ../dma/dma_zx.v"
+FILES="${FILES} ../dma/dma_sd.v"
+FILES="${FILES} ../dma/dma_sequencer.v"
 FILES="${FILES} ../dma/dma_access.v"
 FILES="${FILES} ../common/spi.v"
 FILES="${FILES} ../sound/sound_main.v"

@@ -1,4 +1,4 @@
-// part of NeoGS project (c) 2008-2009 NedoPC
+// part of NeoGS project (c) 2008-2013 NedoPC
 
 // dma sequencer
 
@@ -128,7 +128,7 @@ module dma_sequencer(
 	begin
 		if( !rst_n )
 		begin
-			cur_input_mux  = {DEVNUM{1'b0}};
+			cur_input_mux  = {DEVNUM{1'b0}}; // to remove static priority selection after idle -- have here 'd1!
 		end
 		else // posedge clk
 		begin
