@@ -53,7 +53,6 @@ module dma_sd
 );
 
 	reg dma_on;
-	reg [21:0] dma_addr;
 
 	wire dma_finish;
 
@@ -124,18 +123,18 @@ module dma_sd
 	localparam _RECV2  = 4'd4;
 	localparam _CRC1   = 4'd5;
 	localparam _CRC2   = 4'd6;
-	localparam _DMAWR  = 4'd7
-	localparam _STOP   = 4'd15;
+	localparam _DMAWR  = 4'd7;
+	localparam _STOP   = 4'd8;
 
 
 	always @(posedge clk, negedge dma_on)
 	if( !dma_on )
-		sd_state = _IDLE;
+		state = _IDLE;
 	else // posedge clk
 		state <= next_state;
 
 	always @*
-	case( sd_state )
+	case( state )
 
 	_IDLE: next_state = _WRDY1;
 	

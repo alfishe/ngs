@@ -73,6 +73,7 @@ module ports(
 	input  wire [ 7:0] sd_dout,
 	output wire [ 7:0] sd_din,
 	output wire        sd_start,
+	input  wire        dma_sd_start,
 	input  wire        sd_det,
 	input  wire        sd_wp,
 
@@ -83,7 +84,12 @@ module ports(
 	output reg  [7:0] dma_din_modules, // DMA control
 	//
 	output reg        dma_select_zx,
+	output reg        dma_select_sd,
+	output reg        dma_select_mp3,
+	//
 	input  wire [7:0] dma_dout_zx,
+	input  wire [7:0] dma_dout_sd,
+	input  wire [7:0] dma_dout_mp3,
 	//
 	output reg        dma_wrstb,
 	output reg  [1:0] dma_regsel,
@@ -223,7 +229,9 @@ module ports(
 	reg [2:0] dma_module_select; // which dma module selected: zero - none selected
 	localparam DMA_NONE_SELECTED = 3'd0;
 	localparam DMA_MODULE_ZX     = 3'd1;
-//	localparam DMA_MODULE_...    = 3'd2;
+	localparam DMA_MODULE_SD     = 3'd2;
+	localparam DMA_MODULE_MP3    = 3'd3;
+//	localparam DMA_MODULE_...    = 3'd4;
 
 	reg [7:0] dma_dout_modules; // select in data from different modules
 
@@ -568,7 +576,7 @@ module ports(
 
 	//SPI (mp3, SD) interfaces
 
-	assign sd_din = (a[5:0]==SD_RSTR) ? 8'hFF : din;
+	assign sd_din = (a[5:0]==SD_RSTR || dma_sd_start) ? 8'hFF : din;
 	assign mc_din = din;
 	assign md_din = din;
 
@@ -636,26 +644,18 @@ module ports(
 	// DMA control
 	//
 	always @(posedge cpu_clock, negedge rst_n) // selection of modules
-	begin
-		if( !rst_n )
-			dma_module_select <= DMA_NONE_SELECTED;
-		else if( p_dmamod_wr )
-			dma_module_select <= din[2:0];
-	end
+	if( !rst_n )
+		dma_module_select <= DMA_NONE_SELECTED;
+	else if( p_dmamod_wr )
+		dma_module_select <= din[2:0];
 	//
 	always @* dma_din_modules = din; // translate Z80 bus out to all DMA modules
 	//
 	always @* // select modules by individual signals
 	begin
-		dma_select_zx = 1'b0;
-		//dma_select_... = 1'b0;
-
-		case( dma_module_select )
-		DMA_MODULE_ZX:
-			dma_select_zx = 1'b1;
-		//DMA_MODULE_...:
-		//	dma_select_... = 1'b1;
-		endcase
+		dma_select_zx  = ( dma_module_select==DMA_MODULE_ZX  );
+		dma_select_sd  = ( dma_module_select==DMA_MODULE_SD  );
+		dma_select_mp3 = ( dma_module_select==DMA_MODULE_MP3 );
 	end
 	//
 	always @* dma_wrstb = p_dmaports_wr; // translate dma write strobe
@@ -664,9 +664,13 @@ module ports(
 	//
 	always @* // route data from modules to the common module bus
 	begin
-		case( dma_regsel )
+		case( dma_module_select )
 		DMA_MODULE_ZX:
 			dma_dout_modules <= dma_dout_zx;
+		DMA_MODULE_SD:
+			dma_dout_modules <= dma_dout_sd;
+		DMA_MODULE_MP3:
+			dma_dout_modules <= dma_dout_mp3;
 		//DMA_MODULE_...:
 		//	dma_dout_modules <= dma_dout_...;
 		default:

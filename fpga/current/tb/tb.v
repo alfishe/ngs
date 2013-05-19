@@ -95,6 +95,9 @@ module tb;
 
 
 
+	reg [7:0] sdmp3_chk [$]; // fifo for checking data from SD to MP3
+
+
 
 	// clock gen
 	initial
@@ -250,6 +253,8 @@ module tb;
 		.FILENAME("timer_test.bin")
 `elsif PAGE_TEST
 		.FILENAME("page_test.bin")
+`elsif SDMP3_TEST
+		.FILENAME("sd_mp3_test.bin")
 `endif
 	)
 	rom

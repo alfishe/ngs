@@ -217,17 +217,49 @@ module top(
 	wire [7:0]  dma_rd;
 	wire [7:0]  dma_wd;
 
+	wire        dma_ack_zx ;
+	wire        dma_ack_sd ;
+	wire        dma_ack_mp3;
+	//
+	wire        dma_end_zx ;
+	wire        dma_end_sd ;
+	wire        dma_end_mp3;
+	//
+	wire        dma_req_zx ;
+	wire        dma_req_sd ;
+	wire        dma_req_mp3;
+	//
+	wire        dma_rnw_zx ;
+	wire        dma_rnw_sd ;
+	wire        dma_rnw_mp3;
+	//
+	wire [ 7:0] dma_wd_zx ;
+	wire [ 7:0] dma_wd_sd ;
+	wire [ 7:0] dma_wd_mp3;
+	//
+	wire [21:0] dma_addr_zx ;
+	wire [21:0] dma_addr_sd ;
+	wire [21:0] dma_addr_mp3;
+
+
+
 	wire zx_dmaread,zx_dmawrite;
 	wire zx_wait_ena;
 
 	wire [7:0] dma_zxrd_data;
 	wire [7:0] dma_zxwr_data;
 
+	wire       dma_on_zx;
+
 
 	wire [7:0] dma_dout_zx;
-	wire       dma_on_zx;
+	wire [7:0] dma_dout_sd;
+	wire [7:0] dma_dout_mp3;
+	
 	wire       dma_select_zx;
-
+	wire       dma_select_sd;
+	wire       dma_select_mp3;
+	
 	wire [7:0] dma_din_modules;
 
 	wire [1:0] dma_regsel;
@@ -253,6 +285,8 @@ module top(
 // ports-SPIs interconnection
 
 	wire [7:0] md_din;
+	wire [7:0] dma_md_din;
+	
 	wire [7:0] mc_din;
 	wire [7:0] mc_dout;
 	wire [7:0] sd_din;
@@ -263,9 +297,13 @@ module top(
 	wire mc_rdy;
 
 	wire md_start;
+	wire dma_md_start;
+	wire md_rdy;
 	wire md_halfspeed;
 
 	wire sd_start;
+	wire dma_sd_start;
+	wire sd_rdy;
 
 
 	// LED related
@@ -274,6 +312,10 @@ module top(
 	// timer
 	wire [2:0] timer_rate;
 	wire       timer_stb;
+
+	// interrupt requests
+	wire  sd_int_req;
+	wire mp3_int_req;
 
 	// intena/intreq
 	wire       intena_wr;
@@ -427,7 +469,7 @@ module top(
 
 // DMA modules
 
-	dma_access my_dma
+	dma_access dma_access
 	( 
 		.clk(clk_fpga),
 		.rst_n(internal_reset_n),
@@ -455,30 +497,135 @@ module top(
 
 
 
-	dma_zx zxdma( .clk(clk_fpga),
-	              .rst_n(internal_reset_n),
+	dma_sequencer dma_sequencer
+	(
+		.clk  (clk_fpga        ),
+		.rst_n(internal_reset_n),
+        
+		.req0(dma_req_zx ),
+		.req1(dma_req_sd ),
+		.req2(dma_req_mp3),
+		.req3(1'b0       ),
+        
+		.addr0(dma_addr_zx ),
+		.addr1(dma_addr_sd ),
+		.addr2(dma_addr_mp3),
+		.addr3(22'd0       ),
+        
+		.rnw0(dma_rnw_zx ),
+		.rnw1(dma_rnw_sd ),
+		.rnw2(dma_rnw_mp3),
+		.rnw3(1'b1       ),
+        
+		.wd0(dma_wd_zx ),
+		.wd1(dma_wd_sd ),
+		.wd2(8'd0      ),
+		.wd3(8'd0      ),
+        
+		.ack0(dma_ack_zx ),
+		.ack1(dma_ack_sd ),
+		.ack2(dma_ack_mp3),
+		.ack3(           ),
+        
+		.end0(dma_end_zx ),
+		.end1(dma_end_sd ),
+		.end2(dma_end_mp3),
+		.end3(           ),
+        
+		.dma_req (dma_req ),
+		.dma_addr(dma_addr),
+		.dma_rnw (dma_rnw ),
+		.dma_wd  (dma_wd  ),
+		.dma_ack (dma_ack ),
+		.dma_end (dma_end )
+	);
 
-	              .module_select(dma_select_zx),
-	              .write_strobe(dma_wrstb),
-	              .regsel(dma_regsel),
 
-	              .din(dma_din_modules),
-	              .dout(dma_dout_zx),
 
-	              .wait_ena(zx_wait_ena),
-	              .dma_on(dma_on_zx),
-	              .zxdmaread(zx_dmaread),
-	              .zxdmawrite(zx_dmawrite),
-	              .dma_wr_data(dma_zxwr_data),
-	              .dma_rd_data(dma_zxrd_data),
 
-	              .dma_req(dma_req),
-	              .dma_ack(dma_ack),
-	              .dma_end(dma_end),
-	              .dma_rnw(dma_rnw),
-	              .dma_rd(dma_rd),
-	              .dma_wd(dma_wd),
-	              .dma_addr(dma_addr) );
+
+
+	dma_zx dma_zx
+	(
+		.clk(clk_fpga),
+		.rst_n(internal_reset_n),
+        
+		.module_select(dma_select_zx),
+		.write_strobe(dma_wrstb),
+		.regsel(dma_regsel),
+        
+		.din(dma_din_modules),
+		.dout(dma_dout_zx),
+        
+		.wait_ena(zx_wait_ena),
+		.dma_on(dma_on_zx),
+		.zxdmaread(zx_dmaread),
+		.zxdmawrite(zx_dmawrite),
+		.dma_wr_data(dma_zxwr_data),
+		.dma_rd_data(dma_zxrd_data),
+        
+		.dma_req (dma_req_zx ),
+		.dma_ack (dma_ack_zx ),
+		.dma_end (dma_end_zx ),
+		.dma_rnw (dma_rnw_zx ),
+		.dma_rd  (dma_rd     ),
+		.dma_wd  (dma_wd_zx  ),
+		.dma_addr(dma_addr_zx)
+	);
+
+
+	dma_sd dma_sd
+	(
+		.clk  (clk_fpga        ),
+		.rst_n(internal_reset_n),
+        
+		.sd_start   (dma_sd_start),
+		.sd_rdy     (sd_rdy      ),
+		.sd_recvdata(sd_dout     ),
+        
+		.din          (dma_din_modules),
+		.dout         (dma_dout_sd    ),
+		.module_select(dma_select_sd  ),
+		.write_strobe (dma_wrstb      ),
+		.regsel       (dma_regsel     ),
+        
+		.dma_addr(dma_addr_sd),
+		.dma_wd  (dma_wd_sd  ),
+		.dma_rnw (dma_rnw_sd ),
+		.dma_req (dma_req_sd ),
+		.dma_ack (dma_ack_sd ),
+		.dma_end (dma_end_sd ),
+        
+		.int_req(sd_int_req)
+	);
+
+	dma_mp3 dma_mp3
+	(
+		.clk  (clk_fpga        ),
+		.rst_n(internal_reset_n),
+
+		.md_din  (dma_md_din  ),
+		.md_start(dma_md_start),
+		.md_rdy  (md_rdy      ),
+		.md_dreq (mp3_req     ),
+
+
+		.din          (dma_din_modules),
+		.dout         (dma_dout_mp3   ),
+		.module_select(dma_select_mp3 ),
+		.write_strobe (dma_wrstb      ),
+		.regsel       (dma_regsel     ),
+	
+		.dma_addr(dma_addr_mp3),
+		.dma_rd  (dma_rd      ),
+		.dma_rnw (dma_rnw_mp3 ),
+		.dma_req (dma_req_mp3 ),
+		.dma_ack (dma_ack_mp3 ),
+		.dma_end (dma_end_mp3 ),
+
+		.int_req(mp3_int_req)
+	);
+
 
 
 
@@ -580,6 +727,7 @@ module top(
 		.sd_din(sd_din),
 		.sd_dout(sd_dout),
 		.sd_start(sd_start),
+		.dma_sd_start(dma_sd_start),
 
 
 		.dma_din_modules(dma_din_modules),
@@ -639,7 +787,7 @@ module top(
 		.ena_wr(intena_wr),
 		.req_wr(intreq_wr),
 
-		.int_stbs( {1'b0, 1'b0, timer_stb} )
+		.int_stbs( {mp3_int_req, sd_int_req, timer_stb} )
 	);
 
 	// timer
@@ -670,7 +818,7 @@ module top(
 		.start(md_start),
 		.speed( {1'b0,md_halfspeed} ),
 		.sdi(1'b0),
-		.rdy(),
+		.rdy(md_rdy),
 		.dout()
 	);
 
@@ -696,10 +844,10 @@ module top(
 		.sdi(sd_di),
 		.din(sd_din),
 		.dout(sd_dout),
-		.start(sd_start),
+		.start(sd_start|dma_sd_start),
 		.speed(2'b00),
 		.bsync(),
-		.rdy()
+		.rdy(sd_rdy)
 	);
 
 

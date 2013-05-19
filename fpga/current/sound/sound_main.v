@@ -149,6 +149,7 @@ module sound_main(
 
 	// DAT-VOL memory block
 	mem512b my_mem( .clk(clock),
+	                .re(1'b1),
 	                .rdaddr(mem_rdaddr),
 	                .dataout(mem_do),
 	                .wraddr({5'b0,bf_datnvol,bf_wraddr}),

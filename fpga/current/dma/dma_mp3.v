@@ -29,7 +29,7 @@ module dma_mp3
 	// signals for DMA controller/DMA sequencer
 	//
 	output reg  [21:0] dma_addr,
-	input  wire  [7:0] dma_rd,   // data written to DMA
+	input  wire  [7:0] dma_rd,   // data read from DMA
 	output wire        dma_rnw,
 	//
 	output reg         dma_req,
@@ -39,12 +39,11 @@ module dma_mp3
 	output wire        int_req
 );
 	reg dma_on;
-	reg [21:0] dma_addr;
 
 	wire dma_finish;
 
 	wire w511;
-
+	wire rdone;
 
 	reg [3:0] state,next_state;
 
@@ -168,7 +167,7 @@ module dma_mp3
 		.wr_stb( dma_end  ),
 		.rd_stb( md_start || state==_MP3W1 ),
         
-		.wdone(wdone),
+		.wdone(     ),
 		.rdone(rdone),
 		.empty(     ),
 		.w511 (w511 ),
