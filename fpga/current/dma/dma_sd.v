@@ -17,8 +17,8 @@
 */
 
 
-module dma_sd(
-
+module dma_sd
+(
 	input  wire clk,
 	input  wire rst_n,
 
@@ -47,7 +47,9 @@ module dma_sd(
 	//
 	output wire        dma_req,
 	input  wire        dma_ack,
-	input  wire        dma_end
+	input  wire        dma_end,
+
+	output wire        int_req
 );
 
 	reg dma_on;
@@ -60,6 +62,10 @@ module dma_sd(
 	wire wdone,rdone;
 	
 	reg int_dma_req;
+
+
+
+	assign int_req = dma_finish;
 
 
 
@@ -137,18 +143,18 @@ module dma_sd(
 		next_state = _WRDY2;
 	end
 	
-	_WRDY2:begin
-		if( !sd_rdy )
-			next_state = _WRDY2;
-		else if( sd_recvdata==8'hFF )
-			next_state = _WRDY1;
-		else if( sd_recvdata==8'hFE )
-			next_state = _RECV1;
-		else
-			next_state = _STOP;
-	end
-
-	_RECV1:begin
+	_WRDY2:begin	
+		if( 	!sd_rdy )
+		                next_state = _WRDY2;
+		else	 if( sd_recvdata==8'hFF )
+		    	    next_state = _WRDY1;
+		else         if( sd_recvdata==8'hFE )
+		    	    next_state = _RECV1;
+		else	
+		    	    next_state = _STOP;
+	end         
+                    	
+	_RECV1:begin	
 		if( !wdone )
 			next_state = _RECV2;
 		else
@@ -174,7 +180,7 @@ module dma_sd(
 	end
 
 	_DMAWR:begin
-		if( !rdone )
+		if( int_dma_req )
 			next_state = _DMAWR;
 		else
 			next_state = _STOP;
@@ -202,14 +208,14 @@ module dma_sd(
 	// only dma writes
 	assign dma_rnw = 1'b0;
 
-	assign dma_req = int_dma_req & (~rdone);
+	assign dma_req = int_dma_req;
 
 	always @(posedge clk, negedge dma_on)
 	if( !dma_on )
 		int_dma_req <= 1'b0;
 	else if( state==_CRC2 )
 		int_dma_req <= 1'b1;
-	else if( rdone )
+	else if( rdone && dma_ack )
 		int_dma_req <= 1'b0;
 
 
@@ -217,18 +223,19 @@ module dma_sd(
 	// fifo
 	dma_fifo_oneshot dma_fifo_oneshot
 	(
-	.clk  (clk   ),
-	.rst_n(dma_on),
-
-	.wr_stb( state==_RECV2 && sd_rdy ),
-	.rd_stb( dma_req && dma_ack ),
-
-	.wdone(wdone),
-	.rdone(rdone),
-	.empty(     ),
-
-	.wd(sd_recvdata),
-	.rd(dma_wd     )
+		.clk  (clk   ),
+		.rst_n(dma_on),
+        
+		.wr_stb( state==_RECV2 && sd_rdy ),
+		.rd_stb( (dma_req && dma_ack) || state==_CRC2 ),
+        
+		.wdone(wdone),
+		.rdone(rdone),
+		.empty(     ),
+		.w511 (     ),
+        
+		.wd(sd_recvdata),
+		.rd(dma_wd     )
 	);
 	
 	

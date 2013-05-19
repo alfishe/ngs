@@ -14,6 +14,7 @@ module dma_fifo_oneshot(
 	input  wire rd_stb, // read strobe: increments rptr
 
 	output wire wdone, // write done - all 512 bytes are written (end of write operation)
+	output wire w511,  // write almost done -- at address 511
 	output wire rdone, // read done - all 512 bytes are read (end of read operation)
 	output wire empty, // fifo empty: when wptr==rptr (rd_stb must not be issued when empty is active, otherwise everytrhing desyncs)
 
@@ -29,7 +30,9 @@ module dma_fifo_oneshot(
 		wptr = 10'd0;
 	else if( wr_stb )
 		wptr <= wptr + 10'd1;
-	
+
+	assign w511 = &wptr[8:0];
+
 	always @(posedge clk, negedge rst_n)
 	if( !rst_n )
 		rptr = 10'd0;
@@ -42,14 +45,19 @@ module dma_fifo_oneshot(
 
 
 
-	mem512b fifo512_oneshot_mem512b( .clk(clk),
+	mem512b fifo512_oneshot_mem512b
+	(
+		.clk(clk),
 
-	                                 .rdaddr(rptr[8:0]),
-	                                 .dataout(rd),
+		.rdaddr(rptr[8:0]),
+		.dataout(rd),
+		.re(rd_stb),
 
-	                                 .wraddr(wptr[8:0]),
-	                                 .datain(wd),
-	                                 .we(wr_stb)
-	                               );
+		.wraddr(wptr[8:0]),
+		.datain(wd),
+		.we(wr_stb)
+	);
+
+
 endmodule
 
