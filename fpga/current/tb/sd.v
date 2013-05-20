@@ -7,8 +7,8 @@
 module sd
 (
 	input  wire clk,
-	input  wire di,
-	output wire do
+	input  wire sdi,
+	output wire sdo
 );
 
 	reg [7:0] byteout;
@@ -20,6 +20,8 @@ module sd
 	int state;
 	int count;
 
+	reg [7:0] tmp;
+
 	localparam _FF   = 'd0;
 	localparam _FE   = 'd1;
 	localparam _DATA = 'd2;
@@ -27,19 +29,19 @@ module sd
 
 
 	initial byteout = 8'hFF;
-	initial bitcntout = 7;
+	initial bitcntout = 8;
 	initial bitcntin = 7;
 	initial state = _FF;
 	initial count = 5;
 
 
 
-	assign do = byteout[7];
+	assign sdo = byteout[7];
 
 
 	always @(negedge clk)
 	begin
-		byteout <= byteout<<1;
+		byteout <= {byteout[6:0],1'b1};
 		bitcntout = bitcntout - 1;
 
 		if( bitcntout<0 )
@@ -50,22 +52,39 @@ module sd
 
 			_FF:begin
 				count = count - 1;
-				if( count<=0 )
-					state = _FE;
+				if( count <= 0 )
+					state <= _FE;
 				byteout <= 8'hFF;
 			end
 
 			_FE:begin
-				state = _DATA;
+				state <= _DATA;
 				byteout <= 8'hFE;
 				count = 512;
 			end
 
 			_DATA:begin
-				count
+				count = count - 1;
+				if( count <= 0 )
+				begin
+					state <= _CRC;
+					count <= 2;
+				end
+				
+				tmp = $random>>24;
+				byteout <= tmp;
+				tb.sdmp3_chk.push_back(tmp);
 			end
 
 			_CRC:begin
+				count = count - 1;
+				if( count <= 0 )
+				begin
+					state <= _FF;
+					count <= 1+($random&63);
+				end
+
+				byteout <= $random>>24;
 			end
 
 
@@ -77,13 +96,13 @@ module sd
 
 	always @(posedge clk)
 	begin
-		bytein = {bytein[7:1], di};
+		bytein = {bytein[6:0], sdi};
 
 		bitcntin = bitcntin - 1;
 
 		if( bitcntin<0 )
 		begin
-			bitcnt = 7;
+			bitcntin = 7;
 
 			if( bytein!==8'hFF )
 			begin

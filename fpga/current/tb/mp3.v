@@ -19,7 +19,7 @@ module mp3
 	reg [7:0] tmp;
 
 
-	integer waitctr;
+	int waitcnt;
 
 
 
@@ -65,11 +65,11 @@ module mp3
 	begin
 		if( bitcnt=='d0 )
 		begin
-			if( $rand>32'hD000_0000 )
+			if( $random>32'hD000_0000 )
 			begin
 				req <= 1'b0;
 
-				waitcnt = 1+($rand&63);
+				waitcnt = 1+($random&63);
 
 				repeat( waitcnt ) @(posedge tb.clk_fpga);
 

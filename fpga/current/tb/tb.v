@@ -194,6 +194,23 @@ module tb;
 
 
 
+	// SD and MP3 test modules
+	mp3 mp3
+	(
+		.clk (mp3_clk ),
+		.sync(mp3_sync),
+		.data(mp3_dat ),
+		.req (mp3_req )
+	);
+	//
+	sd sd
+	(
+		.clk(sd_clk),
+		.sdi(sd_do ),
+		.sdo(sd_di )
+	);
+
+
 	// Z80
 	z80 z80
 	(
@@ -254,7 +271,7 @@ module tb;
 `elsif PAGE_TEST
 		.FILENAME("page_test.bin")
 `elsif SDMP3_TEST
-		.FILENAME("sd_mp3_test.bin")
+		.FILENAME("sdmp3_test.bin")
 `endif
 	)
 	rom

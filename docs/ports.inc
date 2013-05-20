@@ -161,6 +161,8 @@ DMA_MOD	EQU	#1B ;select DMA module to work with via DMA_HAD, DMA_MAD, DMA_LAD, D
 
 C_DMA_NONE	equ	0 ; none selected
 C_DMA_ZX	equ	1 ; ZX module selected
+C_DMA_SD	equ	2 ; SD module selected
+C_DMA_MP3	equ	3 ; MP3 module selected
 
 
 DMA_HAD	EQU	#1C ; High   DMA ADdress (bits 21:16)

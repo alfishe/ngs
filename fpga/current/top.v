@@ -734,8 +734,13 @@ module top(
 		.dma_regsel(dma_regsel),
 		.dma_wrstb(dma_wrstb),
 		//
-		.dma_dout_zx(dma_dout_zx),
-		.dma_select_zx(dma_select_zx),
+		.dma_dout_zx (dma_dout_zx ),
+		.dma_dout_sd (dma_dout_sd ),
+		.dma_dout_mp3(dma_dout_mp3),
+		//
+		.dma_select_zx (dma_select_zx ),
+		.dma_select_sd (dma_select_sd ),
+		.dma_select_mp3(dma_select_mp3),
         	
 		.led(led_diag),
 		.led_toggle(led_toggle),

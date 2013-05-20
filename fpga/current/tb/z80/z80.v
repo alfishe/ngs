@@ -118,7 +118,7 @@ module z80
 	assign zm1_n   = im1_n;
 
 
-	assign a = za;
+	assign a = busak_n ? za : 16'hZZZZ;
 
 	assign mreq_n = zmreq_n;
 	assign iorq_n = ziorq_n;
