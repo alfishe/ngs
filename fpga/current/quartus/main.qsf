@@ -28,7 +28,7 @@ set_global_assignment -name FAMILY ACEX1K
 set_global_assignment -name TOP_LEVEL_ENTITY top
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION 6.1
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "02:20:34  MARCH 02, 2008"
-set_global_assignment -name LAST_QUARTUS_VERSION "7.2 SP3"
+set_global_assignment -name LAST_QUARTUS_VERSION 7.2
 set_global_assignment -name DEVICE_FILTER_PACKAGE "ANY QFP"
 set_global_assignment -name DEVICE_FILTER_PIN_COUNT 144
 set_global_assignment -name DEVICE_FILTER_SPEED_GRADE 3
@@ -163,6 +163,10 @@ set_global_assignment -name VERILOG_SHOW_LMF_MAPPING_MESSAGES OFF
 set_global_assignment -name GENERATE_HEX_FILE OFF
 
 
+set_global_assignment -name VERILOG_FILE ../dma/dma_sequencer.v
+set_global_assignment -name VERILOG_FILE ../dma/dma_fifo_oneshot.v
+set_global_assignment -name VERILOG_FILE ../dma/dma_mp3.v
+set_global_assignment -name VERILOG_FILE ../dma/dma_sd.v
 set_global_assignment -name VERILOG_FILE ../dma/dma_zx.v
 set_global_assignment -name VERILOG_FILE ../dma/dma_access.v
 set_global_assignment -name VERILOG_FILE ../common/spi.v

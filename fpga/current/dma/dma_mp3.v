@@ -127,15 +127,18 @@ module dma_mp3
 	_MP3W1: next_state = _MP3W2;
 
 	_MP3W2:begin
-		if( rdone )
-			next_state = _STOP;
 		if( md_rdy && md_dreq )
 			next_state = _MP3W3;
 		else
 			next_state = _MP3W2;
 	end
 
-	_MP3W3: next_state = _MP3W2;
+	_MP3W3:begin
+		if( rdone )
+			next_state = _STOP;
+		else
+			next_state = _MP3W2;
+	end
 
 	_STOP: next_state = _STOP;
 

@@ -37,7 +37,7 @@ VHDL="${VHDL} z80/T80_Reg.vhd  "
 VHDL="${VHDL} z80/T80.vhd      "
 VHDL="${VHDL} z80/T80_MCode.vhd"
 
-vcom -novopt $VHDL
+#vcom -novopt $VHDL
 
 if (( $#>0 )); then
 	vlog +define+$1 -sv -novopt -incr $FILES $BENCH $TV80
