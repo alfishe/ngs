@@ -243,7 +243,8 @@ module tb;
 	wire [19:0] ram_a;
 	genvar ram_i;
 	//
-	assign ram_a = { mema21, mema18, mema17, mema16, mema15, mema14, a[13:0] };
+	//assign ram_a = { mema21, mema18, mema17, mema16, mema15, mema14, a[13:0] }; // 4mb
+	assign ram_a = { 1'b0, mema18, mema17, mema16, mema15, mema14, a[13:0] }; // 2mb
 	//
 	generate
 	for(ram_i=0;ram_i<4;ram_i=ram_i+1)

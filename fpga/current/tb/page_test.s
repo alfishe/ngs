@@ -126,8 +126,8 @@ testloop
 	ld	a,(led)
 	inc	a
 	ld	(led),a
-	rrca
-	rrca
+;	rrca
+;	rrca
 	out	(LEDCTR),a
 
 
@@ -180,9 +180,9 @@ loop2
 	ld	a,(led)
 	inc	a
 	ld	(led),a
-	rrca
-	rrca
-	rrca
+;	rrca
+;	rrca
+;	rrca
 	out	(LEDCTR),a
 
 	ld	h,0xE0
