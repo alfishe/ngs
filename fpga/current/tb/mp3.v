@@ -65,7 +65,7 @@ module mp3
 	begin
 		if( bitcnt=='d0 )
 		begin
-			if( $random>32'hD000_0000 )
+			if( $random>32'hd000_0000 )
 			begin
 				req <= 1'b0;
 

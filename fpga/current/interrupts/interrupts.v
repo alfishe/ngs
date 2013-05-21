@@ -37,6 +37,8 @@ module interrupts
 	reg [2:0] pri_req;
 
 
+	wire [2:0] enareq;
+
 
 
 	// M1 signal beginning
@@ -90,13 +92,16 @@ module interrupts
 
 
 
+	assign enareq = req & ena;
+
+
 	// make prioritized request position
 	always @(posedge clk)
 	if( m1_beg )
 	begin
-		pri_req[0] <=  req[0] ;
-		pri_req[1] <= !req[0] &&  req[1] ;
-		pri_req[2] <= !req[0] && !req[1] && req[2];
+		pri_req[0] <=  enareq[0] ;
+		pri_req[1] <= !enareq[0] &&  enareq[1] ;
+		pri_req[2] <= !enareq[0] && !enareq[1] && enareq[2];
 	end
 	//
 	assign int_vector = { 1'b1, ~pri_req[2], ~pri_req[1] }; // for 3 requests only
@@ -104,7 +109,7 @@ module interrupts
 
 	// gen interrupt
 	always @(posedge clk)
-		int_n <= !( req & ena );
+		int_n <= !enareq;
 
 
 endmodule
