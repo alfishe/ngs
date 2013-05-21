@@ -23,7 +23,7 @@ LFSR	MACRO
 
 	ENDM
 
-TSTRAM	MACRO
+TSTRAM4	MACRO
 
 	push	bc
 	push	de
@@ -48,6 +48,50 @@ TSTRAM	MACRO
 	jr	nz,.error
 	inc	ixl
 	jr	nz,.rdloop
+	jr	.end
+
+.error
+	ld	a,3
+	out	(WIN1),a
+	ld	sp,0x8000
+	jp	$+3
+	jp	start2
+
+.end
+	ENDM
+
+
+TSTRAM2	MACRO
+
+	push	bc
+	push	de
+
+	ld	ixl,0
+.wrloop
+	ld	a,ixl
+	out	(c),a
+	LFSR
+	ld	(hl),a
+	inc	ixl
+	ld	a,ixl
+	add	a,a
+	jr	nc,.wrloop
+
+
+	pop	de
+	pop	bc
+
+	ld	ixl,0
+.rdloop
+	ld	a,ixl
+	out	(c),a
+	LFSR
+	cp	(hl)
+	jr	nz,.error
+	inc	ixl
+	ld	a,ixl
+	add	a,a
+	jr	nc,.rdloop
 	jr	.end
 
 .error
@@ -89,12 +133,12 @@ testloop
 
 	ld	h,0xE0
 	ld	c,WIN3
-	TSTRAM
+	TSTRAM4
 
 
 	ld	h,0xA0
 	ld	c,WIN2
-	TSTRAM
+	TSTRAM4
 
 
 	ld	a,3
@@ -104,7 +148,7 @@ testloop
 
 	ld	h,0x60
 	ld	c,WIN1
-	TSTRAM
+	TSTRAM4
 	
 	ld	a,3
 	out	(WIN1),a
@@ -114,21 +158,74 @@ testloop
 
 	ld	h,0x20
 	ld	c,WIN0
-	TSTRAM
+	TSTRAM4
 
 
 	ld	h,0xA0
 	ld	c,MPAG
-	TSTRAM
+	TSTRAM4
 
 	ld	h,0xE0
 	ld	c,MPAGEX
-	TSTRAM
-
-
-
+	TSTRAM4
 
 	jp	testloop
+
+start2
+	xor	a
+	ld	(led),a
+	ld	l,a
+
+loop2
+	ld	a,(led)
+	inc	a
+	ld	(led),a
+	rrca
+	rrca
+	rrca
+	out	(LEDCTR),a
+
+	ld	h,0xE0
+	ld	c,WIN3
+	TSTRAM2
+
+
+	ld	h,0xA0
+	ld	c,WIN2
+	TSTRAM2
+
+
+	ld	a,3
+	out	(WIN2),a
+	ld	sp,0xc000
+	jp	$+0x4000+3
+
+	ld	h,0x60
+	ld	c,WIN1
+	TSTRAM2
+	
+	ld	a,3
+	out	(WIN1),a
+	ld	sp,0x8000
+	jp	$+3
+
+
+	ld	h,0x20
+	ld	c,WIN0
+	TSTRAM2
+
+
+	ld	h,0xA0
+	ld	c,MPAG
+	TSTRAM2
+
+	ld	h,0xE0
+	ld	c,MPAGEX
+	TSTRAM2
+
+	jp	loop2
+
+
 
 led	equ	$
 
