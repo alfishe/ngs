@@ -1,23 +1,17 @@
 
-;LAST UPDATE: 09.02.2011 savelij
+;LAST UPDATE: 26.12.2011 savelij
 
-		include macros.a80
-		CPU Z180			;€‡Œ… ”€‰‹€ Œ†…’ ‹“—ˆ’‘Ÿ ‹…… 64Š
+		include ../../../pentevo/rom/macros.a80
 
-DD		EQU 9
-MM		EQU 2
-YY		EQU 11
-DATA		EQU DD+MM<<5+YY<<9+0X8000		;„€’€ ‘Šˆ ‚‹…ˆŸ
-
-DD_P0		EQU 15					;—ˆ‘‹ ‘’€ˆ–› 0
-MM_P0		EQU 1					;Œ…‘Ÿ– ‘’€ˆ–› 0
+DD_P0		EQU 26					;—ˆ‘‹ ‘’€ˆ–› 0
+MM_P0		EQU 12					;Œ…‘Ÿ– ‘’€ˆ–› 0
 YY_P0		EQU 11					;ƒ„ ‘’€ˆ–› 0
-DD_P1		EQU 30					;—ˆ‘‹ ‘’€ˆ–› 1
-MM_P1		EQU 1 					;Œ…‘Ÿ– ‘’€ˆ–› 1
+DD_P1		EQU 26					;—ˆ‘‹ ‘’€ˆ–› 1
+MM_P1		EQU 12					;Œ…‘Ÿ– ‘’€ˆ–› 1
 YY_P1		EQU 11					;ƒ„ ‘’€ˆ–› 1
 DD_P7		EQU 19					;—ˆ‘‹ ‘’€ˆ–› 7
 MM_P7		EQU 1 					;Œ…‘Ÿ– ‘’€ˆ–› 7
-YY_P7		EQU 11					;ƒ„ ‘’€ˆ–› 7.
+YY_P7		EQU 11					;ƒ„ ‘’€ˆ–› 7
 DATA_P0		EQU DD_P0+MM_P0<<5+YY_P0<<9+0X8000	;“€Š‚€€Ÿ „€’€ ‘‡„€ˆŸ ‘’€ˆ–› 0
 DATA_P1		EQU DD_P1+MM_P1<<5+YY_P1<<9+0X8000	;“€Š‚€€Ÿ „€’€ ‘‡„€ˆŸ ‘’€ˆ–› 1
 DATA_P7		EQU DD_P7+MM_P7<<5+YY_P7<<9+0X8000	;“€Š‚€€Ÿ „€’€ ‘‡„€ˆŸ ‘’€ˆ–› 7
@@ -30,7 +24,7 @@ FPGA_PAGE	EQU 7
 		ORG 0
 HEADER		DW EHEADER-HEADER
 		DB "NGSF"
-		DW DATA
+		DW DATA_VERS
 
 ;BLOK0
 		DD BLOK0*0X100+LOADER_PAGE

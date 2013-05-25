@@ -1,7 +1,7 @@
 
 ;LAST UPDATE: 30.01.2011 savelij
 
-		include macros.a80
+		include ../../../pentevo/rom/macros.a80
 		include ports_ngs.a80
 
 DDMMYY		EQU "30.01.2011"

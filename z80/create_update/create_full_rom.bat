@@ -21,8 +21,8 @@ ren crc.bin fpga.crc
 addcrc neogs.rom
 ren crc.bin neogs.crc
 
-..\..\tools\asw\asw -cpu z80undoc -U -L create_update.a80
-..\..\tools\asw\p2bin create_update.p ngs_rom.upd -r $-$ -k
+..\..\tools\asw\asw -cpu z80undoc -U -L make_full_rom.a80
+..\..\tools\asw\p2bin make_full_rom.p full_ngs.rom -r $-$ -k
 
 del loader_ngs.rom
 del neogs.rom
@@ -30,5 +30,7 @@ del loader.crc
 del fpga.crc
 del neogs.crc
 del crc.bin
+
+copy /B /Y full_ngs.rom D:\UnrealSpeccy\bootgs.bin
 
 pause

@@ -1,14 +1,9 @@
 
-;LAST UPDATE: 17.01.2011 savelij
+;LAST UPDATE: 26.12.2011 savelij
 
-		include macros.a80
+		include ../../../pentevo/rom/macros.a80
 		include ports_ngs.a80
-		include sdcomand.a80
-
-DD		EQU 17				;„€’€
-MM		EQU 1				;Œ…‘Ÿ–
-YY		EQU 11				;ƒŽ„
-DATA		EQU DD|MM<<5|YY<<9|0X8000	;“€ŠŽ‚€‹ˆ ‚ 16 ˆ’
+		include ../../../pentevo/rom/sdcomand.a80
 
 ;€„…‘ ‡€ƒ“‡Šˆ €‰„…Ž‰ Ž˜ˆ‚Šˆ
 ADRLOAD		EQU 0X8000
@@ -30,7 +25,7 @@ STRPAG		EQU 0X8000			;€„…‘ Š“„€ ‡€ƒ“‡Šˆ
 		OUT (VOL7),A
 		OUT (VOL8),A			;‡€ƒ‹“˜ˆ‹ˆ ŒŽ„ Ž’› „‹Ÿ ˆ‘Ž‹œ‡Ž‚€ˆŸ “”…€
 
-;	JP RDBYT03-2	Ž’‹€„Ž—€Ÿ ”ˆƒŸ
+;		JP RDBYT_DBG			;Ž’‹€„Ž—€Ÿ ”ˆƒŸ
 
 ;Ž†ˆ„€ˆ… ‡€ƒ“‡Šˆ Ž˜ˆ‚Šˆ ‘Ž ‘…Š€
 		LD B,0				;—ˆ’€…Œ 256 Ž’ ‘’€’“‘€
@@ -62,7 +57,7 @@ RDBYT02		IN A,(ZXCMD)			;‡€€‹ˆ €‰’ ˆ‡ Ž’€ ŠŽŒ€„
 		IN A,(ZXDATRD)			;‡€€‹ˆ €‰’ ˆ‡ Ž’€ „€›•
 		CP C				;‘€‚ˆ‹ˆ
 		JR NZ,RDBYT03			;…‘‹ˆ … ‘Ž‚€„€ž’, ƒ“‡ˆŒ ‘’€„€’“ž Ž˜ˆ‚Š“
-		CP 0XAA				;’Ž 0XAA?
+RDBYT_DBG	CP 0XAA				;’Ž 0XAA?
 RDBYT03		EX AF,AF'			;‚…Œ…Ž ‘Ÿ’€‹ˆ ”‹€ƒˆ Ž–…‘‘Ž€
 		LD HL,GRUZILA
 		LD DE,RAMCOD
@@ -77,7 +72,7 @@ GRUZILA
 		PHASE RAMCOD
 
 VERLOAD		DB "Loader"
-		DW DATA
+		DW DATA_VERS
 
 ;“’œ „Ž ”€‰‹€ Ž˜ˆ‚Šˆ GS
 F_PATH		DB "NEOGS.ROM",0
@@ -160,7 +155,7 @@ VERPAGE		IN A,(ZXDATRD)			;‡€€‹ˆ €‰’ ŽŒ…€ ‡€Ž˜…Ž‰ ‘’€ˆ–› ‡“
 ;		JR VERPAG2			;Ž˜‹ˆ € ……‚Ž„—ˆŠ ‚ ’…Š‘’Ž‚›‰ ‚ˆ„
 
 VERPAG1		INC A
-		OUT (MPAG),A			;‚Š‹ž—ˆ‹ˆ Ž‘‹…„ˆˆ 16Š ‚›€Ž‰ ‘’€ˆ–› ‡“
+		OUT (MPAG),A			;‚Š‹ž—ˆ‹ˆ Ž‘‹…„ˆ… 16Š ‚›€Ž‰ ‘’€ˆ–› ‡“
 		LD HL,0XFFF8
 		LD BC,8
 		LD DE,RAMCEND
@@ -395,8 +390,9 @@ MOV1		EX AF,AF'			;Ÿ—…Œ ‘—…’—ˆŠ
 ;‡€“‘Š ‡€ƒ“†…Ž‰ Ž˜ˆ‚Šˆ
 JPLDROM		XOR A
 		OUT (MPAG),A			;‚Š‹ž—ˆ‹ˆ ‘’€ˆ–“ 0 Ž‡“
-		LD A,0X13
-		OUT (GSCFG0),A			;‚Š‹ž—ˆ‹ˆ —€‘’Ž’“ 12Œƒ–, Ž’Š‹ž—ˆ‹ˆ ‡“ ˆ ‡€™ˆ’ˆ‹ˆ Ž‡“ Ž’ ‡€ˆ‘ˆ
+;		LD A,0X13			;‚Š‹ž—ˆ‹ˆ —€‘’Ž’“ 12Œƒ–, Ž’Š‹ž—ˆ‹ˆ ‡“ ˆ ‡€™ˆ’ˆ‹ˆ Ž‡“ Ž’ ‡€ˆ‘ˆ
+		LD A,0X23			;‚Š‹ž—ˆ‹ˆ —€‘’Ž’“ 20Œƒ–, Ž’Š‹ž—ˆ‹ˆ ‡“ ˆ ‡€™ˆ’ˆ‹ˆ Ž‡“ Ž’ ‡€ˆ‘ˆ
+		OUT (GSCFG0),A
 		JP 0				;‘’€’“…Œ ‘’€„€’“ž Ž˜ˆ‚Š“
 
 ;†„…Œ ŽŠ€ ‘…Š „€‘’ €‰’

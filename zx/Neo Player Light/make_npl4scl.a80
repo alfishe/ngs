@@ -3,12 +3,12 @@
 
 		include ../../../pentevo/rom/macros.a80
 
-ADR_LOADING	EQU 0X6000			;адрес загрузки и компиляции
+ADR_LOADING	EQU 0X8000			;адрес загрузки и компиляции
 START_CODE	EQU ADR_LOADING
 
 		ORG ADR_LOADING-0X117		;(END_HEADER-START_SCL)
 ;ЗАГОЛОВОК SCL ФАЙЛА
-START_SCL	DB "SINCLAIR",1,"FLASHNGSB"
+START_SCL	DB "SINCLAIR",1,"NPL     B"
 		DW BASIC_FULL,BASIC_FULL
 FULL_SIZE	DB SIZE_SECTORS+1
 
@@ -17,7 +17,6 @@ FULL_SIZE	DB SIZE_SECTORS+1
 ;END_HEADER
 	
 		ORG ADR_LOADING
-
 		LD HL,$
 		PUSH HL
 		LD HL,START_UNPACK
@@ -35,8 +34,7 @@ FULL_SIZE	DB SIZE_SECTORS+1
 		RET
 		
 START_UNPACK	include dec40.a80
-END_UNPACK
-		binclude flasher_pack.rom	;имя пакованной проги
+END_UNPACK	binclude npl_pack.rom	;имя пакованной проги
 END_COD
 
 		DUPL LOW (ADR_LOADING)+0X100-LOW ($),0
