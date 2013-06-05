@@ -103,6 +103,51 @@ TSTRAM2	MACRO
 	ENDM
 
 
+TSTRM22	MACRO
+
+	push	bc
+	push	de
+
+	ld	ixl,0
+.wrloop
+	ld	a,ixl
+	rrca
+	out	(c),a
+	LFSR
+	ld	(hl),a
+	inc	ixl
+	ld	a,ixl
+	add	a,a
+	jr	nc,.wrloop
+
+
+	pop	de
+	pop	bc
+
+	ld	ixl,0
+.rdloop
+	ld	a,ixl
+	rrca
+	out	(c),a
+	LFSR
+	cp	(hl)
+	jr	nz,.error
+	inc	ixl
+	ld	a,ixl
+	add	a,a
+	jr	nc,.rdloop
+	jr	.end
+
+.error
+	inc	a
+	out	(LEDCTR),a
+	jr	.error
+
+.end
+	ENDM
+
+
+
 
 	org	0x4000
 ; we are in 3rd 16k page now
@@ -126,8 +171,8 @@ testloop
 	ld	a,(led)
 	inc	a
 	ld	(led),a
-;	rrca
-;	rrca
+	rrca
+	rrca
 	out	(LEDCTR),a
 
 
@@ -180,9 +225,9 @@ loop2
 	ld	a,(led)
 	inc	a
 	ld	(led),a
-;	rrca
-;	rrca
-;	rrca
+	rrca
+	rrca
+	rrca
 	out	(LEDCTR),a
 
 	ld	h,0xE0
@@ -216,12 +261,12 @@ loop2
 
 
 	ld	h,0xA0
-	ld	c,MPAG
-	TSTRAM2
+	ld	c,MPAG ;128 values for each port -- only 64 for mpag!!!
+	TSTRM22
 
 	ld	h,0xE0
 	ld	c,MPAGEX
-	TSTRAM2
+	TSTRM22
 
 	jp	loop2
 
