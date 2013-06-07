@@ -1,13 +1,16 @@
 
-;LAST UPDATE: 05.06.2013 savelij
+;LAST UPDATE: 07.06.2013 savelij
 
 		include macros.a80
 		include sdcomand.a80
 		include ports_ngs.a80
 		include global_vars.a80
 
+;ŠŽ‹ˆ—…‘’‚Ž ‘…Š’ŽŽ‚ ‚ Š‹€‘’…… ‚ ……Œ…Ž‰ BYTSSEC
+;ŠŽ…– –…Ž—Šˆ ŽŒ…Ž‚ ‘’€˜ˆ‰ €‰’ 32 ˆ’ŽƒŽ —ˆ‘‹€ = 0XFF
+
 NGS		EQU 0				;0-ŠŽŒˆ‹Ÿ–ˆŸ „‹Ÿ ZSD, 1-ŠŽŒˆ‹Ÿ–ˆŸ „‹Ÿ NEOGS
-CONV_NUMSEC	EQU 0				;0-‘Ž•€Ÿ’œ ŽŒ… Š‹€‘’…€, 1-‘Ž•€Ÿ’œ ŽŒ… ‘…Š’Ž€
+CONV_NUMSEC	EQU 1				;0-‘Ž•€Ÿ’œ ŽŒ… Š‹€‘’…€, 1-‘Ž•€Ÿ’œ ŽŒ… ‘…Š’Ž€
 ADR_LOADING	EQU 0XC000			;€„…‘ “Š‹€„Šˆ ŽŒ…Ž‚ Š‹€‘’…Ž‚/‘…Š’ŽŽ‚
 
 ;‘’€’Ž‚€Ÿ ‘’€ˆ–€ „‹Ÿ ‘ˆ‘Š€ Š‹€‘’…Ž‚, Ž ‡€Ž‹…ˆž ŽŒ… ‘’€ˆ–› „…Š…Œ…’ˆ’‘Ÿ
@@ -27,7 +30,7 @@ BUFF_SEC	EQU 0X8000
 		JR $
 
 ;“’œ „Ž ”€‰‹€, ’Ž‹œŠŽ ‚ ‚…•…Œ …ƒˆ‘’… ˆŽ Žˆ‘Š ‚…„…’‘Ÿ Ž ŠŽŽ’ŠŽŒ“ ˆŒ…ˆ ‚ˆ„€ 8.3
-F_PATH		DB "HD1.IMG",0
+F_PATH		DB "DEMO/ANAMORIG.UDI",0
 ;ŒŽ†Ž “Š€‡€’œ “’œ ‚ ‚ˆ„… "DIR/DIR/FILE.EXT" 0 ‚ ŠŽ–… ‘’ŽŠˆ ŽŸ‡€’…‹…
 
 ;---------------------------------
@@ -469,7 +472,9 @@ FINDFL2		LD A,IYL
 FINDFL3		IF CONV_NUMSEC=1
 		PUSH BC
 		PUSH DE
+		PUSH HL
 		CALL REALSEC			;ŠŽ‚…‘ˆŸ ŽŒ…€ Š‹€‘’…€ ‚ ŽŒ… ‘…Š’Ž€
+		POP HL
 		CALL SAVEZP			;“Š‹€„Š€ ‚ “”… ŽŒ…€ ‘…Š’Ž€
 		POP DE
 		POP BC
@@ -478,13 +483,15 @@ FINDFL3		IF CONV_NUMSEC=1
 		ENDIF
 		LD A,H
 		AND A
-		JR Z,FINDFL2
+		JR Z,FINDFL2			;Ž‚…Š€ € ŠŽ…– €ŒŸ’ˆ
 		PUSH HL
 		CALL RDFATZP
 		CALL LST_CLS
 		POP HL
 		JR NC,FINDFL3
-		RET
+		XOR A
+		LD B,0XFF
+		JP SAVEZP			;ŠŽ…– –…Ž—Šˆ ‘’€˜ˆ‰ €‰’ ŽŒ…€ = FF
 
 SAVEZP		LD (HL),E
 		INC HL
