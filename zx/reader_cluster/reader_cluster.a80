@@ -1,5 +1,5 @@
 
-;LAST UPDATE: 07.06.2013 savelij
+;LAST UPDATE: 08.06.2013 savelij
 
 		include macros.a80
 		include sdcomand.a80
@@ -8,21 +8,26 @@
 
 ;ŠŽ‹ˆ—…‘’‚Ž ‘…Š’ŽŽ‚ ‚ Š‹€‘’…… ‚ ……Œ…Ž‰ BYTSSEC
 ;ŠŽ…– –…Ž—Šˆ ŽŒ…Ž‚ ‘’€˜ˆ‰ €‰’ 32 ˆ’ŽƒŽ —ˆ‘‹€ = 0XFF
+;„‹Ÿ ƒ‘ …†ˆŒ€ “—ˆ’›‚€’œ Ž‹Ž†…ˆ… ‘’…Š€, €„…‘ €Ž’› ŠŽ„€ ˆ Ž‹Ž†…ˆ… ……Œ…›•
 
-NGS		EQU 0				;0-ŠŽŒˆ‹Ÿ–ˆŸ „‹Ÿ ZSD, 1-ŠŽŒˆ‹Ÿ–ˆŸ „‹Ÿ NEOGS
+NGS		EQU 1				;0-ŠŽŒˆ‹Ÿ–ˆŸ „‹Ÿ ZSD, 1-ŠŽŒˆ‹Ÿ–ˆŸ „‹Ÿ NEOGS
 CONV_NUMSEC	EQU 1				;0-‘Ž•€Ÿ’œ ŽŒ… Š‹€‘’…€, 1-‘Ž•€Ÿ’œ ŽŒ… ‘…Š’Ž€
-ADR_LOADING	EQU 0XC000			;€„…‘ “Š‹€„Šˆ ŽŒ…Ž‚ Š‹€‘’…Ž‚/‘…Š’ŽŽ‚
 
 ;‘’€’Ž‚€Ÿ ‘’€ˆ–€ „‹Ÿ ‘ˆ‘Š€ Š‹€‘’…Ž‚, Ž ‡€Ž‹…ˆž ŽŒ… ‘’€ˆ–› „…Š…Œ…’ˆ’‘Ÿ
 		IF NGS=1
-NUM_PAGE	EQU 0X7F			;ŽŒ… ‘’€ˆ–› Š“„€ ‘Š‹€„ˆŽ‚€’œ ‘ˆ‘ŽŠ Š‹€‘’…Ž‚ ‡€Œ…ˆ’œ € “†›‰
-BUFF_SEC	EQU 0X5000
+NUM_PAGE	EQU 0X7F			;‘’€’Ž‚€Ÿ ‘’€ˆ–€ “Š‹€„Šˆ Š‹€‘’…Ž‚/‘…Š’ŽŽ‚                        
+BUFF_SEC	EQU 0X5000			;€„…‘ “”…Ž‚ ˆ ……Œ…›•                                           
+ADR_LOADING	EQU 0X8000			;€„…‘ “Š‹€„Šˆ ŽŒ…Ž‚ Š‹€‘’…Ž‚/‘…Š’ŽŽ‚                             
+ADR_EXEC	EQU 0X6000			;€„…‘ ˆ‘Ž‹…ˆŸ ŠŽ„€                                                
 		ELSE
-NUM_PAGE	EQU 4
-BUFF_SEC	EQU 0X8000
+NUM_PAGE	EQU 7				;‘’€’Ž‚€Ÿ ‘’€ˆ–€ “Š‹€„Šˆ Š‹€‘’…Ž‚/‘…Š’ŽŽ‚
+BUFF_SEC	EQU 0X8000			;€„…‘ “”…Ž‚ ˆ ……Œ…›•
+ADR_LOADING	EQU 0XC000			;€„…‘ “Š‹€„Šˆ ŽŒ…Ž‚ Š‹€‘’…Ž‚/‘…Š’ŽŽ‚
+ADR_EXEC	EQU 0X6000			;€„…‘ ˆ‘Ž‹…ˆŸ ŠŽ„€
 		ENDIF
 
-		ORG 0X6000			;-> ‡€Œ…ˆ’œ € ‹žŽ‰ “„Ž›‰
+		ORG ADR_EXEC			;-> ‡€Œ…ˆ’œ € ‹žŽ‰ “„Ž›‰
+		DI
 		LD HL,F_PATH			;€„…‘ ˆ’ˆ ˆ ˆŒ…ˆ ”€‰‹€ „‹Ÿ Žˆ‘Š€
 		LD A,NUM_PAGE			;ŽŒ… ‘’€ˆ–› Š“„€ ‘Š‹€„›‚€’œ ŽŒ…€ Š‹€‘’…Ž‚/‘…Š’ŽŽ‚
 		CALL READ_CLS
@@ -30,7 +35,11 @@ BUFF_SEC	EQU 0X8000
 		JR $
 
 ;“’œ „Ž ”€‰‹€, ’Ž‹œŠŽ ‚ ‚…•…Œ …ƒˆ‘’… ˆŽ Žˆ‘Š ‚…„…’‘Ÿ Ž ŠŽŽ’ŠŽŒ“ ˆŒ…ˆ ‚ˆ„€ 8.3
-F_PATH		DB "DEMO/ANAMORIG.UDI",0
+F_PATH		IF NGS=0
+		DB "DEMO/ANAMORIG.UDI",0
+		ELSE
+		DB "MP3/MIC-RO~1.MP3",0
+		ENDIF
 ;ŒŽ†Ž “Š€‡€’œ “’œ ‚ ‚ˆ„… "DIR/DIR/FILE.EXT" 0 ‚ ŠŽ–… ‘’ŽŠˆ ŽŸ‡€’…‹…
 
 ;---------------------------------
@@ -89,6 +98,8 @@ CS_HIGH		PUSH AF
 READ_CLS	LD IYL,A;LY,A			;‘Ž•€ˆ‹ˆ ŽŒ… ‘’€ˆ–› Š“„€ ƒ“‡ˆ’œ
 		LD (ADRPATH),HL			;‘Ž•€ˆ‹ˆ €„…‘ ‘’ŽŠˆ “’ˆ
 		LD (OLD_SP),SP			;‘Ž•€ˆ‹ˆ ‘’…Š
+		LD A,0XFF
+		LD (LSTLOAD+3),A		;ˆ“„ˆ’…‹œ€Ÿ ‡€ƒ“‡Š€ ‘…Š’Ž€ …‡ Ž‚…Šˆ €‹ˆ—ˆŸ ‚ “”……
 		IF NGS=1
 		LD A,1
 		OUT (GSCFG0),A			;Ž’Š‹ž—ˆ‹ˆ ‡“, ‚‘… ‘’€ˆ–€ Ž‡“
@@ -358,7 +369,7 @@ RDFAT04		LD (CAL_FAT),A			;“’Ž—ˆ‹ˆ ’ˆ ”€’€
 		LD HL,STARTRZ
 		CALL BCDEHLP
 		LD (FATSTR),DE
-		LD (FATSTR+2),BC		;‚›—ˆ‘‹ˆ‹ˆ ˆ Ž‹Ž†ˆ‹ˆ ŽŒ… ‘…Š’Ž€ €—€‹€ FAT-…€‹ˆ–
+		LD (FATSTR+2),BC		;‚›—ˆ‘‹ˆ‹ˆ ˆ Ž‹Ž†ˆ‹ˆ ŽŒ… ‘…Š’Ž€ €—€‹€ FAT-T€‹ˆ–
 		EX AF,AF'
 		AND A
 		LD DE,0
