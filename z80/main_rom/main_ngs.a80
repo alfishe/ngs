@@ -1,9 +1,9 @@
 
 ;1720708
 
-;LAST UPDATE: 11.11.2012 savelij
+;LAST UPDATE: 16.06.2013 savelij
 
-		include ../../../pentevo/rom/macros.a80
+		include macros.a80
 		include ports_ngs.a80
 		include equ_ngs.a80
 		include sdcomand.a80
@@ -22,7 +22,7 @@
 		JP INIT
 
 ;---patched
-		DEFB 0X08			;LOW	(in BCD!)
+		DEFB 0X09			;LOW	(in BCD!)
 		DEFB 0X01			;HIGH	(in BCD!)
 ;---
 
@@ -75,7 +75,7 @@ NMILP3		IN A,(ZXSTAT)
 		ORG GSRomBaseL+0X0100
 		DB "General  Sound (tm)  ROM"
 		DB "Copyright   1997 Stinger"
-		DB "Version 1.08            "
+		DB "Version 1.09            "
 
 ; LOW ROM INCLUDES
 
@@ -141,9 +141,9 @@ INIT_		XOR A
 		OUT (MPAG),A
 		LD A,(HL)
 		CP 0XAA
-		LD A,0X7E
+		LD A,0X7E			;äéãàóÖëíÇé ëíêÄçàñ Ñãü 4 åÖÉÄÅÄâíçéâ NEOGS
 		JR Z,CP_RAMPAGES
-		LD A,0X3E
+		LD A,0X3E			;äéãàóÖëíÇé ëíêÄçàñ Ñãü 2 åÖÉÄÅÄâíçéâ NEOGS
 CP_RAMPAGES	LD (NUMPG),A
 		OUT (ZXDATWR),A
 		ADD A,2
@@ -155,16 +155,92 @@ CREATE_TABL	LD (HL),A
 		INC A
 		CP B
 		JR C,CREATE_TABL
-		LD (HL),1
-		INC HL
-		LD (HL),0
-		LD SP,0X8000
 		XOR A
 		OUT (MPAG),A
+		LD (HL),1
+		INC HL
+		LD (HL),A
+		LD SP,0X8000
 		JP Patch5i3
 
+SET_SIZE_MOD	LD A,E
+		INC A
+		LD (SIZE_MOD),A		;êÄáåÖê áÄÉêÜÖççéÉé îÄâãÄ Ç 32ä ëíêÄçàñÄï
+		JP PLAYMD
+
+SET7XOR		XOR A
+		OUT (VOL1),A
+		OUT (VOL2),A
+		OUT (VOL3),A
+		OUT (VOL4),A
+		OUT (VOL5),A
+		OUT (VOL6),A
+		OUT (VOL7),A
+		OUT (VOL8),A
+		OUT (VOL8),A
+		PUSH HL
+		LD HL,0
+		ADD HL,SP
+		EXX
+		LD A,0X10
+		LD SP,0X7F00
+		LD BC,0XA97E
+		LD DE,0X2C77
+SPEDI1		REPT 16
+		PUSH DE
+		PUSH BC
+		ENDM
+		DEC A
+		JP NZ,SPEDI1
+		LD HL,SPEDI2
+		LD DE,0X7F00
+		LD BC,ESPEDI2-SPEDI2
+		LDIR
+		EXX
+		LD SP,HL
+		POP HL
+		LD A,L
+		EXX
+		LD L,A
+		LD H,0
+		LD BC,0X7B00
+		ADD HL,HL
+		ADD HL,HL
+		ADD HL,BC
+		EX (SP),HL
+		EXX
+		LD A,(SIZE_MOD)
+		LD B,A
+		LD C,0X80
+		RET
+
+SPEDI2		INC H
+		JP NZ,0X7B00
+		INC E
+		LD A,(DE)
+		LD H,0X80
+		OUT (MPAG),A
+		DEC B
+		JP NZ,0X7B00
+		JP END7XOR
+ESPEDI2
+
+END7XOR		EXX
+		LD HL,0
+		ADD HL,SP
+		LD SP,0X8000
+		LD DE,0X8080
+		LD B,0X28
+E7X1		REPT 16
+		PUSH DE
+		ENDM
+		DJNZ E7X1
+		LD SP,HL
+		EXX
+		JP NOCONV
+
 		DUPL GSRomBaseL+0X269-$,0
-		ORG GSRomBaseL+0X269
+;		ORG GSRomBaseL+0X269
 
 ;INCLUDE "COM_L.a80"
 COMHZ		OUT (CLRCBIT),A
@@ -235,7 +311,7 @@ WTDTG		IN A,(ZXSTAT)
 COMTAB		DEFW COM00,COM01,COM02,COM03,COM04,COM05,COM06,COM07	;0365,036C,0381,0390,039E,03A8,03B8,03D0
 		DEFW COM08,COM09,COM0A,COM0B,COM0C,COM0D,COM0E,COM0F	;0360,03F3,0407,041F,0444,046E,0497,04AE
 		DEFW COM10,COM11,COM12,COM13,COM14,COM15,COM16,COM17	;0511,0522,052E,0537,0545,0594,05FE,0617
-		DEFW COM18,COM19,COM1A,COM1B,COM1C,COM1D,GSDDRV,COM1F	;062A,063A,0642,064A,0650,0662,0360,0360
+		DEFW COM18,COM19,COM1A,COM1B,COM1C,COM1D,COM1E,COM1F	;062A,063A,0642,064A,0650,0662,0360,0360
 		DEFW COMF0,COMF1,COMF2,COMF3,COMF4,COMF5,COMF6,COMF7	;066F,0360,0360,0679,067E,0683,069B,06B0
 		DEFW COMF8,COMF9,COMFA,COMFB,COMFC,COMFD,COMFE,COMFF	;0360,0360,06B9,0360,0360,0360,0360,0360
 
@@ -999,11 +1075,11 @@ LOAD3   LD A,E
         LD (CURADR+2),A
         LD (MEMBOT),HL
         LD (MEMBOT+2),A
-        LD E,A
+        EX AF,AF'	;LD E,A
         XOR A
         LD (CPAGE),A
         OUT (MPAG),A
-        LD A,E
+        EX AF,AF'	;LD A,E
         RET
 
 ;INCLUDE "PLAY.a80"
@@ -1273,28 +1349,33 @@ LPCNT   LD A,(IY+24)
         LD B,A
 SMPMD2  LD A,(DE)
         OUT (MPAG),A
-SMPMD1  LD A,(HL)		;≠†Á†´Æ ADD A,0X80
-        ADD A,0X80
-        LD (HL),A
-        INC L
-        JP NZ,SMPMD1
-        INC H
-        JP NZ,SMPMD1
-        LD H,0X80
-        INC E
-        DJNZ SMPMD2
-        LD A,(DE)
-        OUT (MPAG),A
-        OR A
-        JR Z,SMPMD4
-SMPMD3  LD A,(HL)
-        ADD A,0X80
-        LD (HL),A
-        INC L
-        JP NZ,SMPMD3
-        INC H
-        BIT 6,H
-        JP Z,SMPMD3
+		CALL SET7XOR	;äéçÇÖêëàü áÄÉêìÜÖççéÉé MOD îÄâãÄ
+		JR SMPMD4
+
+;SMPMD1  LD A,(HL)		;≠†Á†´Æ ADD A,0X80
+;        ADD A,0X80
+;        LD (HL),A
+;        INC L
+;        JP NZ,SMPMD1
+;        INC H
+;        JP NZ,SMPMD1
+;        LD H,0X80
+;        INC E
+;        DJNZ SMPMD2
+;        LD A,(DE)
+;        OUT (MPAG),A
+;        OR A
+;        JR Z,SMPMD4
+;SMPMD3  LD A,(HL)
+;        ADD A,0X80
+;        LD (HL),A
+;        INC L
+;        JP NZ,SMPMD3
+;        INC H
+;        BIT 6,H
+;        JP Z,SMPMD3
+
+		DUPL 0XF20-$,0XFF
 SMPMD4
 NOCONV  XOR A
         LD (CPAGE),A
@@ -2612,7 +2693,7 @@ Patch5s	LD HL,0X0200
 	RET
 
 ;reconstruct MOD after load
-Patch5x	CALL PLAYMD		;init MOD
+Patch5x	CALL SET_SIZE_MOD		;CALL PLAYMD		;init MOD
 	LD HL,(MODLLEN)
 	LD A,H
 	OR L
@@ -2917,8 +2998,6 @@ Patch5i3	XOR A
 		JP INITVAR
 
 CP_END_MOD
-
-		include ngs_sd_drv.a80
 
 	;LD HL,MTSNGPS
 	;INC (HL)
@@ -8489,41 +8568,15 @@ INITVAR DI
         LD SP,0X8000
         LD HL,0X8080
         LD B,0X00
-INITV00 PUSH HL
+INITV00 REPT 16
         PUSH HL
-        PUSH HL
-        PUSH HL
-        PUSH HL
-        PUSH HL
-        PUSH HL
-        PUSH HL
-        PUSH HL
-        PUSH HL
-        PUSH HL
-        PUSH HL
-        PUSH HL
-        PUSH HL
-        PUSH HL
-        PUSH HL
+        ENDM
         DJNZ INITV00
         LD HL,0X0000
-        LD B,0XFE
-INITV01 PUSH HL
+        LD B,0XFC;0XFE	; éóàôÄíú èÄåüíú çÖ çàÜÖ 00X4080 óíéÅõ çÖ ìçàóíéÜÄíú íÄÅãàñì ëíêÄçàñ
+INITV01 REPT 16
         PUSH HL
-        PUSH HL
-        PUSH HL
-        PUSH HL
-        PUSH HL
-        PUSH HL
-        PUSH HL
-        PUSH HL
-        PUSH HL
-        PUSH HL
-        PUSH HL
-        PUSH HL
-        PUSH HL
-        PUSH HL
-        PUSH HL
+        ENDM
         DJNZ INITV01
         LD SP,ISTACK
         LD (NUMPG),A

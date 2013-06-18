@@ -1,15 +1,11 @@
 @ECHO OFF
 
-..\..\tools\asw\asw -cpu z80undoc -U -L main_ngs.a80
-..\..\tools\asw\p2bin main_ngs.p neogs.rom -r $-$ -k
-rem ..\..\tools\sjasmplus\sjasmplus -isrc make_rom.a80
+..\..\tools\asw\asw -U -L main_ngs.a80
+..\..\tools\asw\p2bin main_ngs.p NEOGS.ROM -r $-$ -k
 
-rem ..\..\tools\sjasmplus\sjasmplus --sym=sym.log --lst=dump.log -isrc make_rom.a80
+..\..\tools\asw\asw -U -L main_full.a80
+..\..\tools\asw\p2bin main_full.p full_ngs.rom -r $-$ -k
 
-rem if %errorlevel% neq 0 goto end
-
-rem copy /B /Y gsroml+gsromh gs105a.rom
-rem del gsroml
-rem del gsromh
+copy /B /Y full_ngs.rom d:\unrealspeccy\bootgs.bin
 
 pause

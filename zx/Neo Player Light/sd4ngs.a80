@@ -1,17 +1,17 @@
 
-;LAST UPDATE 17.12.2009 savelij
+;LAST UPDATE 17.06.2013 savelij
 
 ;SD & MP3 ”“–  …€
-Sd_init		EQU 0		;’ SD €’›
-Sd__off		EQU 1		;‘’… ‚›€
-Rdsingl		EQU 2		;—’€’ 1 ‘…’
-Rdmulti		EQU 3		;—’€’ "A" ‘…’
-Wrsingl		EQU 4		;‡€‘€’ 1 ‘…’-…’“
-Wrmulti		EQU 5		;‡€‘€’ "A" ‘…’‚-…’“
-Avtodet		EQU 6		;€‚’„…’…’ GS/NeoGS
-Freqnc		EQU 7		;“‘’€‚€ —€‘’’›
-Hardmp3		EQU 8		;‹›‰ ’ MP3 —€
-Ldi_mp3		EQU 9		;……„€—€ ‘…’€ ‘ SD>MP3
+Sd_init		EQU 0			;’ SD €’›
+Sd__off		EQU 1			;‘’… ‚›€
+Rdsingl		EQU 2			;—’€’ 1 ‘…’
+Rdmulti		EQU 3			;—’€’ "A" ‘…’
+Wrsingl		EQU 4			;‡€‘€’ 1 ‘…’-…’“
+Wrmulti		EQU 5			;‡€‘€’ "A" ‘…’‚-…’“
+Avtodet		EQU 6			;€‚’„…’…’ GS/NeoGS
+Freqnc		EQU 7			;“‘’€‚€ —€‘’’›
+Hardmp3		EQU 8			;‹›‰ ’ MP3 —€
+Ldi_mp3		EQU 9			;……„€—€ ‘…’€ ‘ SD>MP3
 Com_mp3		EQU 0X0A		;RD/WR MP3 —€
 Softmp3		EQU 0X0B		;SOFT ’ MP3 —€
 Dat2mp3		EQU 0X0C		;……„€—€ ‘…. GSDAT>MP3
@@ -33,7 +33,8 @@ Zer2mp3		EQU 0X0D		;……„€—€ 2048 “‹…‰>MP3
 ;A=3-―®―λβª  § ―¨α¨ Ά α¥ªβ®ΰ 0 ª ΰβλ
 ;A=0X80-ª ΰβ  ―¥ΰ¥αβ «  ®βΆ¥η βμ
 
-;™€ ’—€ ‚•„€ „‹ €’› ‘
+;™€ ’—€ ‚•„€ „‹ €’› ‘ SD €’‰
+		CALL CMP_INT
 		DI
 		EXX
 		PUSH HL			;‘•€‹ HL'
@@ -68,6 +69,12 @@ ERR_SD		EX DE,HL
 		POP DE
 		POP HL
 		EXX
+		PUSH AF
+		LD A,(INT_MODE)
+		AND A
+		JR Z,ERR_SD1
+		EI
+ERR_SD1		POP AF
 		RET
 
 TABL_SD		DW SD_INIT		;0 ― ΰ ¬¥βΰ®Ά ­¥ βΰ¥΅γ¥β, ­  Άλε®¤¥ A α¬®βΰ¨ Άλθ¥ ―¥ΰΆλ¥ 2 §­ η¥­¨ο
@@ -354,7 +361,8 @@ AVTODET		IN A,(GSCFG0)
 NO_MP3		LD A,0XFF
 		RET
 
-FREQNC		LD D,C_10MHZ			;0X30
+FREQNC		LD A,E
+		LD D,C_10MHZ			;0X30
 		AND 3
 		JR Z,FREQNCS
 		LD D,C_12MHZ			;0X10
@@ -390,7 +398,7 @@ HARDMP3		XOR A
 		LD BC,MC_SEND
 		LD A,%10011100			;0X9C
 		OUT (SCTRL),A
-		XOR A
+		LD E,0
 		CALL FREQNC			;‚›‘’€‚‹ —€‘’’“ € NGS 10 ƒζ
 		LD HL,0X0301
 		CALL COM_MP3
@@ -414,7 +422,7 @@ HARDMP3		XOR A
 		CALL Z,COM_MP3			;‡€‘ …„“…’‚€ƒ € ‚
 						;…„“…’‚€›‰ …ƒ‘’, …‘‹
 						;’› 6-4 …ƒ‘’€ ‘’€’“‘€ ‚ “‹…
-		LD A,1
+		LD E,1
 		JP FREQNC			;‚›‘’€‚‹ —€‘’’“ € NGS 12 ƒζ
 
 ;ƒ€›‰ ‘‘ MP3 „…„…€, ……„“…’‘ ‚›‡›‚€’ ……„ €†„› ‚› ”€‰‹, ‘€‘›‚€…’ ‘—…’— ‘…“„

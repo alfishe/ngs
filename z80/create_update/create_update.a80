@@ -1,14 +1,14 @@
 
-;LAST UPDATE: 26.12.2011 savelij
+;LAST UPDATE: 15.06.2013 savelij
 
-		include ../../../pentevo/rom/macros.a80
+		include macros.a80
 
-DD_P0		EQU 26					;—ˆ‘‹Ž ‘’€ˆ–› 0
-MM_P0		EQU 12					;Œ…‘Ÿ– ‘’€ˆ–› 0
-YY_P0		EQU 11					;ƒŽ„ ‘’€ˆ–› 0
-DD_P1		EQU 26					;—ˆ‘‹Ž ‘’€ˆ–› 1
-MM_P1		EQU 12					;Œ…‘Ÿ– ‘’€ˆ–› 1
-YY_P1		EQU 11					;ƒŽ„ ‘’€ˆ–› 1
+DD_P0		EQU 15					;—ˆ‘‹Ž ‘’€ˆ–› 0
+MM_P0		EQU 6					;Œ…‘Ÿ– ‘’€ˆ–› 0
+YY_P0		EQU 13					;ƒŽ„ ‘’€ˆ–› 0
+DD_P1		EQU 15					;—ˆ‘‹Ž ‘’€ˆ–› 1
+MM_P1		EQU 6					;Œ…‘Ÿ– ‘’€ˆ–› 1
+YY_P1		EQU 13					;ƒŽ„ ‘’€ˆ–› 1
 DD_P7		EQU 19					;—ˆ‘‹Ž ‘’€ˆ–› 7
 MM_P7		EQU 1 					;Œ…‘Ÿ– ‘’€ˆ–› 7
 YY_P7		EQU 11					;ƒŽ„ ‘’€ˆ–› 7
@@ -16,7 +16,12 @@ DATA_P0		EQU DD_P0+MM_P0<<5+YY_P0<<9+0X8000	;“€ŠŽ‚€€Ÿ „€’€ ‘Ž‡„€ˆŸ ‘’€ˆ–› 
 DATA_P1		EQU DD_P1+MM_P1<<5+YY_P1<<9+0X8000	;“€ŠŽ‚€€Ÿ „€’€ ‘Ž‡„€ˆŸ ‘’€ˆ–› 1
 DATA_P7		EQU DD_P7+MM_P7<<5+YY_P7<<9+0X8000	;“€ŠŽ‚€€Ÿ „€’€ ‘Ž‡„€ˆŸ ‘’€ˆ–› 7
 
+;—’Ž ‚ ŽŽ‚‹…ˆˆ
+LDPAGE		EQU 1
+MAINPAGE	EQU 1
+FPGAPAGE	EQU 0
 
+;ŽŒ…€ 64K ‘’€ˆ–
 LOADER_PAGE	EQU 0
 MAINROM_PAGE	EQU 1
 FPGA_PAGE	EQU 7
@@ -25,30 +30,39 @@ FPGA_PAGE	EQU 7
 HEADER		DW EHEADER-HEADER
 		DB "NGSF"
 		DW DATA_VERS
-
 ;BLOK0
+		IF LDPAGE=1
 		DD BLOK0*0X100+LOADER_PAGE
 		DW BLOK1-BLOK0
 		binclude loader.crc
 		DB "LOADER"
 		DW DATA_P0
-
+		ENDIF
 ;BLOK1		
+		IF MAINPAGE=1
 		DD BLOK1*0X100+MAINROM_PAGE
 		DW BLOK7-BLOK1
 		binclude neogs.crc
 		DB "MAIN  "
 		DW DATA_P1
-
+		ENDIF
 ;BLOK7
+		IF FPGAPAGE=1
 		DD BLOK7*0X100+FPGA_PAGE
 		DW BLOKE-BLOK7
 		binclude fpga.crc
 		DB "FPGA  "
 		DW DATA_P7
+		ENDIF
 EHEADER
 
-BLOK0		binclude loader_ngs.rom
-BLOK1		binclude neogs.rom
-BLOK7		binclude fpga.bin
+BLOK0		IF LDPAGE=1
+		binclude loader_ngs.rom
+		ENDIF
+BLOK1		IF MAINPAGE=1
+		binclude neogs.rom
+		ENDIF
+BLOK7		IF FPGAPAGE=1
+		binclude fpga.bin
+		ENDIF
 BLOKE

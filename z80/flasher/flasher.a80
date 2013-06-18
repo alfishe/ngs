@@ -1,10 +1,10 @@
 
-;LAST UPDATE: 30.01.2011 savelij
+;LAST UPDATE: 10.06.2013 savelij
 
 		include ../../../pentevo/rom/macros.a80
 		include ports_ngs.a80
 
-DDMMYY		EQU "30.01.2011"
+DDMMYY		EQU "10.06.2013"
 
 DD		EQU 30				;—ˆ‘‹Ž
 MM		EQU 1				;Œ…‘Ÿ–
@@ -624,8 +624,9 @@ MINILDE
 
 NGS_LOADER	binclude ../loader_ngs/loader_ngs.rom
 NGS_LOADERE
+
 		include window.a80
-		include flasher_data.a80
 CHARS		binclude altstd.bin
+		include flasher_data.a80
 
 TEXT_VERSUS

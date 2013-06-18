@@ -1,7 +1,7 @@
 
-;LAST UPDATE 20.10.2012 savelij
+;LAST UPDATE 18.06.2013 savelij
 
-		include ../../../pentevo/rom/macros.a80
+		include macros.a80
 	        include ports_ngs.a80
 
 GSCOD		EQU 0X8000			;€„…‘ Š“„€ ‡€Šˆ„›‚€’œ ŠŽ„ € ƒ‘
@@ -18,6 +18,7 @@ START		DI
 		LD SP,0
 STEK		EQU $-2
 		RES 3,(IY+48)
+		RES 5,(IY+1)
 
 ;“„…†€ˆ… ˆ ‡€“‘Š… CS =  TURBO OFF
 		LD A,0XFE
@@ -87,8 +88,14 @@ LOOP25		EI
 		JR C,LOOP25			;ŠŽŒ€„ ˆ’ ˆ‡Œ…ˆ‹‘Ÿ, Ž„Ž‹†€…Œ
 
 ;‡€ƒ“‡Š€ ˆ ‡€“‘Š ŠŽ„€ € NEOGS
-LOOP24		LD DE,0X3F00+MPAG		;‚Š‹ž—€…Œ ‘’€„€’Ž‰ ŠŽŒ€„Ž‰ Ž˜ˆ‚Šˆ
-		CALL OUTPORT			;‘’€ˆ–“ 0X3F € ƒ‘ „‹Ÿ ‡€ƒ“‡Šˆ ‚“’……ƒŽ ‹……€
+LOOP24		LD A,0X23			;‡€Ž‘ ŠŽ‹ˆ—…‘’‚€ ‘’€ˆ– €ŒŸ’ˆ
+		OUT (GSCOM),A			;„‹Ÿ Ž…„…‹…ˆŸ ‚ Š€Š“ž ‘’€ˆ–“ ‹…… ‡€Šˆ„›‚€’œ
+		CALL WC
+		IN A,(GSDAT)
+		OR 0X3F
+		LD D,A
+		LD E,MPAG			;‚Š‹ž—€…Œ ‘’€„€’Ž‰ ŠŽŒ€„Ž‰ Ž˜ˆ‚Šˆ
+		CALL OUTPORT			;‘’€ˆ–“ € ƒ‘ „‹Ÿ ‡€ƒ“‡Šˆ ‚“’……ƒŽ ‹……€
 		LD BC,GSDAT			;‘’€„€’›Œˆ ‘…„‘’‚€Œˆ ƒ“‡ˆŒ ŠŽ„ € ƒ‘ 
 		LD DE,FAT_END-GO_YES
 		LD HL,GSCOD
@@ -137,7 +144,7 @@ LOOP13		LD A,7
 		CP 0X77
 		JR Z,Warm			;…‘‹ˆ Ž’‚…’ 0X77, ’Ž Ž’‚…’ˆ‹ ‚“’…ˆ‰ ‹……
 		CP 0XEE
-		JR NZ,LOOP17		
+		JR NZ,LOOP17
 		LD A,7
 		CALL CLS
 		LD HL,MESS13
@@ -222,16 +229,16 @@ LOOP14		EI
 		LD A,H
 		BIT 1,A
 		LD HL,MODCOM
-		JR NZ,$+5
+		JR NZ,LOOP14_1
 		LD HL,MP3COM
-		LD DE,4
-		LD A,(HL)
+LOOP14_1	LD DE,4
+LOOP14_2	LD A,(HL)
 		AND A
 		JR Z,LOOP
 		CP B
 		JR Z,RDCOMM
 		ADD HL,DE
-		JR $-8
+		JR LOOP14_2
 
 RDCOMM		INC HL
 		LD A,(HL)
@@ -242,52 +249,52 @@ RDCOMM		INC HL
 		EX DE,HL
 		JP (HL)
 
-MP3COM		DB 0X36,0X09
+MP3COM		DB "6",0X09
 		DW EXE1
-		DB 0X37,0X08
+		DB "7",0X08
 		DW EXE1
-		DB 0X38,0X07
+		DB "8",0X07
 		DW EXE1
-		DB 0X39,0X06
+		DB "9",0X06
 		DW EXE2
 		DB 0X0D,0X0A
 		DW EXE1
-		DB 0X3A,0X17
+		DB ":",0X17
 		DW EXE1
-		DB 0X71,0X03
-		DW EXE3
-		DB 0X61,0X01
-		DW EXE3
-		DB 0X77,0X0C
-		DW EXE3
-		DB 0X73,0X04
-		DW EXE3
-		DB 0X65,0X30
-		DW EXE3
-		DB 0X64,0X10
-		DW EXE3
-		DB 0X72,0XC0
-		DW EXE3
-		DB 0X66,0X40
-		DW EXE3
+;		DB "q",0X03
+;		DW EXE3
+;		DB "a",0X01
+;		DW EXE3
+;		DB "w",0X0C
+;		DW EXE3
+;		DB "s",0X04
+;		DW EXE3
+;		DB "e",0X30
+;		DW EXE3
+;		DB "d",0X10
+;		DW EXE3
+;		DB "r",0XC0
+;		DW EXE3
+;		DB "f",0X40
+;		DW EXE3
 
-MODCOM		DB 0X31,0X01
+MODCOM		DB "1",0X01
 		DW EXE1
-		DB 0X32,0X02
+		DB "2",0X02
 		DW EXE4
-		DB 0X33,0X03
+		DB "3",0X03
 		DW EXE4
-		DB 0X34,0X04
+		DB "4",0X04
 		DW EXE4
-		DB 0X35,0X05
+		DB "5",0X05
 		DW EXE1
-		DB 0X21,0X18
+		DB "!",0X18
 		DW EXE1
-		DB 0X25,0X19
+		DB "%",0X19
 		DW EXE1
-		DB 0X30,0X00
+		DB "0",0X00
 		DW EJECT
-		DB 0X20,0X00
+		DB " ",0X00
 		DW RESCOMP
 		DB 0
 
@@ -412,18 +419,18 @@ DAT_VTS		CALL FGETVTS		;‡€Ž‘ ”‹€ƒŽ‚ŽƒŽ €‰’€
 		BIT 7,H
 		LD A,0X2B
 		JR NZ,$+4
-		LD A,0X2D
+		LD A,"-"
 		CALL PRISYM		;‚›‚Ž„ Ž‹Ž†…ˆŸ TREBLE/BASS
 		BIT 0,H
-		LD A,0X2B
+		LD A,"+"
 		JR NZ,$+4
-		LD A,0X2D
+		LD A,"-"
 		LD DE,0X4890
 		CALL PRISYM		;‚›‚Ž„ Ž‹Ž†…ˆŸ VIRTUAL SURROUND
 		BIT 6,H
-		LD A,0X2B
+		LD A,"+"
 		JR NZ,$+4
-		LD A,0X2D
+		LD A,"-"
 		LD DE,0X48DF
 		CALL PRISYM		;‚›‚Ž„ Ž‹Ž†…ˆŸ MUTE ON/OFF
 		LD A,L
@@ -455,43 +462,44 @@ DATVTS2		LD HL,MESS16
 		CALL PRINT
 
 ;Ž‹“—…ˆ… ˆ €‘…—€’Š€ ˆ”› ’…ŒŽ‹ŽŠ€
-PRTTBL		CALL FGETVTS
-		BIT 3,H
-		JR Z,EMPTSTR
-		BIT 7,H
-		JR Z,EMPTSTR
-		LD A,0X1B
-		OUT (GSDAT),A
-		LD A,0X1F
-		OUT (GSCOM),A
-		CALL WC
-		LD HL,OPISAT+0X0100
-		LD E,8
-		PUSH HL
-		CALL INI_E
-		LD DE,0X48B1
-		LD B,2
-		POP HL
-		CALL PRINT_B
-		LD A,0X30
-		CALL PRISYM
-		LD A,0X30
-		CALL PRISYM
-		LD A,0X30
-		CALL PRISYM
-		LD A,0X2F
-		CALL PRISYM
-		LD B,2
-		CALL PRINT_B
-		INC E
-		LD B,2
-		CALL PRINT_B
-		LD A,0X30
-		CALL PRISYM
-		LD A,0X2F
-		CALL PRISYM
-		LD B,2
-		JP PRINT_B
+PRTTBL		
+;		CALL FGETVTS
+;		BIT 3,H
+;		JR Z,EMPTSTR
+;		BIT 7,H
+;		JR Z,EMPTSTR
+;		LD A,0X1B
+;		OUT (GSDAT),A
+;		LD A,0X1F
+;		OUT (GSCOM),A
+;		CALL WC
+;		LD HL,OPISAT+0X0100
+;		LD E,8
+;		PUSH HL
+;		CALL INI_E
+;		LD DE,0X48B1
+;		LD B,2
+;		POP HL
+;		CALL PRINT_B
+;		LD A,"0"
+;		CALL PRISYM
+;		LD A,"0"
+;		CALL PRISYM
+;		LD A,"0"
+;		CALL PRISYM
+;		LD A,"/"
+;		CALL PRISYM
+;		LD B,2
+;		CALL PRINT_B
+;		INC E
+;		LD B,2
+;		CALL PRINT_B
+;		LD A,"0"
+;		CALL PRISYM
+;		LD A,"/"
+;		CALL PRISYM
+;		LD B,2
+;		JP PRINT_B
 
 ;…—€’œ “‘’Ž‰ ‘’ŽŠˆ
 EMPTSTR		LD HL,EMPT16+1
@@ -743,7 +751,7 @@ MORDALL		LD HL,MESS1
 		LD DE,0X4840
 		CALL PRINT
 		LD HL,MESS24
-		LD DE,0X48E3
+		LD DE,0X48E0+((32-(EMESS24-MESS24))/2)
 		CALL PRINT
 		LD A,3
 		CALL GET_VTS
@@ -760,7 +768,7 @@ MORDALL		LD HL,MESS1
 		LD A,C
 		RRCA
 		RRCA
-		ADD A,"0"
+		ADD A,"0"		;ŽŒ… ‚…‘ˆˆ MP3 —ˆ€
 		LD DE,0X48FF
 		CALL PRISYM
 MORDAR		LD A,3
@@ -891,7 +899,8 @@ MESS20		DB "Please wait, search files",0
 MESS21		DB "Eject SD card or insert new card",0
 MESS22		DB "Press any key",0
 MESS23		DB "File(s) not found",0
-MESS24		DB "Neo Player Light v0.5beta2",0
+MESS24		DB "Neo Player Light v0.51",0
+EMESS24		EQU $-1
 EMPT32		DB "                "
 EMPT16		DB "                ",0
 MESS26		DB "Hz",0						;0X487C
@@ -983,10 +992,10 @@ OUTPORT		LD A,E
 		JR WD
 
 ;Ž†ˆ„€ˆ… €‰’€ Ž’‚…’€ ‘ €“‡Ž‰
-WAIT_WN		PUSH BC
-		LD B,2
-		DJNZ $
-		POP BC
+;WAIT_WN		PUSH BC
+;		LD B,2
+;		DJNZ $
+;		POP BC
 
 ;Ž†ˆ„€ˆ… “‘’€Ž‚Šˆ DATA ˆ’€
 WN		IN A,(GSCOM)
@@ -1058,8 +1067,7 @@ PRISYM		PUSH HL
 		INC E
 		RET
 
-GO_YES
-		binclude play4ngs.rom
+GO_YES		binclude play4ngs.rom
 FAT_END
 
 CHARS		binclude altstd.bin

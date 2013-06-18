@@ -415,7 +415,7 @@ LASTCLS		LD BC,0XFFFF
 		LD A,(HL)			;’…Š“™ˆ‰ “Ž‚…œ „ˆ…Š’Žˆˆ
 		INC (HL)			;‘‹…„“ž™ˆ‰ “Ž‚…œ „ˆ…Š’Žˆˆ
 		AND A
-		LD BC,0				;ŠŽ‹ˆ—…‘’‚Ž ‡€ˆ‘…‰ “’ „ˆ…Š’Žˆˆ
+		LD BC,0				;ŠŽ‹ˆ—…‘’‚Ž ‡€ˆ‘…‰ ROOT „ˆ…Š’Žˆˆ
 		JR NZ,LASTCLS1
 		LD A,(CAL_FAT)
 		CP 2
