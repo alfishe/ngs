@@ -1,9 +1,9 @@
 
-;LAST UPDATE: 29.12.2011 savelij
+;LAST UPDATE: 24.04.2014 savelij
 
 ;‘Š€ ‹ƒ ‡“ 512Š „‹Ÿ NEOGS
 
-		include ../../../pentevo/rom/macros.a80
+		include ../macros.a80
 
 		ORG 0
 		binclude loader_ngs.rom

@@ -1,12 +1,12 @@
 
 ;1720708
 
-;LAST UPDATE: 16.06.2013 savelij
+;LAST UPDATE: 24.04.2014 savelij
 
-		include macros.a80
-		include ports_ngs.a80
+		include ../macros.a80
+		include ../ports_ngs.a80
 		include equ_ngs.a80
-		include sdcomand.a80
+		include ../sdcomand.a80
 
 ;GSRomBaseL equ 0X0000
 ;GSRomBaseH equ 0Xc000

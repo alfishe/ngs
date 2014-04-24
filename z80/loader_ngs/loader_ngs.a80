@@ -1,9 +1,9 @@
 
-;LAST UPDATE: 18.06.2013 savelij
+;LAST UPDATE: 24.04.2014 savelij
 
-		include ../../../pentevo/rom/macros.a80
-		include ports_ngs.a80
-		include ../../../pentevo/rom/sdcomand.a80
+		include ../macros.a80
+		include ../ports_ngs.a80
+		include ../sdcomand.a80
 
 ;€„…‘ ‡€ƒ“‡Šˆ €‰„…‰ ˜ˆ‚Šˆ
 ADRLOAD		EQU 0X8000

@@ -1,7 +1,7 @@
 
-;LAST UPDATE: 13.06.2013 savelij
+;LAST UPDATE: 24.04.2014 savelij
 
-		include macros.a80
+		include ../macros.a80
 
 		binclude ../loader_ngs/loader_ngs.rom
 		

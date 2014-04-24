@@ -9,6 +9,5 @@ call mk.bat bootFPGA
 
 del *.lst
 del *.mlz
-del *.bin
 del *.rbf
 del *.hex
