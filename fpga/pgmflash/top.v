@@ -14,7 +14,7 @@ module top(
 
 
 	inout  wire [ 7:0] d, // Z80 data bus
-	input  wire [14:0] a, // Z80 address bus
+	input  wire [15:0] a, // Z80 address bus
 
 	input  wire iorq_n,   // Z80 control signals
 	input  wire mreq_n,   //
@@ -87,9 +87,19 @@ module top(
 );
 
 
-	wire clk = clk_24mhz; // working clock
 
 
+
+	wire init, init_in_progress;
+	
+	wire zxbus_rst_n;
+	wire rom_rst_n;
+
+	wire       wr_addr;
+	wire       wr_data;
+	wire       rd_data;
+	wire [7:0] wr_buffer;
+	wire [7:0] rd_buffer;
 
 
 
@@ -132,6 +142,90 @@ module top(
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+	// reset controller
+	reset reset
+	(
+		.clk_fpga (clk_fpga ),
+		.clk_24mhz(clk_24mhz),
+
+		.init            (init            ),
+		.init_in_progress(init_in_progress),
+
+		.zxbus_rst_n(zxbus_rst_n),
+		.rom_rst_n  (rom_rst_n  ),
+		.z80_rst_n  (z80res_n   ),
+
+		.z80_busrq_n(busrq_n),
+		.z80_busak_n(busak_n)
+	);
+
+
+
+
+
+
+	// zxbus controller
+	zxbus zxbus
+	(
+		.clk  (clk_24mhz  ),
+		.rst_n(zxbus_rst_n),
+
+		.zxid       (zxid       ),
+		.zxa        (zxa        ),
+		.zxiorq_n   (zxiorq_n   ),
+		.zxmreq_n   (zxmreq_n   ),
+		.zxrd_n     (zxrd_n     ),
+		.zxwr_n     (zxwr_n     ),
+		.zxblkiorq_n(zxblkiorq_n),
+		.zxbusin    (zxbusin    ),
+		.zxbusena_n (zxbusena_n ),
+
+		.init            (init            ),
+		.init_in_progress(init_in_progress),
+
+		.led(led_diag),
+
+		.wr_addr  (wr_addr  ),
+		.wr_data  (wr_data  ),
+		.rd_data  (rd_data  ),
+		.wr_buffer(wr_buffer),
+		.rd_buffer(rd_buffer)
+	);
+
+
+
+
+	// rom controller
+	rom rom
+	(
+		.clk  (clk_24mhz),
+		.rst_n(rom_rst_n),
+
+		.wr_addr  (wr_addr  ),
+		.wr_data  (wr_data  ),
+		.rd_data  (rd_data  ),
+		.wr_buffer(wr_buffer),
+		.rd_buffer(rd_buffer),
+
+		.rom_a   ({mema18,mema17,mema16,mema15,mema14,a[13:0]}),
+		.rom_d   (d),
+		.rom_cs_n(romcs_n),
+		.rom_oe_n(memoe_n),
+		.rom_we_n(memwe_n)
+	);
 
 
 

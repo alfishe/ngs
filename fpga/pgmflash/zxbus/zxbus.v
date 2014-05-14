@@ -90,7 +90,7 @@ module zxbus
 	end
 	//
 	assign iowr_begin = iowr_r[1] && !iowr_r[2];
-	assign iord_begin = iord_r[1] && !iord_i[2];
+	assign iord_begin = iord_r[1] && !iord_r[2];
 	//
 	assign iowr_end = !iowr_r[1] && iowr_r[2];
 	assign iord_end = !iord_r[1] && iord_r[2];
@@ -134,25 +134,31 @@ module zxbus
 
 
 	// write to 33 (init reg)
+	//
 	always @(posedge clk, negedge rst_n)
 	if( !rst_n )
-	begin
-		led  <= 1'b0; // led ON
-	end
-	else if( addr_ok && regsel==2'b00 && iowr_begin )
-	begin
-		if( zxid[7] ) init <= 1'b1;
-		if( zxid[6] ) led <= ~led;
-	end
-	else
-	begin
+		led <= 1'b0;
+	else if( init )
+		led <= 1'b0;
+	else if( addr_ok && regsel==2'b00 && iowr_begin && zxid[6] )
+		led <= ~led;
+	//
+	always @(posedge clk, negedge rst_n)
+	if( !rst_n )
 		init <= 1'b0;
-	end
+	else if( addr_ok && regsel==2'b00 && iowr_begin && zxid[7] )
+		init <= 1'b1;
+	else
+		init <= 1'b0;
 
 
 	// write to 3B (test reg)
 	always @(posedge clk, negedge rst_n)
 	if( !rst_n )
+	begin
+		test_reg <= 9'd0;
+	end
+	else if( init )
 	begin
 		test_reg <= 9'd0;
 	end
@@ -203,11 +209,11 @@ module zxbus
 	// ports read
 	always @*
 	case( regsel )
-		2'b00:   read_data <= { init_in_progress, 7'd0 };
-		2'b01:   read_data <= test_reg[7:0];
+		2'b00:   read_data = { init_in_progress, 7'd0 };
+		2'b01:   read_data = test_reg[7:0];
 		//2'b10:   read_data <= рег адреса (НОЛЬ!)
-		2'b11:   read_data <= rd_buffer;
-		default: read_data <= 8'd0;
+		2'b11:   read_data = rd_buffer;
+		default: read_data = 8'd0;
 	endcase
 	//
 	always @(posedge clk)
