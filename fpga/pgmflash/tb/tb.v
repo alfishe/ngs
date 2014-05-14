@@ -38,7 +38,7 @@ module tb;
 	wire int_n;
 	wire nmi_n;
 	wire busrq_n;
-	wire busak_n;
+	reg  busak_n;
 	tri1 z80res_n;
 
 
@@ -54,14 +54,14 @@ module tb;
 	wire memwe_n;
 
 
-	tri0 [7:0] zxid;
+	tri1 [7:0] zxid;
 	reg  [7:0] zxa;
 	tri0 zxa14;
 	tri0 zxa15;
-	tri1 zxiorq_n;
-	tri1 zxmreq_n;
-	tri1 zxrd_n;
-	tri1 zxwr_n;
+	reg  zxiorq_n = 1'b1;
+	reg  zxmreq_n = 1'b1;
+	reg  zxrd_n   = 1'b1;
+	reg  zxwr_n   = 1'b1;
 	wire zxcsrom_n;
 	wire zxblkiorq_n;
 	wire zxblkrom_n;
@@ -94,14 +94,26 @@ module tb;
 	wire mp3_dat;
 	wire mp3_sync;
 
-	wire led_diag;
+	wire led;
 
 	
-	wire [7:0] zxd;
+	tri1 [7:0] zxd;
 
 	wire [7:0] zxin;
 	reg  [7:0] zxout;
 	reg        zxena;
+
+
+
+	// rom read & write queues
+	int wr_queue [$];
+	int rd_queue [$];
+
+	int very_first_read = 1;
+
+	int rom_addr  = 0;
+	int rom_phase = 0;
+
 
 	// zx databus
 	assign zxin = zxd;
@@ -111,6 +123,17 @@ module tb;
 	// 74*245 emulation
 	assign zxd  = (!zxbusena_n && !zxbusin) ? zxid : 8'bZZZZ_ZZZZ;
 	assign zxid = (!zxbusena_n &&  zxbusin) ? zxd  : 8'bZZZZ_ZZZZ;
+
+
+	// busrq/busak logic emulation
+	always @(posedge clk_fpga)
+	if( !z80res_n )
+		busak_n <= 1'b1;
+	else if( !busrq_n )
+		busak_n <= 1'b0;
+	else
+		busak_n <= 1'b1;
+
 
 
 
@@ -210,22 +233,193 @@ module tb;
 		.mp3_clk(mp3_clk),
 		.mp3_dat(mp3_dat),
 		.mp3_sync(mp3_sync),
-		.led_diag(led_diag)
+		.led_diag(led)
 	);
 
 
 
 
-
+	rom_emu rom_emu
+	(
+		.a   ({mema18,mema17,mema16,mema15,mema14,a[13:0]}),
+		.d   (d),
+		.ce_n(romcs_n),
+		.oe_n(memoe_n),
+		.we_n(memwe_n)
+	);
 
 
 	initial
-	begin
-		wait(warmres_n==1'b1);
+	begin : test_sequence
 
-		iord(.addr(8'h33,.data()));
-		iowr(.addr(8'h33,.data(8'h00)));
+		reg [7:0] tmp;
+		int i;
+
+		wait(warmres_n==1'b1);
+		repeat(10) @(negedge clk_zx);
+
+
+		// start polling for init_in_progress end.
+		// first we poll floating bus (==ff), then init_in_progress==1, finally it sets to 0.
+		init_wait();
+
+		// make software init
+		iowr(.addr(8'h33),.data(8'h80));
+
+		// wait for end of init_in_progress again
+		init_wait();
+
+		// play with led
+		led_test();
+
+		// "presence check" check
+		presence_check();
+
+$display("rom access!");
+		// check rom access
+		rom_check();
+
+
+
+		$display("TESTS PASSED!");
+		$stop;
 	end
+
+
+
+
+
+
+
+
+	task init_wait;
+
+		reg [7:0] tmp;
+		int i;
+
+		for(i=0;i<100;i=i+1)
+		begin
+			iord(.addr(8'h33),.data(tmp));
+			if( !(tmp&8'h80) ) disable init_wait;
+		end
+
+		$display("init_wait() failed: too long waiting for init_in_progress going to 0!");
+		$stop;
+	endtask
+
+	
+	task led_test;
+		
+		// assume that led_test called after reset or init, so led initial state is known to be 0.
+
+		int i;
+		int led_state;
+
+
+
+		if( led!==1'b0 )
+		begin
+			$display("led is not 0 at the start of led_test!");
+			$stop;
+		end
+
+		// invert led several times and check
+		led_state = 0;
+		for(i=0;i<20;i=i+1)
+		begin
+			iowr(.addr(8'h33),.data(8'h40));
+			
+			led_state = led_state ^ 1;
+
+			if( led!==led_state[0] )
+			begin
+				$display("led is not inverted properly after write of 0x40 to 0x33 in led_test!");
+				$stop;
+			end
+		end
+	endtask
+
+
+	task presence_check;
+
+		// assume we start after init, so test reg contains zeros. so check it first.
+
+		reg [7:0] tmp;
+
+		int i,treg,rnd;
+
+
+		iord(.addr(8'h3B),.data(tmp));
+
+		if( tmp!==8'd0 )
+		begin
+			$display("test reg at first read is not zero!");
+			$stop;
+		end
+
+
+		treg = 0;
+
+		for(i=0;i<256;i=i+1)
+		begin
+			rnd = $random>>24;
+
+			iowr(.addr(8'h3B),.data(rnd[7:0]));
+			
+			iord(.addr(8'h3B),.data(tmp));
+
+			treg[8:0] = { ~rnd[7:0], treg[8] };
+
+			if( treg[7:0]!==tmp[7:0] )
+			begin
+				$display("test reg at read after write is wrong!");
+				$stop;
+			end
+		end
+
+	endtask
+
+
+	task rom_check;
+
+		int addr;
+		int wrdata;
+		int rddata;
+		reg [7:0] tmp;
+		int rnd;
+
+
+
+		forever
+		begin
+			addr = $random;
+			rnd  = $random;
+
+			if( rnd[31] )
+			begin : write
+				wrdata = $random>>24;
+				
+				iowr(.addr(8'hB3),.data(addr>>16));
+				iowr(.addr(8'hB3),.data(addr>>8));
+				iowr(.addr(8'hB3),.data(addr));
+
+				iowr(.addr(8'hBB),.data(wrdata));
+				iowr(.addr(8'hBB),.data(wrdata));
+			end
+			else 
+			begin : read
+				iowr(.addr(8'hB3),.data(addr>>16));
+				iowr(.addr(8'hB3),.data(addr>>8));
+				iowr(.addr(8'hB3),.data(addr));
+
+				iord(.addr(8'hBB),.data(tmp));
+				iord(.addr(8'hBB),.data(tmp));
+			end
+		end
+
+	endtask
+
+
 
 
 
@@ -241,6 +435,13 @@ module tb;
 		output [7:0] data;
 
 		begin
+
+			if( addr==8'hB3 )
+			begin
+				rom_addr[rom_phase*8 +: 8] = addr[7:0];
+				rom_phase = (rom_phase>=2) ? 0 : (rom_phase+1);
+			end
+
 
 			@(posedge clk_zx);
 
@@ -266,6 +467,20 @@ module tb;
 			zxiorq_n <= 1'b1;
 			zxrd_n   <= 1'b1;
 
+
+			if( addr==8'hBB )
+			begin
+				if( very_first_read )
+				begin
+					very_first_read = 0;
+				end
+				else
+				begin
+				end
+
+
+				rom_addr = rom_addr + 1;
+			end
 		end
 
 	endtask
@@ -312,6 +527,52 @@ module tb;
 
 
 
+
+
+
+
+endmodule
+
+
+
+
+
+
+module rom_emu
+(
+	input  wire [18:0] a,
+	inout  wire [ 7:0] d,
+	input  wire        ce_n,
+	input  wire        oe_n,
+	input  wire        we_n
+);
+	wire rd_stb = ~(ce_n|oe_n);
+	wire wr_stb = ~(ce_n|we_n);
+
+	wire [7:0] dwr;
+	wire [7:0] drd;
+
+	reg [7:0]  read_data;
+	reg [7:0] write_data;
+
+	assign d = rd_stb ? drd : 8'bZZZZ_ZZZZ;
+
+	assign dwr = d;
+
+
+	
+	always @(posedge rd_stb)
+	begin
+		read_data <= $random>>24;
+	end
+	//
+	assign drd = read_data;
+
+
+	always @(negedge wr_stb)
+	begin
+		write_data <= dwr;
+	end
 
 
 

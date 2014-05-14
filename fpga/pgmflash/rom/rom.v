@@ -109,18 +109,15 @@ module rom
 	always @(posedge clk, negedge rst_n)
 	if( !rst_n )
 	begin
-		enaaddr <= 1'b0;
 		enadata <= 1'b0;
 	end
 	else if( rw_phase[0] )
 	begin
 		enadata <= !rnw;
-		enaaddr <= 1'b1;
 	end
 	else if( rw_phase[6] )
 	begin
 		enadata <= 1'b0;
-		enaaddr <= 1'b0;
 	end
 	//
 	always @(posedge clk, negedge rst_n)

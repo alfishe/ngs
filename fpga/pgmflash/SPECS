@@ -2,7 +2,7 @@ zx ports:
 
 $33 -- reset/init (r/w)
 $3b -- check presence (r/w)
-$b3 -- ROM addr (ro)
+$b3 -- ROM addr (wo)
 $bb -- ROM data (r/w)
 
 ports description:

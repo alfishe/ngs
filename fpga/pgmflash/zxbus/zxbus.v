@@ -42,6 +42,8 @@ module zxbus
 
 	wire addr_ok;
 
+	reg wrr;
+
 
 	wire [1:0] regsel;
 
@@ -131,6 +133,13 @@ module zxbus
 		zxid_oe <= 1'b0;
 	end
 
+	// internal write strobe
+	always @(posedge clk, negedge rst_n)
+	if( !rst_n )
+		wrr <= 1'b0;
+	else
+		wrr <= addr_ok && iowr_begin;
+
 
 
 	// write to 33 (init reg)
@@ -140,13 +149,13 @@ module zxbus
 		led <= 1'b0;
 	else if( init )
 		led <= 1'b0;
-	else if( addr_ok && regsel==2'b00 && iowr_begin && zxid[6] )
+	else if( wrr && regsel==2'b00 && zxid[6] )
 		led <= ~led;
 	//
 	always @(posedge clk, negedge rst_n)
 	if( !rst_n )
 		init <= 1'b0;
-	else if( addr_ok && regsel==2'b00 && iowr_begin && zxid[7] )
+	else if( wrr && regsel==2'b00 && zxid[7] )
 		init <= 1'b1;
 	else
 		init <= 1'b0;
@@ -168,7 +177,7 @@ module zxbus
 	end
 	//
 	always @(posedge clk)
-	if( addr_ok && regsel==2'b01 && iowr_begin )
+	if( wrr && regsel==2'b01 )
 	begin
 		test_reg_pre <= zxid_in;
 		test_reg_write <= 1'b1;
@@ -181,14 +190,14 @@ module zxbus
 
 	// write to B3 (addr reg)
 	always @(posedge clk)
-	if( addr_ok && regsel==2'b10 && iowr_begin )
+	if( wrr && regsel==2'b10 )
 		wr_addr <= 1'b1;
 	else
 		wr_addr <= 1'b0;
 
 	// write to BB (data reg)
 	always @(posedge clk)
-	if( addr_ok && regsel==2'b11 && iowr_begin )
+	if( wrr && regsel==2'b11 )
 		wr_data <= 1'b1;
 	else
 		wr_data <= 1'b0;
@@ -202,7 +211,7 @@ module zxbus
 
 	// write data for B3 and BB
 	always @(posedge clk)
-	if( addr_ok && regsel[1]==1'b1 && iowr_begin )
+	if( wrr && regsel[1]==1'b1 )
 		wr_buffer <= zxid_in;
 
 

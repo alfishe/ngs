@@ -49,7 +49,7 @@ parameter RST_CNT_SIZE = 8;
 	// make rom/z80 reset
 	//
 	always @(posedge clk_24mhz, negedge poweron_rst_n)
-	if( !poweron_rst_cnt )
+	if( !poweron_rst_n )
 		rz_rst_cnt <= 'd0;
 	else if( init )
 		rz_rst_cnt <= 'd0;
