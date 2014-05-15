@@ -107,7 +107,9 @@ module tb;
 
 	// rom read & write queues
 	int wr_queue [$];
-	int rd_queue [$];
+	int rd_addr_queue [$];
+	int rd_reta_queue [$];
+	int rd_retd_queue [$];
 
 	int very_first_read = 1;
 
@@ -435,14 +437,13 @@ $display("rom access!");
 		output [7:0] data;
 
 		begin
-
-			if( addr==8'hB3 )
+			if( addr==8'hBB )
 			begin
-				rom_addr[rom_phase*8 +: 8] = addr[7:0];
-				rom_phase = (rom_phase>=2) ? 0 : (rom_phase+1);
+				rom_phase = 0;
+
+				rd_addr_queue.push_back(rom_addr);
 			end
-
-
+			
 			@(posedge clk_zx);
 
 			zxmreq_n <= 1'b1;
@@ -467,19 +468,39 @@ $display("rom access!");
 			zxiorq_n <= 1'b1;
 			zxrd_n   <= 1'b1;
 
-
 			if( addr==8'hBB )
-			begin
-				if( very_first_read )
+			begin : check_read_rom
+				int taddr, tdata;
+
+				taddr = rd_reta_queue.pop_front();
+
+				if( taddr[18:0]!==rom_addr[18:0] )
 				begin
-					very_first_read = 0;
+					$display("iord: rom addr error!");
+					$display("iord: addr from queue: %h",taddr[18:0]);
+					$display("iord: addr from bus:   %h",rom_addr[18:0]);
+					$stop;
+				end
+
+				
+				if( !very_first_read )
+				begin
+					tdata = rd_retd_queue.pop_front();
+
+					if( tdata[7:0]!==data[7:0] )
+					begin
+						$display("iord: rom data error!");
+						$display("iord: data from queue: %h",tdata[7:0]);
+						$display("iord: data from bus:   %h",data[7:0]);
+						$stop;
+					end
 				end
 				else
 				begin
+					very_first_read = 0;
 				end
-
-
-				rom_addr = rom_addr + 1;
+				
+				rom_addr++;
 			end
 		end
 
@@ -491,6 +512,24 @@ $display("rom access!");
 		input [7:0] data;
 
 		begin
+
+			if( addr==8'hB3 )
+			begin
+				rom_addr[rom_phase*8 +: 8] = data[7:0];
+				rom_phase = (rom_phase>=2) ? 0 : (rom_phase+1);
+			end
+			
+			if( addr==8'hBB || (addr==8'h33 && (data & 8'h80)) )
+			begin
+				rom_phase = 0;
+			end
+
+			if( addr==8'hBB )
+			begin
+				wr_queue.push_back((rom_addr<<8)|data[7:0]);
+				rom_addr++;
+			end
+
 
 			@(posedge clk_zx);
 
@@ -549,6 +588,8 @@ module rom_emu
 	wire rd_stb = ~(ce_n|oe_n);
 	wire wr_stb = ~(ce_n|we_n);
 
+	reg old_wr_stb;
+
 	wire [7:0] dwr;
 	wire [7:0] drd;
 
@@ -562,16 +603,56 @@ module rom_emu
 
 	
 	always @(posedge rd_stb)
-	begin
-		read_data <= $random>>24;
+	if( rd_stb==1'b1 )
+	begin : test_read
+
+		int taddr;
+
+		read_data = $random>>24;
+
+		tb.rd_reta_queue.push_back(a[18:0]);
+		tb.rd_retd_queue.push_back(read_data);
+
+		taddr = tb.rd_addr_queue.pop_front();
+
+		if( taddr[18:0]!==a[18:0] )
+		begin
+			$display("rom_emu: read address error!");
+			$display("rom_emu: addr from queue: %h",taddr[18:0]);
+			$display("rom_emu: addr from bus:   %h",a[18:0]);
+			$stop;
+		end
 	end
 	//
 	assign drd = read_data;
 
 
-	always @(negedge wr_stb)
-	begin
-		write_data <= dwr;
+	always @(wr_stb)
+	if( wr_stb==1'b0 && old_wr_stb==1'b1 )
+	begin : test_write
+
+		int taddr;
+		int tdata;
+		int tqueue;
+
+		tqueue = tb.wr_queue.pop_front();
+
+		taddr = tqueue>>8;
+		tdata = tqueue&255;
+
+		if( taddr[18:0]!==a[18:0] )
+		begin
+			$display("rom_emu: write address error!");
+			$stop;
+		end
+
+		if( tdata[7:0]!==dwr[7:0] )
+		begin
+			$display("rom_emu: write data error!");
+			$stop;
+		end
+
+		old_wr_stb = wr_stb;
 	end
 
 

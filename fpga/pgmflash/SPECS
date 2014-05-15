@@ -9,7 +9,7 @@ ports description:
 
 $33 -- reset/init.
  write: $80 -- reset/init flashing board
-        $20 -- toggle LED
+        $40 -- toggle LED
  read: bit7: 1 when reset/init in progress, 0 otherwise
 
 $3b: check presence.
@@ -28,4 +28,4 @@ byte from ROM is read to the buffer, and ZX is shown with previous buffer value,
 
 after any access to $bb ROM address gets incremented so you can do burst transfers.
 
-
+TODO: optional autoincrement, for example controlled by bit 5.port 33

@@ -76,8 +76,10 @@ add wave -noupdate /tb/rom_emu/oe_n
 add wave -noupdate /tb/rom_emu/we_n
 add wave -noupdate -radix hexadecimal /tb/rom_emu/a
 add wave -noupdate -radix hexadecimal /tb/rom_emu/d
+add wave -noupdate /tb/rom_emu/rd_stb
+add wave -noupdate /tb/rom_emu/wr_stb
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {263753952 ps} 0}
+WaveRestoreCursors {{Cursor 1} {26131040230 ps} 0}
 configure wave -namecolwidth 315
 configure wave -valuecolwidth 112
 configure wave -justifyvalue left
@@ -92,4 +94,4 @@ configure wave -griddelta 10
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {263651396 ps} {265702178 ps}
+WaveRestoreZoom {26066401726 ps} {26195678734 ps}

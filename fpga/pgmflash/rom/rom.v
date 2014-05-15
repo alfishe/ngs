@@ -148,7 +148,7 @@ module rom
 
 	// input control
 	always @(posedge clk)
-	if( rw_phase[6] )
+	if( rw_phase[6] && rnw )
 		rd_buffer <= rddata;
 
 
