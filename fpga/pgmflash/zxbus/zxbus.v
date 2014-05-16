@@ -22,6 +22,8 @@ module zxbus
 
 	output reg        led, // LED state
 
+	output reg        autoinc_ena, // enable autoincrement
+
 	output reg        wr_addr,   // to ROM controller
 	output reg        wr_data,   //
 	output reg        rd_data,   //
@@ -142,7 +144,7 @@ module zxbus
 
 
 
-	// write to 33 (init reg)
+	// write to 33 (init/ctrl reg)
 	//
 	always @(posedge clk, negedge rst_n)
 	if( !rst_n )
@@ -159,6 +161,12 @@ module zxbus
 		init <= 1'b1;
 	else
 		init <= 1'b0;
+	//
+	always @(posedge clk, negedge rst_n)
+	if( !rst_n )
+		autoinc_ena <= 1'b0;
+	else if( wrr && regsel==2'b00 )
+		autoinc_ena <= zxid[5];
 
 
 	// write to 3B (test reg)

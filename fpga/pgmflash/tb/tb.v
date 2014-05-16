@@ -96,6 +96,8 @@ module tb;
 
 	wire led;
 
+	int autoinc_ena = 0;
+
 	
 	tri1 [7:0] zxd;
 
@@ -384,38 +386,61 @@ $display("rom access!");
 
 	task rom_check;
 
-		int addr;
+		int addr = 0;
 		int wrdata;
 		int rddata;
 		reg [7:0] tmp;
 		int rnd;
 
+		int read_nwrite;
+		int addr_init_num = (-1);
+		int autoinc;
+		int old_autoinc = 0;
+		int access_num;
+
+		int i;
 
 
 		forever
 		begin
-			addr = $random;
-			rnd  = $random;
+			// get some random numbers and decide what to do
 
-			if( rnd[31] )
-			begin : write
-				wrdata = $random>>24;
-				
-				iowr(.addr(8'hB3),.data(addr>>16));
-				iowr(.addr(8'hB3),.data(addr>>8));
-				iowr(.addr(8'hB3),.data(addr));
+			read_nwrite = $random>>31;
 
-				iowr(.addr(8'hBB),.data(wrdata));
-				iowr(.addr(8'hBB),.data(wrdata));
+			if( addr_init_num<0 )
+				addr_init_num = 3;
+			else
+				addr_init_num = $random>>30;
+
+			autoinc = $random>>31;
+
+			access_num = 1 + ($random>>28); // 1..16
+
+
+			// start doing that
+			if( autoinc!=old_autoinc )
+			begin
+				iowr( .addr(8'h33), .data( autoinc ? 8'h20 : 8'h00 ) );
+				old_autoinc = autoinc;
+			end
+
+			for(i=0;i<addr_init_num;i=i+1)
+			begin
+				rnd = $random>>24;
+
+				addr[i*8 +: 8] = rnd[7:0];
+				iowr( .addr(8'hB3), .data( rnd[7:0] ) );
+			end
+			
+			if( read_nwrite )
+			begin : read
+				for(i=0;i<access_num;i=i+1)
+					iord( .addr(8'hBB), .data(tmp) );
 			end
 			else 
-			begin : read
-				iowr(.addr(8'hB3),.data(addr>>16));
-				iowr(.addr(8'hB3),.data(addr>>8));
-				iowr(.addr(8'hB3),.data(addr));
-
-				iord(.addr(8'hBB),.data(tmp));
-				iord(.addr(8'hBB),.data(tmp));
+			begin : write
+				for(i=0;i<access_num;i=i+1)
+					iowr( .addr(8'hBB), .data($random>>24) );
 			end
 		end
 
@@ -500,7 +525,7 @@ $display("rom access!");
 					very_first_read = 0;
 				end
 				
-				rom_addr++;
+				if( autoinc_ena ) rom_addr++;
 			end
 		end
 
@@ -512,6 +537,11 @@ $display("rom access!");
 		input [7:0] data;
 
 		begin
+
+			if( addr==8'h33 )
+			begin
+				autoinc_ena = data[5];
+			end
 
 			if( addr==8'hB3 )
 			begin
@@ -527,7 +557,7 @@ $display("rom access!");
 			if( addr==8'hBB )
 			begin
 				wr_queue.push_back((rom_addr<<8)|data[7:0]);
-				rom_addr++;
+				if( autoinc_ena ) rom_addr++;
 			end
 
 

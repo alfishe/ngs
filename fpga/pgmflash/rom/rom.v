@@ -9,11 +9,13 @@ module rom
 	input  wire clk,
 	input  wire rst_n,
 	
-	input  wire       wr_addr,
-	input  wire       wr_data,
-	input  wire       rd_data,
-	input  wire [7:0] wr_buffer,
-	output reg  [7:0] rd_buffer,
+	input  wire        wr_addr,
+	input  wire        wr_data,
+	input  wire        rd_data,
+	input  wire [ 7:0] wr_buffer,
+	output reg  [ 7:0] rd_buffer,
+
+	input  wire        autoinc_ena,
 
 	output wire [18:0] rom_a,
 	inout  wire [ 7:0] rom_d,
@@ -78,7 +80,7 @@ module rom
 			next_addr[15:8 ] = addr_phase[1] ? wr_buffer[7:0] : next_addr[15:8 ];
 			next_addr[18:16] = addr_phase[2] ? wr_buffer[2:0] : next_addr[18:16];
 		end
-		3'b010, 3'b001: next_addr <= next_addr + 19'd1;
+		3'b010, 3'b001: if( autoinc_ena ) next_addr <= next_addr + 19'd1;
 		default:        next_addr <= next_addr;
 	endcase
 

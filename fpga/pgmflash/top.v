@@ -101,6 +101,7 @@ module top(
 	wire [7:0] wr_buffer;
 	wire [7:0] rd_buffer;
 
+	wire autoinc_ena;
 
 
 
@@ -198,6 +199,8 @@ module top(
 
 		.led(led_diag),
 
+		.autoinc_ena(autoinc_ena),
+
 		.wr_addr  (wr_addr  ),
 		.wr_data  (wr_data  ),
 		.rd_data  (rd_data  ),
@@ -219,6 +222,8 @@ module top(
 		.rd_data  (rd_data  ),
 		.wr_buffer(wr_buffer),
 		.rd_buffer(rd_buffer),
+
+		.autoinc_ena(autoinc_ena),
 
 		.rom_a   ({mema18,mema17,mema16,mema15,mema14,a[13:0]}),
 		.rom_d   (d),

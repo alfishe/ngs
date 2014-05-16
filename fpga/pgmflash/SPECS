@@ -7,9 +7,11 @@ $bb -- ROM data (r/w)
 
 ports description:
 
-$33 -- reset/init.
- write: $80 -- reset/init flashing board
+$33 -- reset/init/ctrl.
+ write: $80 -- reset/init board
         $40 -- toggle LED
+        $20 -- turn autoincrement ON
+        $00 -- turn autoincrement OFF
  read: bit7: 1 when reset/init in progress, 0 otherwise
 
 $3b: check presence.
@@ -26,6 +28,5 @@ $bb: ROM data.
 byte from ROM is read to the buffer, and ZX is shown with previous buffer value, so to read single byte after address setup,
  read $bb twice.
 
-after any access to $bb ROM address gets incremented so you can do burst transfers.
+after any access to $bb ROM address gets incremented (if enabled in $33 reg!) so you can do burst transfers.
 
-TODO: optional autoincrement, for example controlled by bit 5.port 33
