@@ -1,5 +1,5 @@
 
-;LAST UPDATE 18.06.2013 savelij
+;LAST UPDATE 08.08.2014 savelij
 
 		include macros.a80
 	        include ports_ngs.a80
@@ -899,7 +899,7 @@ MESS20		DB "Please wait, search files",0
 MESS21		DB "Eject SD card or insert new card",0
 MESS22		DB "Press any key",0
 MESS23		DB "File(s) not found",0
-MESS24		DB "Neo Player Light v0.51",0
+MESS24		DB "Neo Player Light v0.52",0
 EMESS24		EQU $-1
 EMPT32		DB "                "
 EMPT16		DB "                ",0

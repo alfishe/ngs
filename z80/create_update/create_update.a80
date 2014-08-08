@@ -1,14 +1,14 @@
 
-;LAST UPDATE: 24.04.2014 savelij
+;LAST UPDATE: 08.08.2014 savelij
 
 		include ../macros.a80
 
 DD_P0		EQU 15					;—ˆ‘‹Ž ‘’€ˆ–› 0
 MM_P0		EQU 6					;Œ…‘Ÿ– ‘’€ˆ–› 0
 YY_P0		EQU 13					;ƒŽ„ ‘’€ˆ–› 0
-DD_P1		EQU 15					;—ˆ‘‹Ž ‘’€ˆ–› 1
-MM_P1		EQU 6					;Œ…‘Ÿ– ‘’€ˆ–› 1
-YY_P1		EQU 13					;ƒŽ„ ‘’€ˆ–› 1
+DD_P1		EQU 8					;—ˆ‘‹Ž ‘’€ˆ–› 1
+MM_P1		EQU 8					;Œ…‘Ÿ– ‘’€ˆ–› 1
+YY_P1		EQU 14					;ƒŽ„ ‘’€ˆ–› 1
 DD_P7		EQU 19					;—ˆ‘‹Ž ‘’€ˆ–› 7
 MM_P7		EQU 1 					;Œ…‘Ÿ– ‘’€ˆ–› 7
 YY_P7		EQU 11					;ƒŽ„ ‘’€ˆ–› 7

@@ -1,12 +1,15 @@
 
 ;1720708
 
-;LAST UPDATE: 24.04.2014 savelij
+;LAST UPDATE: 08.08.2014 savelij
 
 		include ../macros.a80
 		include ../ports_ngs.a80
 		include equ_ngs.a80
 		include ../sdcomand.a80
+
+VERS_TXT	EQU "1.10"
+VERS_BIN	EQU 1<<8+0X10
 
 ;GSRomBaseL equ 0X0000
 ;GSRomBaseH equ 0Xc000
@@ -22,8 +25,9 @@
 		JP INIT
 
 ;---patched
-		DEFB 0X09			;LOW	(in BCD!)
-		DEFB 0X01			;HIGH	(in BCD!)
+;		DEFB 0X0A			;LOW	(in BCD!)
+;		DEFB 0X01			;HIGH	(in BCD!)
+		DW VERS_BIN
 ;---
 
 ROMCRC		DW 0XE428			;CRC from original rom, corrupted!?
@@ -75,7 +79,7 @@ NMILP3		IN A,(ZXSTAT)
 		ORG GSRomBaseL+0X0100
 		DB "General  Sound (tm)  ROM"
 		DB "Copyright   1997 Stinger"
-		DB "Version 1.09            "
+		DB "Version ",VERS_TXT,"            "
 
 ; LOW ROM INCLUDES
 
@@ -306,6 +310,16 @@ WTDTG		IN A,(ZXSTAT)
 		JP P,WTDTG
 		IN A,(ZXDATRD)
 		JP (IY)
+
+COMM5__		LD A,(IY+CHLPBP)
+		CP -1
+		JP Z,COMM5
+		LD (IY+CHCURP),A
+		LD L,(IY+CHLPBL)
+		LD H,(IY+CHLPBH)
+		LD (IY+CHCURL),L
+		LD (IY+CHCURH),H
+		JP COMM5
 
 		align 256
 COMTAB		DEFW COM00,COM01,COM02,COM03,COM04,COM05,COM06,COM07	;0365,036C,0381,0390,039E,03A8,03B8,03D0
@@ -1660,8 +1674,8 @@ FX9_    LD (IY+CHOFFST),A
         LD A,L
         CP (IY+CHENDL)
         JP C,COMM5
-COMM3_  RES 7,(IY+CHSTAT)
-        JP COMM5
+COMM3_	RES 7,(IY+CHSTAT)
+        JP COMM5__
 
 COMM4   LD (IY+CHWNT),D
 COMM5   XOR A
