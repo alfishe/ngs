@@ -1,8 +1,10 @@
 
-;LAST UPDATE 08.08.2014 savelij
+;LAST UPDATE 29.09.2014 savelij
 
 		include macros.a80
 	        include ports_ngs.a80
+
+VERS_PLAYER	EQU "0.53"
 
 GSCOD		EQU 0X8000			;€„…‘ Š“„€ ‡€Šˆ„›‚€’œ Š„ € ƒ‘
 
@@ -899,7 +901,7 @@ MESS20		DB "Please wait, search files",0
 MESS21		DB "Eject SD card or insert new card",0
 MESS22		DB "Press any key",0
 MESS23		DB "File(s) not found",0
-MESS24		DB "Neo Player Light v0.52",0
+MESS24		DB "Neo Player Light v",VERS_PLAYER,0
 EMESS24		EQU $-1
 EMPT32		DB "                "
 EMPT16		DB "                ",0

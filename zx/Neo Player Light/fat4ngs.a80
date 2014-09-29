@@ -1,5 +1,5 @@
 
-;LAST UPDATE: 08.08.2014 savelij
+;LAST UPDATE: 29.09.2014 savelij
 
 ;FAT ”“Š–ˆˆ Ž ŽŒ…€Œ
 Wc_fat		EQU 0				;ˆˆ’ FAT „€‰‚…€
@@ -1057,6 +1057,7 @@ NEXTSEC		LD HL,KOL_CLS
 		LD (NUMSECK),A
 		LD A,(BYTSSEC)
 		CP H
+		LD A,0				;‚›•Ž„ … Ž Ž˜ˆŠ…
 		RET NZ
 		XOR A
 		LD (NUMSECK),A
