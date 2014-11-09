@@ -76,9 +76,9 @@ module rom
 	else
 	case( {wr_addr, wr_data, rd_data} )
 		3'b100: begin
-			next_addr[ 7:0 ] = addr_phase[0] ? wr_buffer[7:0] : next_addr[ 7:0 ];
-			next_addr[15:8 ] = addr_phase[1] ? wr_buffer[7:0] : next_addr[15:8 ];
-			next_addr[18:16] = addr_phase[2] ? wr_buffer[2:0] : next_addr[18:16];
+			next_addr[ 7:0 ] <= addr_phase[0] ? wr_buffer[7:0] : next_addr[ 7:0 ];
+			next_addr[15:8 ] <= addr_phase[1] ? wr_buffer[7:0] : next_addr[15:8 ];
+			next_addr[18:16] <= addr_phase[2] ? wr_buffer[2:0] : next_addr[18:16];
 		end
 		3'b010, 3'b001: if( autoinc_ena ) next_addr <= next_addr + 19'd1;
 		default:        next_addr <= next_addr;
