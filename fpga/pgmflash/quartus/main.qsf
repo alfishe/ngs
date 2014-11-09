@@ -161,3 +161,5 @@ set_global_assignment -name VERILOG_FILE ../top.v
 set_global_assignment -name VERILOG_FILE ../reset/reset.v
 set_global_assignment -name VERILOG_FILE ../rom/rom.v
 set_global_assignment -name VERILOG_FILE ../zxbus/zxbus.v
+
+set_global_assignment -name RESERVE_ALL_UNUSED_PINS_NO_OUTPUT_GND "AS INPUT TRI-STATED"

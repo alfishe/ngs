@@ -14,7 +14,7 @@ module top(
 
 
 	inout  wire [ 7:0] d, // Z80 data bus
-	input  wire [15:0] a, // Z80 address bus
+	output wire [15:0] a, // Z80 address bus
 
 	input  wire iorq_n,   // Z80 control signals
 	input  wire mreq_n,   //
@@ -232,6 +232,7 @@ module top(
 		.rom_we_n(memwe_n)
 	);
 
+	assign a[15:14] = 2'bZZ;
 
 
 
