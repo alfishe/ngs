@@ -1,10 +1,9 @@
 
-;LAST UPDATE 29.09.2014 savelij
+;LAST UPDATE 24.02.2016 savelij
 
 		include macros.a80
 	        include ports_ngs.a80
-
-VERS_PLAYER	EQU "0.53"
+	        include vers.a80
 
 GSCOD		EQU 0X8000			;€„…‘ Š“„€ ‡€Šˆ„›‚€’œ Š„ € ƒ‘
 
