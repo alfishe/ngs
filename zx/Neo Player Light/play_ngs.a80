@@ -1,27 +1,27 @@
 
-;LAST UPDATE 24.02.2016 savelij
+;LAST UPDATE 10.07.2017 savelij
 
 		include macros.a80
 	        include ports_ngs.a80
 	        include vers.a80
 
-GSCOD		EQU 0X8000			;АДРЕС КУДА ЗАКИДЫВАТЬ КОД НА НГС
+GSCOD		EQU 0X8000			;адрес куда закидывать код на нгс
 
-OPISAT		EQU 0X6000			;АДРЕС СКЛАДИРОВАНИЯ ОПИСАТЕЛЯ ПРИ ПРИЕМЕ С НГС
+OPISAT		EQU 0X6000			;адрес складирования описателя при приеме с нгс
 
 SIZ_PAT		EQU 0X14
 
 		ORG 0X8000
 START		DI
 		LD HL,0X0110
-		LD (0X5C09),HL			;УСТАНОВКА ПЕРЕМЕННОЙ КЛАВИАТУРЫ
-		LD (STEK),SP			;СОХРАНЕНИЕ СТЕКА
+		LD (0X5C09),HL			;установка переменной клавиатуры
+		LD (OLD_STACK),SP		;сохранение стека
 		LD SP,0
-STEK		EQU $-2
+OLD_STACK	EQU $-2
 		RES 3,(IY+48)
 		RES 5,(IY+1)
 
-;УДЕРЖАНИЕ ПРИ ЗАПУСКЕ CS =  TURBO OFF
+;удержание при запуске CS =  Turbo off
 		LD A,0XFE
 		IN A,(0XFE)
 		RRA
@@ -31,73 +31,72 @@ STEK		EQU $-2
 		LD BC,0XEFF7
 		OUT (C),A
 
-;УДЕРЖАНИЕ ПРИ ЗАПУСКЕ SS = RESET NEOGS
+;удержание при запуске SS = reset NeoGS
 		LD A,0X7F
 		IN A,(0XFE)
 		RRA
 		RRA
 		JR NC,LOOP21
 
-;ТЕСТ НАЛИЧИЯ GS/NEOGS
-LOOP31		LD B,0X30			;ДЛЯ ОПРЕДЕЛЕНИЯ НАЛИЧИЯ НГС ИСПОЛЬЗУЕТСЯ
-		XOR A				;КОМАНДА 0X1D С ПАРАМЕТРОМ =0
-		OUT (GSDAT),A			;ЖДЕМ ОТВЕТА 0X30 ПРЕРЫВАНИЙ
+;тест наличия GS/NeoGS
+		LD B,0X30			;для определения наличия нгс используется
+		XOR A				;команда 0X1D с параметром =0
+		OUT (GSDAT),A			;ждем ответа 0x30 прерываний
 		LD A,0X1D
 		OUT (GSCOM),A
 LOOP22		EI
 		HALT
 		DI
 		DEC B
-		JR Z,LOOP21			;СЧЕТЧИК ОБНУЛИЛСЯ, А МОЖЕТ НГС ВИСИТ?
-		IN A,(GSCOM)			;ЖДЕМ СБРОСА КОМАНД БИТА
+		JR Z,LOOP21			;счетчик обнулился, а может нгс висит?
+		IN A,(GSCOM)			;ждем сброса команд бита
 		RRA
 		JR C,LOOP22
-		IN A,(GSDAT)			;КОМАНД БИТ СБРОСИЛСЯ, ЧИТАЕМ ОТВЕТ ИЗ ДАТА ПОРТА
-		XOR A				;ПОПЫТКА ПОЛУЧИТЬ ФЛАГОВЫЙ БАЙТ С НГС
-		OUT (GSDAT),A			;ПРИ ПЕРВОМ ЗАПУСКЕ КОМАНДА 0XFF ЕЩЕ ЕН ПРОПАТЧЕНА
+		IN A,(GSDAT)			;команд бит сбросился, читаем ответ из дата порта
+		XOR A				;попытка получить флаговый байт с нгс
+		OUT (GSDAT),A			;при первом запуске команда 0xFF еще не пропатчена
 		LD A,0XFF
-		LD B,0X30			;ЖДЕМ ОТВЕТА 0X30 ПРЕРЫВАНИЙ
+		LD B,0X30			;ждем ответа 0x30 прерываний
 		OUT (GSCOM),A
 LOOP001		EI
 		HALT
 		DI
 		DEC B
-		JR Z,LOOP21			;СЧЕТЧИК ОБНУЛИЛСЯ, ПРОБУЕМ ПЕРЕЗАПУСТИТЬ НГС
+		JR Z,LOOP21			;счетчик обнулился, пробуем перезапустить нгс
 		IN A,(GSCOM)
 		RRA
 		JR C,LOOP001
-		JR LOOP13			;НГС ОТВЕТИЛ НА КОМАНДУ, ПОДКЛЮЧАЕМСЯ К ВНУТРЕННЕМУ ПЛЕЕРУ
+		JR LOOP13			;нгс ответил на команду, подключаемся к внутреннему плееру
 
-;ПРИНУДИТЕЛЬНЫЙ ПЕРЕЗАПУСК NEOGS
+;принудительный перезапуск NeoGS
 LOOP21		LD A,M_DBIT
-		OUT (GSCTR),A			;ПОЛНЫЙ СБРОС НГС
+		OUT (GSCTR),A			;полный сброс нгс
 		EI
 		HALT
 		HALT
 		DI
 		LD A,0XF3
-		OUT (GSCOM),A			;ХОЛОДНЫЙ ПЕРЕЗАПУСК НГС ПРОШИВКИ
-		LD B,0X30			;ЖДЕМ 0X30 ПРЕРЫВАНИЙ
+		OUT (GSCOM),A			;холодный перезапуск нгс прошивки
+		LD B,0X30			;ждем 0x30 прерываний
 LOOP25		EI
 		HALT
 		HALT
 		DI
 		DEC B
-		JP Z,NO__GS			;НЕТ ОТВЕТА, НЕТ НГСЫ
+		JP Z,NO__GS			;нет ответа, нет нгс
 		IN A,(GSCOM)
 		RRA
-		JR C,LOOP25			;КОМАНД БИТ ИЗМЕНИЛСЯ, ПРОДОЛЖАЕМ
-
-;ЗАГРУЗКА И ЗАПУСК КОДА НА NEOGS
-LOOP24		LD A,0X23			;ЗАПРОС КОЛИЧЕСТВА СТРАНИЦ ПАМЯТИ
-		OUT (GSCOM),A			;ДЛЯ ОПРЕДЕЛЕНИЯ В КАКУЮ СТРАНИЦУ ПЛЕЕР ЗАКИДЫВАТЬ
+		JR C,LOOP25			;команд бит изменился, продолжаем
+;загрузка и запуск кода на NeoGS
+RST_NGS_CODE	LD A,0X23			;запрос количества страниц памяти
+		OUT (GSCOM),A			;для определения в какую страницу плеер закидывать
 		CALL WC
 		IN A,(GSDAT)
 		OR 0X3F
 		LD D,A
-		LD E,MPAG			;ВКЛЮЧАЕМ СТАНДАРТНОЙ КОМАНДОЙ ПРОШИВКИ
-		CALL OUTPORT			;СТРАНИЦУ НА НГС ДЛЯ ЗАГРУЗКИ ВНУТРЕННЕГО ПЛЕЕРА
-		LD BC,GSDAT			;СТАНДАРТНЫМИ СРЕДСТВАМИ ГРУЗИМ КОД НА НГС 
+		LD E,MPAG			;включаем стандартной командой прошивки
+		CALL OUTPORT			;страницу на нгс для загрузки внутреннего плеера
+		LD BC,GSDAT			;стандартными средствами грузим код на нгс 
 		LD DE,FAT_END-GO_YES
 		LD HL,GSCOD
 		OUT (C),E
@@ -117,7 +116,7 @@ LODCOD		OUTI
 		LD A,D
 		OR E
 		JR NZ,LODCOD
-		LD HL,GSCOD			;КОД ЗАГРУЗИЛИ, ЗАПУСКАЕМ
+		LD HL,GSCOD			;код загрузили, запускаем
 		OUT (C),L
 		LD A,0X13
 		OUT (GSCOM),A
@@ -126,26 +125,27 @@ LODCOD		OUTI
 		EI
 		HALT
 		HALT
-		DI				;ПОДОЖДПЛИ 2 ПРЕРЫВАНИЯ ЗАПУСКА КОДА
+		DI				;подождали 2 прерывания запуска кода
+;		JP Warm
 
 LOOP13		LD A,7
-		CALL CLS			;ОЧИСТИЛИ ЭКРАН
+		CALL CLS			;очистили экран
 		LD DE,0X4800
-		LD HL,MESS20			;ПЕЧАТЬ ТЕКСТА О ПОИСКЕ НА КАРТОЧКЕ
+		LD HL,MESS20			;печать текста о поиске на SD карточке
 		CALL PRINT
-		LD A,0X1D			;ПОДАЕМ КОМАНДУ ПРОВЕРКИ ЧТО НА НГС КРУТИТСЯ
+		LD A,0X1D			;подаем команду проверки что на нгс крутится
 		OUT (GSDAT),A
 		LD A,0X1F
 		OUT (GSCOM),A
 		LD B,0
-		CALL WAITGS			;ОЖИДАЕМ ОТВЕТА ПОКРУЧИВАВАЯ ПАЛОЧКУ
-		IN A,(GSDAT)			;ЧИТАЕМ ОТВЕТ
+		CALL WAITGS			;ожидаем ответа покручивавая палочку
+		IN A,(GSDAT)			;читаем ответ
 		CP 0X8B	
-		JR Z,LOOP24			;ЕСЛИ 0X8B ТО ОТВЕТИЛА СТАНДАРТНАЯ ПРОШИВКА
+		JR Z,RST_NGS_CODE		;если 0x8B то ответила стандартная прошивка
 		CP 0X77
-		JR Z,Warm			;ЕСЛИ ОТВЕТ 0X77, ТО ОТВЕТИЛ ВНУТРЕННИЙ ПЛЕЕР
+		JR Z,Warm			;если ответ 0x77, то ответил внутренний плеер
 		CP 0XEE
-		JR NZ,LOOP17
+		JR NZ,LOOP17			;SD карта найдена?
 		LD A,7
 		CALL CLS
 		LD HL,MESS13
@@ -160,7 +160,7 @@ LOOP20		CALL PRINT
 		JR LOOP16
 
 LOOP17		CP 0XDD
-		JR NZ,LOOP26
+		JR NZ,LOOP26			;на SD карте FAT не обнаружен
 		LD A,7
 		CALL CLS
 		LD HL,MESS14
@@ -176,7 +176,7 @@ LOOP26		CP 0XBB
 		JR LOOP20
 
 LOOP27		CP 0XCC
-		JR NZ,LOOP13
+		JP NZ,RST_NGS_CODE		;плата GS стараго типав
 		JP NO_NGS
 
 LOOP16		BIT 5,(IY+1)
@@ -190,13 +190,13 @@ LOOP16		BIT 5,(IY+1)
 		JR LOOP16
 
 Warm		LD A,7
-		CALL CLS			;ОЧИСТКА ЭКРАНА
-		CALL MORDALL			;ВЫВОД ОСНОВНЫХ НАДПИСЕЙ
+		CALL CLS			;очистка экрана
+		CALL MORDALL			;вывод основных надписей
 		LD A,0X15
 		LD DE,0X400D
-		CALL READ5BT			;ВЫВОД КОЛ-ВА НАЙДЕННОГО
-		CALL NAMELNG			;ВЫВОД ИМЕНИ ТЕКУЩЕГО ФАЙЛА
-		CALL DAT_VTS			;ВЫВОД ИНФЫ ТЕКУЩЕГО ФАЙЛА
+		CALL READ5BT			;вывод кол-ва найденного
+		CALL NAMELNG			;вывод имени текущего файла
+		CALL DAT_VTS			;вывод инфы текущего файла
 LOOP		XOR A
 		CALL GET_VTS
 		BIT 7,A
@@ -213,7 +213,7 @@ LOOP		XOR A
 		BIT 1,A
 		JR NZ,LOOPM
 		LD DE,0X486B
-		CALL READSEC			;ВРЕМЯ ИГРАНИЯ
+		CALL READSEC			;время играния
 		CALL BITRATE
 		JR LOOP14
 
@@ -329,7 +329,7 @@ EXE4		OUT (GSDAT),A
 		CALL WC
 		JP LOOP
 
-;ОЖИДАНИЕ ОТПУСКАНИЯ КНОПКИ И СБРОС
+;ожидание отпускания кнопки и сброс
 RESCOMP		CALL NANYKEY
 		XOR A
 		LD BC,0X7FFD
@@ -359,16 +359,16 @@ WAITGS		LD E,B
 		LD B,0
 		JR WAITGS
 
-;РАСПЕЧАТКА НОМЕРА ТРЕКА И ИМЕНИ ИГРАЕМОГО ФАЙЛА
+;распечатка номера трека и имени играемого файла
 NAMELNG		LD A,0X16
 		LD DE,0X484D
-		CALL READ5BT			;ТЕКУЩИЙ НОМЕР ТРЕКА
+		CALL READ5BT			;текущий номер трека
 		LD HL,0X8000
 		LD A,0X11
 		OUT (GSDAT),A
 		LD A,0X1F
 		OUT (GSCOM),A
-		CALL WC				;ПОЛУЧИТЬ ДЛИННОЕ ИМЯ
+		CALL WC				;получить длинное имя
 		LD A,H
 		OUT (GSDAT),A
 		CALL WD
@@ -413,32 +413,32 @@ NAMELNG		LD A,0X16
 		CALL PRINT_B
 		JP MORDAR
 
-DAT_VTS		CALL FGETVTS		;ЗАПРОС ФЛАГОВОГО БАЙТА
+DAT_VTS		CALL FGETVTS		;запрос флагового байта
 		LD DE,0X48B0
 		BIT 1,H
-		RET NZ			;ЭТО MOD
+		RET NZ			;это MOD
 		BIT 7,H
 		LD A,0X2B
 		JR NZ,$+4
 		LD A,"-"
-		CALL PRISYM		;ВЫВОД ПОЛОЖЕНИЯ TREBLE/BASS
+		CALL PRISYM		;вывод положения TREBLE/BASS
 		BIT 0,H
 		LD A,"+"
 		JR NZ,$+4
 		LD A,"-"
 		LD DE,0X4890
-		CALL PRISYM		;ВЫВОД ПОЛОЖЕНИЯ VIRTUAL SURROUND
+		CALL PRISYM		;вывод положения VIRTUAL SURROUND
 		BIT 6,H
 		LD A,"+"
 		JR NZ,$+4
 		LD A,"-"
 		LD DE,0X48DF
-		CALL PRISYM		;ВЫВОД ПОЛОЖЕНИЯ MUTE ON/OFF
+		CALL PRISYM		;вывод положения MUTE ON/OFF
 		LD A,L
 		LD DE,0X48D0
 		CALL PRIHEX
 
-;ВЫВОД ИНДИКАТОРА SOFT/HARD RESET
+;вывод индикатора SOFT/HARD RESET
 		BIT 4,H
 		LD HL,MESS16+2
 		JR Z,DATVTS1
@@ -462,7 +462,7 @@ DATVTS2		LD HL,MESS16
 		LD DE,0X4014
 		CALL PRINT
 
-;ПОЛУЧЕНИЕ И РАСПЕЧАТКА ИНФЫ ТЕМБРОБЛОКА
+;получение и распечатка инфы темброблока
 PRTTBL		
 ;		CALL FGETVTS
 ;		BIT 3,H
@@ -502,12 +502,12 @@ PRTTBL
 ;		LD B,2
 ;		JP PRINT_B
 
-;ПЕЧАТЬ ПУСТОЙ СТРОКИ
+;печать пустой строки
 EMPTSTR		LD HL,EMPT16+1
 		LD DE,0X48B1
 		JP PRINT
 
-;РАСПЕЧАТКА КОГДА НИЧЕГО НЕ ИГРАЕТ
+;распечатка когда ничего не играет
 BITRAT1		LD HL,EMPT16+2
 		LD DE,0X4856
 		PUSH HL
@@ -523,7 +523,7 @@ BITRAT1		LD HL,EMPT16+2
 		LD DE,0X4834
 		JP PRINT_B
 
-;ПЕЧАТЬ MP3 БИТРЕЙТА
+;печать MP3 битрейта
 BITRATE		LD A,0X1C
 		OUT (GSDAT),A
 		LD A,0X1F
@@ -609,8 +609,8 @@ BITRAT2		ADD HL,DE
 		LD DE,0X4878
 		JP PRINT_B
 
-;ПОЛУЧЕНИЕ И РАСПЕЧАТКА КОЛ-ВА НАЙДЕННЫХ ФАЙЛОВ (15)
-;ИЛИ НОМЕРА ТЕКУЩЕГО ФАЙЛА (16)
+;получение и распечатка кол-ва найденных файлов (15)
+;или номера текущего файла (16)
 READ5BT		OUT (GSDAT),A
 		LD A,0X1F
 		OUT (GSCOM),A
@@ -631,8 +631,8 @@ READ5BT		OUT (GSDAT),A
 		IN A,(GSDAT)
 		JP PRISYM
 
-;ПОЛУЧЕНИЕ ВРЕМЕНИ ПРОИГРЫВАНИЯ В
-;ТЕКСТОВОМ ВИДЕ И РАСПЕЧАТКА
+;получение времени проигрывания в
+;текстовом виде и распечатка
 READSEC		LD A,0X0B
 		OUT (GSDAT),A
 		LD A,0X1F
@@ -661,7 +661,7 @@ READSEC		LD A,0X0B
 		IN A,(GSDAT)
 		JP PRISYM
 
-;ПРИ ОТСТСТВИИ NEOGS ВЫХОД В 128 БАСИК
+;при отстствии NeoGS выход в 128 басик
 NO_NGS		LD A,7
 		CALL CLS
 		LD DE,0X4809
@@ -678,7 +678,7 @@ BAS128		XOR A
 		OUT (C),A
 		JP 0
 
-;ЖДЕМ НАЖАТИЯ КНОПКИ
+;ждем нажатия кнопки
 ANYKEY		XOR A
 		IN A,(0XFE)
 		CPL
@@ -686,7 +686,7 @@ ANYKEY		XOR A
 		JR Z,$-6
 		RET
 
-;ЖДЕМ ОТПУСКАНИЯ КНОПКИ
+;ждем отпускания кнопки
 NANYKEY		XOR A
 		IN A,(0XFE)
 		CPL
@@ -694,7 +694,7 @@ NANYKEY		XOR A
 		JR NZ,$-6
 		RET
 
-;ПРИ ОТСУТСВИИ GS ВЫХОД В 128 БАСИК
+;при отсутсвии GS выход в 128 басик
 NO__GS		LD A,7
 		CALL CLS
 		LD DE,0X480A
@@ -707,7 +707,7 @@ NO__GS		LD A,7
 		CALL NANYKEY
 		JR BAS128
 
-;ПЕЧАТЬ ТЕКСТА ДО БАЙТА 0 ИЛИ ПОКА B НЕ ОБНУЛИЦА
+;печать текста до байта 0 или пока B не обнулица
 PRINT_B		LD A,(HL)
 		AND A
 		RET Z
@@ -716,7 +716,7 @@ PRINT_B		LD A,(HL)
 		DJNZ PRINT_B
 		RET
 
-;ПЕЧАТЬ ТЕКСТА ДО БАЙТА 0
+;печать текста до байта 0
 PRINT		LD A,(HL)
 		INC HL
 		AND A
@@ -769,7 +769,7 @@ MORDALL		LD HL,MESS1
 		LD A,C
 		RRCA
 		RRCA
-		ADD A,"0"		;НОМЕР ВЕРСИИ MP3 ЧИПА
+		ADD A,"0"		;номер версии MP3 чипа
 		LD DE,0X48FF
 		CALL PRISYM
 MORDAR		LD A,3
@@ -847,7 +847,7 @@ POSMOD		LD A,SIZ_PAT
 		IN A,(GSDAT)
 		JP PRIHEX
 
-;ЧИТАТЬ БАЙТ ПЕРЕМЕННЫХ ПО СМЕЩЕНИЮ В "A"
+;читать байт переменных по смещению в "A"
 GET_VTS		OUT (GSDAT),A
 		LD A,0XFF
 		OUT (GSCOM),A
@@ -856,7 +856,7 @@ GET_VTS		OUT (GSDAT),A
 		IN A,(GSDAT)
 		RET
 
-;ПОЛУЧЕНИЕ 16 БИТНОГО СОСТОЯНИЯ
+;получение 16 битного состояния
 FGETVTS		LD A,0X0C
 		OUT (GSDAT),A
 		LD A,0X1F
@@ -970,9 +970,9 @@ CLSCLR		LD (0X5C8D),A
 		OUT (0XFE),A
 		RET
 
-;ЧТЕНИЕ ИЗ ПОРТА NEOGS
-;ВХОД: E-АДРЕС ПОРТА
-;ВЫХОД: A-ПРОЧИТАННОЕ ЗНАЧЕНИЕ
+;чтение из порта NeoGS
+;вход: E-адрес порта
+;выход: A-прочитанное значение
 INPORT		LD A,E
 		OUT (GSDAT),A
 		LD A,0X11
@@ -981,8 +981,8 @@ INPORT		LD A,E
 		IN A,(GSDAT)
 		RET
 
-;ЗАПИСЬ В ПОРТ NEOGS
-;ВХОД: E-АДРЕС ПОРТА, D-ЗНАЧЕНИЕ
+;запись в порт NEOGS
+;вход: E-адрес порта, D-значение
 OUTPORT		LD A,E
 		OUT (GSDAT),A
 		LD A,0X10
@@ -992,31 +992,31 @@ OUTPORT		LD A,E
 		OUT (GSDAT),A
 		JR WD
 
-;ОЖИДАНИЕ БАЙТА ОТВЕТА С ПАУЗОЙ
+;ожидание байта ответа с паузой
 ;WAIT_WN		PUSH BC
 ;		LD B,2
 ;		DJNZ $
 ;		POP BC
 
-;ОЖИДАНИЕ УСТАНОВКИ DATA БИТА
+;ожидание установки DATA бита
 WN		IN A,(GSCOM)
 		RLA
 		JR NC,WN
 		RET
 
-;ОЖИДАНИЕ СБРОСА COMMAND БИТА
+;ожидание сброса COMMAND бита
 WC		IN A,(GSCOM)
 		RRA
 		JR C,WC
 		RET
 
-;ОЖИДАНИЕ СБРОСА DATA БИТА
+;ожидание сброса DATA бита
 WD		IN A,(GSCOM)
 		RLA
 		JR C,WD
 		RET
 
-;ПРИЕМ E БАЙТ ИЗ NeoGS
+;прием E байт из NeoGS
 INI_E		LD BC,GSDAT
 INI_E1		LD D,0
 INI_E2		DEC D
@@ -1031,7 +1031,7 @@ INI_E3		XOR A
 		CALL GET_VTS
 		BIT 7,A
 		JR Z,INI_E1
-		LD SP,(STEK)
+		LD SP,(OLD_STACK)
 		JP EJECT
 
 PRIHEX		PUSH AF
