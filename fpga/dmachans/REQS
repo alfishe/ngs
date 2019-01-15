@@ -1,0 +1,71 @@
+BASE = 14bit (*256)
+
+SIZE = 20bit
+LOOPSTRT = 20bit
+
+ADD=6+12bit (18)
+
+VOLS=6+6bit (12)
+
+OFFSET = 20+12 bit (32) [accumulator]
+
+LOOPMODE = 2bit [none, forward, backward, pingpong]
+
+SURROUND = 1bit [add result to one channel, subtract from other]
+
+OLDSMPL = 8bit [old byte value, for interpolation]
+
+LOOPSTATE = 1bit
+
+
+total:=128bit (16 bytes)
+
+
+
+
+2mem * 256w * 16bit = 64 channels max
+
+
+
+
+LOOP MODES:
+no loop: equivalent to LOOPSTRT=BASE*256+SIZE (add extra silent byte to the sample)
+loop down: first pass up, then down
+
+pingpong: alternating passes (need 1 bit of state)
+
+00 - loop up
+01 - loop down
+1x - ping pong + state bit
+
+
+
+
+play algo:
+
+OFFSET += ADD [TODO: loop modes]
+
+if( OFFSET.int>SIZE )
+{
+	OFFSET.int=LOOPSTRT [TODO: loop modes]
+}
+
+sample = fetch [OFFSET.int + BASE]
+
+left  = VOL.left  * sample [MUL:8s*6u]
+right = VOL.right * sample [--//--   ]
+
+SAMPLE.left  += left  [TODO: surround]
+SAMPLE.right += right
+
+
+
+interpolation:
+if was carry (OFFSET.frac+ADD.frac)
+{
+	update OLD SAMPLE
+}
+
+interpolated sample = (~OFFSET.frac)*old sample + OFFSET.frac*new sample
+[MUL:8s*8u] -- not all fraction bits used
+
