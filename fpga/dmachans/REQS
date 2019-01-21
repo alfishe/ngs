@@ -13,12 +13,15 @@ LOOPMODE = 2bit [none, forward, backward, pingpong]
 
 SURROUND = 1bit [add result to one channel, subtract from other]
 
-OLDSMPL = 8bit [old byte value, for interpolation]
+// OLDSMPL = 8bit [old byte value, for interpolation]
+// нет смысла хранить это значение
+// для шагов больше единицы! т.е. фетчить 2 раза
+// надо уметь всегда!
 
 LOOPSTATE = 1bit
 
 
-total:=128bit (16 bytes)
+total:=120bit (15 bytes)
 
 
 
@@ -69,3 +72,42 @@ if was carry (OFFSET.frac+ADD.frac)
 interpolated sample = (~OFFSET.frac)*old sample + OFFSET.frac*new sample
 [MUL:8s*8u] -- not all fraction bits used
 
+
+
+play algo try #2:
+{
+	{carry, OFFSET.frac} = OFFSET.frac + ADD.frac
+	
+	offset_upd = ADD.int + carry
+
+	offset_up = OFFSET.int + offset_upd
+	offset_dn = OFFSET.int - offset_upd
+
+	if( loop_up && offset_up>=SIZE )
+	{
+		new_offset = LOOPSTRT + (offset_up-SIZE+1)
+		//TODO: loop reversion
+	}
+	else if( loop_dn && offset_dn<LOOPSTRT )
+	{
+		new_offset = SIZE-1 - (LOOPSTRT-offset_dn)
+		//TODO: loop reversion
+	}
+
+	OFFSET.int = new_offset
+
+
+	if( !loop_dn )
+	{ // going up
+		addr_lo = BASE+OFFSET.int
+
+		interp_val = 0xFF-OFFSET.frac[higher_8_bits]
+	}
+	else
+	{ // going down
+		addr_lo = BASE+OFFSET.int-1
+		interp_val = OFFSET.frac[higher_8_bits]
+	}
+
+
+}
