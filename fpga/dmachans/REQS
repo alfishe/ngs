@@ -9,7 +9,7 @@ VOLS=6+6bit (12)
 
 OFFSET = 20+12 bit (32) [accumulator]
 
-LOOPMODE = 2bit [none, forward, backward, pingpong]
+LOOPENA = 1bit
 
 SURROUND = 1bit [add result to one channel, subtract from other]
 
@@ -18,10 +18,8 @@ SURROUND = 1bit [add result to one channel, subtract from other]
 // для шагов больше единицы! т.е. фетчить 2 раза
 // надо уметь всегда!
 
-LOOPSTATE = 1bit
 
-
-total:=120bit (15 bytes)
+total:=???bit (15 bytes)
 
 
 
@@ -32,45 +30,15 @@ total:=120bit (15 bytes)
 
 
 LOOP MODES:
-no loop: equivalent to LOOPSTRT=BASE*256+SIZE (add extra silent byte to the sample)
-loop down: first pass up, then down
 
-pingpong: alternating passes (need 1 bit of state)
-
-00 - loop up
-01 - loop down
-1x - ping pong + state bit
+!!!ONLY simple forward loop!!!111
 
 
+INTERPOLATION:
+
+!!!ALWAYS!!! between neighboring bytes, even when ADD.int>0
 
 
-play algo:
-
-OFFSET += ADD [TODO: loop modes]
-
-if( OFFSET.int>SIZE )
-{
-	OFFSET.int=LOOPSTRT [TODO: loop modes]
-}
-
-sample = fetch [OFFSET.int + BASE]
-
-left  = VOL.left  * sample [MUL:8s*6u]
-right = VOL.right * sample [--//--   ]
-
-SAMPLE.left  += left  [TODO: surround]
-SAMPLE.right += right
-
-
-
-interpolation:
-if was carry (OFFSET.frac+ADD.frac)
-{
-	update OLD SAMPLE
-}
-
-interpolated sample = (~OFFSET.frac)*old sample + OFFSET.frac*new sample
-[MUL:8s*8u] -- not all fraction bits used
 
 
 
@@ -78,36 +46,5 @@ play algo try #2:
 {
 	{carry, OFFSET.frac} = OFFSET.frac + ADD.frac
 	
-	offset_upd = ADD.int + carry
-
-	offset_up = OFFSET.int + offset_upd
-	offset_dn = OFFSET.int - offset_upd
-
-	if( loop_up && offset_up>=SIZE )
-	{
-		new_offset = LOOPSTRT + (offset_up-SIZE+1)
-		//TODO: loop reversion
-	}
-	else if( loop_dn && offset_dn<LOOPSTRT )
-	{
-		new_offset = SIZE-1 - (LOOPSTRT-offset_dn)
-		//TODO: loop reversion
-	}
-
-	OFFSET.int = new_offset
-
-
-	if( !loop_dn )
-	{ // going up
-		addr_lo = BASE+OFFSET.int
-
-		interp_val = 0xFF-OFFSET.frac[higher_8_bits]
-	}
-	else
-	{ // going down
-		addr_lo = BASE+OFFSET.int-1
-		interp_val = OFFSET.frac[higher_8_bits]
-	}
-
-
+TODOTODOTODO.....
 }
