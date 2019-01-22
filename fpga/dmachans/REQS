@@ -19,7 +19,7 @@ SURROUND = 1bit [add result to one channel, subtract from other]
 // надо уметь всегда!
 
 
-total:=???bit (15 bytes)
+total:=118bit (15 bytes)
 
 
 
@@ -40,11 +40,48 @@ INTERPOLATION:
 
 
 
+sample:
+
+0
+1
+2
+...
+N       <= loop start, LOOPSTART points here
+N+1
+N+2
+...
+N+M-1   <= last loop byte (total M bytes in loop)
+N+M     <= 1 byte past loop (must be same as [N]), SIZE points here
+...loops shorter than 64 bytes must be unrolled to minimum 64 bytes long...
 
 
-play algo try #2:
+LOOPSTART = N
+SIZE      = N+M
+
+
+play algo
 {
-	{carry, OFFSET.frac} = OFFSET.frac + ADD.frac
-	
-TODOTODOTODO.....
+	{carry,OFFSET.frac} = OFFSET.frac + ADD.frac
+
+	new_off = OFFSET.int + ADD.int + carry
+
+	if( new_off >= SIZE ) // the very last byte of loop is SIZE-1, byte at SIZE must be same as at LOOPSTART
+	{
+		new_off = new_off-SIZE+LOOPSTART+1 // TODO: worth having LOOPSTART+1-SIZE instead of simple LOOPSTART
+	}
+	OFFSET.int = new_off
+
+	ADDR       = OFFSET.int + BASE*256
+
+	val_left =  fetch(ADDR)   // two consecutive bytes for interpolation
+	val_right = fetch(ADDR+1) //
+
+	interpolated = ( val_left * (256-OFFSET.frac[higher 8 bits]) + val_right * OFFSET.frac[higher 8 bits] ) / 256
+
+	volume_left  = interpolated * (-1)^surround * VOL_LEFT
+	volume_right = interpolated                 * VOL_RIGHT
+
+	sum_left  += volume_left
+	sum_right += volume_right
 }
+
