@@ -67,7 +67,7 @@ play algo
 
 	if( new_off >= SIZE ) // the very last byte of loop is SIZE-1, byte at SIZE must be same as at LOOPSTART
 	{
-		new_off = new_off-SIZE+LOOPSTART+1 // TODO: worth having LOOPSTART+1-SIZE instead of simple LOOPSTART
+		new_off = new_off-SIZE+LOOPSTART // TODO: worth having LOOPSTART-SIZE instead of simple LOOPSTART
 	}
 	OFFSET.int = new_off
 
@@ -83,5 +83,41 @@ play algo
 
 	sum_left  += volume_left
 	sum_right += volume_right
-}
+} ->> APPROVED
+
+
+
+interrupts:
+1. period interrupt, goes 37500 Hz
+2. BPM interupt, goes every N periods, where N=2..4097
+
+interrupt register
+bit 7: SET/RESET
+bit 3: BPM enable
+bit 2: BPM pending
+bit 1: period enable
+bit 0: period pending
+
+period and BPM interrupts coincide in the same cycle. BPM has priority over period
+
+IM0/IM2 vectors:
+period -- #FF / RST #38
+BPM    -- #F7 / RST #30
+
+pending bit is automatically cleared when the corresponding interrupt is taken (vector read)
+
+BPM period register: X=[11:0]
+X=0 => N=2,
+X=1 => N=3,
+...
+X=4095 => N=4097
+
+BPM algorithm:
+
+if( !ov ) cnt <= cnt + 1;
+else cnt <= 0;
+
+ov <= (cnt>=X) && !ov;
+
+X can change dynamically, since >= condition is important
 
