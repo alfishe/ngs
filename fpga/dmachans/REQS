@@ -86,6 +86,22 @@ play algo
 } ->> APPROVED
 
 
+more on mixing/interpolating
+
+d, dn -- data, data_next (signed)
+fr -- frac for interpolating (unsigned)
+vl, vr -- volumes (signed)
+
+rl, rr -- result left, right
+
+i = d*(~fr) + dn*fr:
+ordinaty mul: add data or zero, shift
+d*(~fr) + dn*fr: if bit[fr] add d else add dn, shift
+
+
+
+
+
 
 interrupts:
 1. period interrupt, goes 37500 Hz
@@ -121,3 +137,11 @@ ov <= (cnt>=X) && !ov;
 
 X can change dynamically, since >= condition is important
 
+
+
+
+
+STRUCTURE:
+
+ - после контроллера каналов данные через фифо: адрес выборки (для 1ого байта, 22 бита), frac, volume_left, volume_right.
+   пишутся в fifo, младшие 3 бита задает контроллер каналов, остальные -- счётчики FIFO
