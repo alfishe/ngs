@@ -152,5 +152,8 @@ STRUCTURE:
 
 CHANNEL FORMAT:
 
-bytes[0:3], all 32 bits: OFFSET
+bytes[ 0:3 ]: OFFSET[31:0]
+bytes[ 4:7 ]: ADD[17:0], LOOPENA, SURROUND, VLEFT[5:0], VRIGHT[5:0]
+bytes[ 8:11]: NU[3:0], SIZE[19:0],      BASE[15:8]
+bytes[12:15]: NU[3:0], LOOP-SIZE[19:0], BASE[ 7:0]
 
