@@ -27,7 +27,7 @@ module chan_ctrl
 	output reg  [ 7:0] out_data; 
 	output reg         out_stb_addr; // strobes address sequence (addrhi/mid/lo)
 	output reg         out_stb_mix;  // strobes mix sequence (frac/vl/vr)
-	// sequence: addrhi, addrmid, addrlo, frac, vl, vr (6 bytes)
+	// sequence: addrhi, addrmid, addrlo; frac, vl, vr (6 bytes)
 );
 
 	reg [ 5:0] curr_ch; // current channel number
@@ -55,10 +55,11 @@ module chan_ctrl
 	reg surround;
 	
 	// base address
-	reg [13:0] base;
+	reg [21:0] base;
 
 
-
+	// emit control
+	reg [1:0] addr_emit;
 
 	always @(posedge clk)
 	     if( st==ST_WAIT )
@@ -114,6 +115,7 @@ module chan_ctrl
 		next_st = ST_SAVEOFFS;
 	///////////////////////////////////////////////////////////////////////
 	ST_SAVEOFFS:
+		next_st = ST_NEXT
 	///////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////
@@ -146,11 +148,10 @@ module chan_ctrl
 	begin
 		rd_addr[1:0] <= 2'd0;
 	end
-	else if( st==ST_BEGIN || st==ST_GETOFFS )
+	else if( st==ST_BEGIN || st==ST_GETOFFS || st==ST_GETADDVOL )
 	begin
 		rd_addr[1:0] <= rd_addr[1:0] + 2'd1;
 	end
-
 
 
 	// offset register control
@@ -167,6 +168,11 @@ module chan_ctrl
 	if( st==ST_GETSIZE )
 		oversize <= ( {off_cy,offset[31:12]} >= {1'b0, rd_data[27:8]} );
 
+	// offset writeback
+	always @(posedge clk)
+		wr_stb <= st==ST_SAVEOFFS;
+	//
+	assign wr_data = offset;
 
 
 	// volumes and miscellaneous
@@ -182,16 +188,56 @@ module chan_ctrl
 
 
 
-	// base address
+	// base address calc
 	always @(posedge clk)
 	if( st==ST_GETSIZE )
-		base[13:8] <= rd_data[7:0];
+		base[15:8] <= rd_data[7:0];
+	else if( st==ST_GETLOOP )
+		base[21:16] <= rd_data[5:0];
+	else if( st==ST_SAVEOFFS )
+	begin
+		base[7:0] <= offset[19:12];
+		base[21:8] <= base[21:8] + {2'd0,offset[31:20]};
+	end
+
+
+
+
+
+	// emitting data to fifos
+	always @(posedge clk, negedge rst_n)
+	if( !rst_n )
+		addr_emit <= 2'd0;
+	else
+		addr_emit[1:0] <= {fvv_emit[0], st==ST_NEXT};
 	//
 	always @(posedge clk)
-	if( st==ST_GETLOOP )
-		base[7:0] <= rd_data[7:0];
-
-
+	     if( st==ST_GETSIZE )
+		out_data <= offset[11:4];
+	else if( st==ST_GETLOOP )
+		out_data <= {2'd0, vol_left[5:0]};
+	else if( st==ST_SAVEOFFS )
+		out_data <= {2'd0, vol_right[5:0] ^ {6{surround}}};
+	else if( st==ST_NEXT )
+		out_data <= {2'd0, base[21:16]};
+	else if( addr_emit[0] )
+		out_data <= base[15:8];
+	else
+		out_data <= base[7:0];
+	//
+	always @(posedge clk, negedge rst_n)
+	if( !rst_n )
+		out_stb_mix <= 1'b0;
+	else
+		out_stb_mix <= (st==ST_GETSIZE)  ||
+		               (st==ST_GETLOOP)  ||
+		               (st==ST_SAVEOFFS) ;
+	//
+	always @(posedge clk, negedge rst_n)
+	if( !rst_n )
+		out_stb_addr <= 1'b0;
+	else
+		out_stb_addr <= (st=ST_NEXT) || addr_emit;
 
 
 

@@ -154,6 +154,13 @@ CHANNEL FORMAT:
 
 bytes[ 0:3 ]: OFFSET[31:0]
 bytes[ 4:7 ]: ADD[17:0], LOOPENA, SURROUND, VLEFT[5:0], VRIGHT[5:0]
-bytes[ 8:11]: NU[3:0], SIZE[19:0],      BASE[15:8]
-bytes[12:15]: NU[3:0], LOOP-SIZE[19:0], BASE[ 7:0]
+bytes[ 8:11]: NU[3:0], SIZE[19:0],      BASE[ 7:0]
+bytes[12:15]: NU[3:0], LOOP-SIZE[19:0], BASE[15:8]
+
+
+addr=offs[31:12]+base[13:0],8'd0
+
+21  20  19  18  17  16  15  14  13  12  11  10  09  08  07  06  05  04  03  02  01  00
+a13 a12 a11 a10 a09 a08 a07 a06 a05 a04 a03 a02 a01 a00  -   -   -   -   -   -   -   -
+ -   -  o31 o30 o29 o28 o27 o26 o25 o24 o23 o22 o21 o20 o19 o18 o17 o16 o15 o14 o13 o12
 
