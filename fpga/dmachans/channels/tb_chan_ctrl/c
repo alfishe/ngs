@@ -1,0 +1,13 @@
+#!/bin/bash
+
+FILES=""
+FILES="${FILES} ../chan_ctrl.v"
+
+BENCH="tb.v"
+
+if (( $#>0 )); then
+	vlog +define+$1 -sv -novopt -incr $FILES $BENCH
+else
+	vlog -sv -novopt -incr $FILES $BENCH
+fi
+

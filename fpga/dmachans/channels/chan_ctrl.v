@@ -7,15 +7,13 @@ module chan_ctrl
 	input  wire clk, // 24.0 MHz
 	input  wire rst_n,
 
-	input  wire ena, // global enable
-
 	// memory interface
 	output reg  [ 6:0] rd_addr,
 	input  wire [31:0] rd_data,
 	//
 	output reg  [ 6:0] wr_addr,
 	output wire [31:0] wr_data,
-	output wire        wr_stb,
+	output reg         wr_stb,
 
 	// 37500 Hz period strobe (1-cycle strobe)
 	input  wire        sync_stb,
@@ -24,9 +22,9 @@ module chan_ctrl
 	input  wire [31:0] ch_enas,
 
 	// output data
-	output reg  [ 7:0] out_data; 
-	output reg         out_stb_addr; // strobes address sequence (addrhi/mid/lo)
-	output reg         out_stb_mix;  // strobes mix sequence (frac/vl/vr)
+	output reg  [ 7:0] out_data, 
+	output reg         out_stb_addr, // strobes address sequence (addrhi/mid/lo)
+	output reg         out_stb_mix   // strobes mix sequence (frac/vl/vr)
 	// sequence: addrhi, addrmid, addrlo; frac, vl, vr (6 bytes)
 );
 
@@ -61,16 +59,10 @@ module chan_ctrl
 	// emit control
 	reg [1:0] addr_emit;
 
-	always @(posedge clk)
-	     if( st==ST_WAIT )
-		curr_ch[5:0] <= 6'd0;
-	else if( st==ST_NEXT )
-		curr_ch[5:0] <= curr_ch[5:0] + 6'd1;
-
-
-
-
-
+	
+	///////////////////////
+	// states definition //
+	///////////////////////
 	localparam ST_BEGIN     = 4'd0;
 	localparam ST_GETOFFS   = 4'd1; // when offset value arrives
 	localparam ST_GETADDVOL = 4'd2; // whed add and volumes arrive
@@ -84,6 +76,21 @@ module chan_ctrl
 	//localparam ST_ = 4'd;
 	localparam ST_NEXT = 4'd14;
 	localparam ST_WAIT = 4'd15;
+	
+	
+	
+	
+	
+	always @(posedge clk)
+	     if( st==ST_WAIT )
+		curr_ch[5:0] <= 6'd0;
+	else if( st==ST_NEXT )
+		curr_ch[5:0] <= curr_ch[5:0] + 6'd1;
+
+
+
+
+
 
 	always @(posedge clk, negedge rst_n)
 	if( !rst_n )
@@ -115,7 +122,7 @@ module chan_ctrl
 		next_st = ST_SAVEOFFS;
 	///////////////////////////////////////////////////////////////////////
 	ST_SAVEOFFS:
-		next_st = ST_NEXT
+		next_st = ST_NEXT;
 	///////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////
@@ -144,7 +151,7 @@ module chan_ctrl
 		wr_addr[1:0] <= 2'd0;
 	//
 	always @(posedge clk)
-	if( st==ST_NEXT )
+	if( st==ST_NEXT || st==ST_WAIT )
 	begin
 		rd_addr[1:0] <= 2'd0;
 	end
@@ -209,7 +216,7 @@ module chan_ctrl
 	if( !rst_n )
 		addr_emit <= 2'd0;
 	else
-		addr_emit[1:0] <= {fvv_emit[0], st==ST_NEXT};
+		addr_emit[1:0] <= {addr_emit[0], st==ST_NEXT};
 	//
 	always @(posedge clk)
 	     if( st==ST_GETSIZE )
@@ -237,7 +244,7 @@ module chan_ctrl
 	if( !rst_n )
 		out_stb_addr <= 1'b0;
 	else
-		out_stb_addr <= (st=ST_NEXT) || addr_emit;
+		out_stb_addr <= (st==ST_NEXT) || addr_emit;
 
 
 
