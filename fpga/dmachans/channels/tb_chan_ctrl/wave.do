@@ -1,7 +1,7 @@
 onerror {resume}
 quietly WaveActivateNextPane {} 0
 add wave -noupdate -expand -group clk_rst /tb/clk
-add wave -noupdate -expand -group clk_rst -color Yellow /tb/rst_n
+add wave -noupdate -expand -group clk_rst -color Magenta /tb/rst_n
 add wave -noupdate -expand -group sync /tb/sync_cnt
 add wave -noupdate -expand -group sync /tb/sync_stb
 add wave -noupdate -group channel_enas -radix hexadecimal /tb/ch_enas
@@ -55,4 +55,4 @@ configure wave -griddelta 10
 configure wave -timeline 0
 configure wave -timelineunits us
 update
-WaveRestoreZoom {0 ns} {4268 ns}
+WaveRestoreZoom {0 ns} {68250 ns}

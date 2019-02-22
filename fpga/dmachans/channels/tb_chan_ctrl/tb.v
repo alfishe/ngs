@@ -5,6 +5,31 @@
 `define HALF_CLK (5.0)
 
 
+class channel_data;
+
+	bit [13:0] base;
+
+	bit [19:0] size;
+	bit [19:0] loop; // actually loop-size
+
+	bit [ 5:0] add_int;
+	bit [11:0] add_frac;
+
+	bit [19:0] offset_int;
+	bit [11:0] offset_frac;
+
+	bit        surround;
+	bit        loopena;
+
+	bit [ 5:0] vol_left;
+	bit [ 5:0] vol_right;
+
+endclass
+
+
+
+
+
 module tb;
 
 	reg clk;
@@ -34,12 +59,22 @@ module tb;
 
 
 	// channels memory
-	reg [31:0] channels [0:128];
+	reg [31:0] channels_mem [0:127];
 
 
 
 
 
+	// test data
+	channel_data chans[0:31];
+
+
+
+
+
+	// create class objects
+	initial
+		chans_create(chans);
 
 	// clock and reset gen
 	initial
@@ -85,8 +120,30 @@ module tb;
 
 
 	// channels memory emulator
+	reg [31:0] rd_data_reg;
+	assign rd_data = rd_data_reg;
+	//
 	always @(posedge clk)
-	хуй
+		rd_data_reg <= channels_mem[rd_addr];
+	//
+	always @(posedge clk)
+	if( wr_stb )
+		channels_mem[wr_addr] <= wr_data;
+
+
+
+
+	// channel generator/checker
+	always @(posedge clk)
+	if( sync_stb )
+	begin
+		chans_generate(chans);
+	end
+
+
+
+
+
 
 
 
@@ -119,6 +176,42 @@ module tb;
 		.out_stb_mix (out_stb_mix )
 	);
 
+
+
+
+
+	task chans_create(inout channel_data chans[0:31]);
+		
+		int i;
+
+		for(i=0;i<32;i++)
+		begin
+			chans[i] = new;
+		end
+
+	endtask
+
+
+	task chans_generate(inout channel_data chans[0:31]);
+
+		int i;
+
+		for(i=0;i<32;i++)
+		begin : gen_channel
+
+			chans[i].base = $random()>>(32-14);
+
+			//chans[i].add_int = $random()>>(32-6);
+			chans[i].add_frac = $random()>>(32-12);
+
+
+			chans[i].surround = $random()>>(32-1);
+			chans[i].loopena  = $random()>>(32-1);
+
+			chans[i].vol_left  = $random()>>(32-6);
+			chans[i].vol_right = $random()>>(32-6);
+		end
+	endtask
 
 
 
