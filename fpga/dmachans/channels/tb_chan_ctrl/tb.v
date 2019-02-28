@@ -24,6 +24,94 @@ class channel_data;
 	bit [ 5:0] vol_left;
 	bit [ 5:0] vol_right;
 
+
+
+	function void init();
+
+		base = $random()>>(32-14);
+
+		add_int = $random()>>(32-6);
+		add_frac = $random()>>(32-12);
+
+		offset_int = $random()>>(32-20);
+		offset_frac = $random()>>(32-12);
+
+		size = $random()>>(32-10); // TODO: greater sizes
+		loop = {20{1'b1}};
+		while(loop>=size)
+			loop = $random()>>(32-10); // TODO: greater sizes
+
+		surround = $random()>>(32-1);
+		loopena  = $random()>>(32-1);
+
+		vol_left  = $random()>>(32-6);
+		vol_right = $random()>>(32-6);
+	endfunction
+
+
+	function void update();
+
+		bit cy;
+
+		int new_off;
+
+		bit [21:0] addr;
+
+
+		{cy,offset_frac} = {1'b0, offset_frac} + {1'b0, add_frac};
+
+		new_off = {31'd0, cy} + {26'd0,add_int} + {12'd0,offset_int};
+
+		if( new_off >= size )
+		begin
+			new_off = new_off - size + loop;
+		end
+		
+		offset_int = new_off[19:0];
+	endfunction
+
+
+
+
+
+
+	function int get_word(input int wnum);
+		// return words suitable for channels state
+		if( wnum==0 )
+			get_word = {offset_int,offset_frac};
+		else if( wnum==1 )
+			get_word = {add_int, add_frac, loopena, surround, vol_left, vol_right};
+		else if( wnum==2 )
+			get_word = { (4'd0|$random()), size, base[7:0] };
+		else if( wnum==3 )
+			get_word = { (4'd0|$random()), loop-size, 2'b0, base[13:8] };
+		else
+			$stop;
+	endfunction
+
+
+	function bit [21:0] get_addr();
+
+		get_addr = base*256 + offset_int;
+	endfunction
+
+
+	function bit [6:0] get_vol_left();
+		get_vol_left = {1'b0, vol_left};
+	endfunction
+
+
+	function bit [6:0] get_vol_right();
+		if( surround )
+			get_vol_right = 7'h7F - {1'b0, vol_right};
+		else
+			get_vol_right = {1'b0, vol_right};
+	endfunction
+
+
+	function bit [7:0] get_frac();
+		get_frac = offset_frac[11:4];
+	endfunction
 endclass
 
 
@@ -39,7 +127,7 @@ module tb;
 
 	// sync counter
 	integer sync_cnt;
-
+	bit pre_sync;
 
 	// DUT connections
 	wire [ 6:0] rd_addr;
@@ -68,13 +156,23 @@ module tb;
 	// test data
 	channel_data chans[0:31];
 
+	// generation fifos
+	reg [7:0] mix_fifo[$];
+	reg [7:0] addr_fifo[$];
 
 
 
 
-	// create class objects
+	// init tb data structures
 	initial
-		chans_create(chans);
+	begin : chans_create
+
+		int i;
+		for(i=0;i<32;i++) chans[i] = new;
+
+		mix_fifo.delete();
+		addr_fifo.delete();
+	end
 
 	// clock and reset gen
 	initial
@@ -97,6 +195,7 @@ module tb;
 	initial
 	begin
 		sync_cnt = 0;
+		pre_sync = 1'b0;
 		sync_stb = 1'b0;
 	end
 	//
@@ -104,6 +203,7 @@ module tb;
 	if( !rst_n )
 	begin
 		sync_cnt <= 637;
+		pre_sync <= 1'b0;
 		sync_stb <= 1'b0;
 	end
 	else
@@ -113,7 +213,9 @@ module tb;
 		else
 			sync_cnt <= 0;
 
-		sync_stb <= !sync_cnt;
+		pre_sync <= !sync_cnt;
+
+		sync_stb <= pre_sync;
 	end
 
 
@@ -132,12 +234,39 @@ module tb;
 
 
 
+	// fill queues off the output data
+	always @(posedge clk)
+	if( out_stb_mix ) mix_fifo.push_back(out_data);
+	//
+	always @(posedge clk)
+	if( out_stb_addr ) addr_fifo.push_back(out_data);
+
+
+
 
 	// channel generator/checker
 	always @(posedge clk)
 	if( sync_stb )
-	begin
-		chans_generate(chans);
+	begin : chans
+		int i;
+
+		// if there was previous iteration, check it
+
+
+
+
+		// init channels for new iteration
+		for(i=0;i<32;i++)
+		begin
+			chans[i].init();
+			
+			channels_mem[i*4+0] = chans[i].get_word(0);
+			channels_mem[i*4+1] = chans[i].get_word(1);
+			channels_mem[i*4+2] = chans[i].get_word(2);
+			channels_mem[i*4+3] = chans[i].get_word(3);
+
+			chans[i].update();
+		end
 	end
 
 
@@ -175,43 +304,6 @@ module tb;
 		.out_stb_addr(out_stb_addr),
 		.out_stb_mix (out_stb_mix )
 	);
-
-
-
-
-
-	task chans_create(inout channel_data chans[0:31]);
-		
-		int i;
-
-		for(i=0;i<32;i++)
-		begin
-			chans[i] = new;
-		end
-
-	endtask
-
-
-	task chans_generate(inout channel_data chans[0:31]);
-
-		int i;
-
-		for(i=0;i<32;i++)
-		begin : gen_channel
-
-			chans[i].base = $random()>>(32-14);
-
-			//chans[i].add_int = $random()>>(32-6);
-			chans[i].add_frac = $random()>>(32-12);
-
-
-			chans[i].surround = $random()>>(32-1);
-			chans[i].loopena  = $random()>>(32-1);
-
-			chans[i].vol_left  = $random()>>(32-6);
-			chans[i].vol_right = $random()>>(32-6);
-		end
-	endtask
 
 
 
